@@ -22,6 +22,7 @@ import { useFeaturedLocation } from '@/src/hooks/useFeaturedLocation';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 import { usePlaceDistances } from '@/src/hooks/usePlaceDistances';
 import { VibeChips } from '@/src/components/home/VibeChips';
+import { useLangStore } from '@/src/store/langStore';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
 import type { Location } from '@/src/types';
 
@@ -122,6 +123,7 @@ function CarouselCard({ location }: { location: Location }) {
 export default function HomeScreen() {
   const insets    = useSafeAreaInsets();
   const user      = useAuthStore((s) => s.user);
+  const { lang, toggle: toggleLang } = useLangStore();
   const firstName = user?.user_metadata?.full_name?.split(' ').pop() ?? 'bạn';
   const mascot = useMascot();
 
@@ -222,8 +224,9 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerIcon}>
-              <Ionicons name="search-outline" size={22} color={colors.nomad.onSurface} />
+            <TouchableOpacity style={styles.headerIcon} onPress={toggleLang}>
+              <Ionicons name="globe-outline" size={22} color={colors.nomad.onSurface} />
+              <Text style={styles.langBadge}>{lang.toUpperCase()}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIcon}>
               <View>
@@ -432,7 +435,8 @@ const styles = StyleSheet.create({
   headerBrand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   logoImg:     { width: 38, height: 38 },
-  headerIcon:  { padding: 2 },
+  headerIcon:  { padding: 2, alignItems: 'center' },
+  langBadge:   { fontSize: 9, fontWeight: '700', color: colors.nomad.onSurface, lineHeight: 11, opacity: 0.7 },
   brandName:   { fontSize: 20, fontWeight: '700', color: colors.nomad.primary, lineHeight: 24 },
   brandSub:    { fontSize: 11, color: '#8A8A8A' },
   notifDot:    { position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF4D6D', borderWidth: 1.5, borderColor: '#fff' },

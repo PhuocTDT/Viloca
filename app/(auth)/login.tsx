@@ -10,6 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/src/theme/colors';
+import { useT } from '@/src/lib/i18n';
+import { LangToggle } from '@/src/components/ui/LangToggle';
 
 const c = colors.nomad;
 
@@ -21,14 +23,15 @@ export default function LoginScreen() {
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState('');
   const setUser = useAuthStore((s) => s.setUser);
+  const t = useT();
 
   async function handleLogin() {
     setError('');
-    if (!email || !password) { setError('Vui lòng nhập email và mật khẩu'); return; }
+    if (!email || !password) { setError(t('fillAll')); return; }
     setLoading(true);
     const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (authError) { console.log('LOGIN ERROR:', authError.status, authError.message); setError('Email hoặc mật khẩu không đúng'); return; }
+    if (authError) { console.log('LOGIN ERROR:', authError.status, authError.message); setError(t('loginError')); return; }
     setUser(data.user);
     router.replace('/(app)');
   }
@@ -38,6 +41,11 @@ export default function LoginScreen() {
       {/* ── Decorative blobs ─────────────────────────────────────── */}
       <View style={[styles.blob, styles.blobTopRight]} />
       <View style={[styles.blob, styles.blobBottomLeft]} />
+
+      {/* ── Lang toggle ──────────────────────────────────────────── */}
+      <View style={[styles.langToggleWrap, { top: insets.top + 8 }]}>
+        <LangToggle />
+      </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -58,8 +66,8 @@ export default function LoginScreen() {
               <Image source={require('@/assets/viloca-logo.png')} style={styles.logo} resizeMode="contain" />
             </View>
             <View style={styles.headlineWrap}>
-              <Text style={styles.headline}>Bắt đầu hành trình</Text>
-              <Text style={styles.subheadline}>Khám phá thế giới cùng Viloca hôm nay.</Text>
+              <Text style={styles.headline}>{t('loginTitle')}</Text>
+              <Text style={styles.subheadline}>{t('loginSub')}</Text>
             </View>
           </View>
 
@@ -75,12 +83,12 @@ export default function LoginScreen() {
 
             {/* Email */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>ĐỊA CHỈ EMAIL</Text>
+              <Text style={styles.fieldLabel}>{t('emailLabel')}</Text>
               <View style={styles.inputRow}>
                 <Ionicons name="mail-outline" size={20} color={c.outline} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="hello@viloca.vn"
+                  placeholder={t('emailHint')}
                   placeholderTextColor={c.outlineVariant}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -93,7 +101,7 @@ export default function LoginScreen() {
 
             {/* Password */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>MẬT KHẨU</Text>
+              <Text style={styles.fieldLabel}>{t('passwordLabel')}</Text>
               <View style={styles.inputRow}>
                 <Ionicons name="lock-closed-outline" size={20} color={c.outline} style={styles.inputIcon} />
                 <TextInput
@@ -116,7 +124,7 @@ export default function LoginScreen() {
 
             {/* Forgot password */}
             <TouchableOpacity style={styles.forgotWrap} activeOpacity={0.7}>
-              <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+              <Text style={styles.forgotText}>{t('forgotPassword')}</Text>
             </TouchableOpacity>
 
             {/* Login button */}
@@ -130,7 +138,7 @@ export default function LoginScreen() {
                 <ActivityIndicator color={c.onPrimary} />
               ) : (
                 <>
-                  <Text style={styles.primaryBtnText}>Đăng nhập</Text>
+                  <Text style={styles.primaryBtnText}>{t('loginBtn')}</Text>
                   <Ionicons name="arrow-forward" size={18} color={c.onPrimary} />
                 </>
               )}
@@ -139,24 +147,24 @@ export default function LoginScreen() {
             {/* Divider */}
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>HOẶC TIẾP TỤC VỚI</Text>
+              <Text style={styles.dividerText}>{t('orWith')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
             {/* Social buttons */}
             <TouchableOpacity style={styles.googleBtn} activeOpacity={0.7}>
               <Image source={require('@/assets/Google.png')} style={styles.googleLogo} resizeMode="contain" />
-              <Text style={styles.socialBtnText}>Tiếp tục với Google</Text>
+              <Text style={styles.socialBtnText}>{t('continueGoogle')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* ── Footer ───────────────────────────────────────────── */}
           <View style={styles.footer}>
             <View style={styles.signupRow}>
-              <Text style={styles.signupText}>Chưa có tài khoản? </Text>
+              <Text style={styles.signupText}>{t('noAccount')} </Text>
               <Link href="/(auth)/register" asChild>
                 <TouchableOpacity activeOpacity={0.7}>
-                  <Text style={styles.signupLink}>Tham gia ngay</Text>
+                  <Text style={styles.signupLink}>{t('signUp')}</Text>
                 </TouchableOpacity>
               </Link>
             </View>
@@ -417,5 +425,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: c.outline,
     opacity: 0.5,
+  },
+
+  langToggleWrap: {
+    position: 'absolute',
+    right: 20,
+    zIndex: 10,
   },
 });

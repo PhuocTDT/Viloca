@@ -1,0 +1,101 @@
+import { useLangStore } from '@/src/store/langStore';
+
+const strings = {
+  vi: {
+    // Login
+    loginTitle:    'Bắt đầu hành trình',
+    loginSub:      'Khám phá thế giới cùng Viloca hôm nay.',
+    emailLabel:    'ĐỊA CHỈ EMAIL',
+    emailHint:     'hello@viloca.vn',
+    passwordLabel: 'MẬT KHẨU',
+    passwordHint:  'Mật khẩu của bạn',
+    forgotPassword:'Quên mật khẩu?',
+    loginBtn:      'Đăng nhập',
+    noAccount:     'Chưa có tài khoản?',
+    signUp:        'Tham gia ngay',
+    loginError:    'Email hoặc mật khẩu không đúng',
+    fillAll:       'Vui lòng nhập email và mật khẩu',
+    orWith:        'HOẶC TIẾP TỤC VỚI',
+    continueGoogle:'Tiếp tục với Google',
+    // Register
+    registerTitle: 'Tạo tài khoản',
+    registerSub:   'Bắt đầu hành trình khám phá của bạn.',
+    nameLabel:     'HỌ VÀ TÊN',
+    nameHint:      'Nguyễn Văn A',
+    confirmLabel:  'NHẬP LẠI MẬT KHẨU',
+    confirmHint:   'Nhập lại mật khẩu',
+    registerBtn:   'Tạo tài khoản',
+    hasAccount:    'Đã có tài khoản?',
+    signIn:        'Đăng nhập',
+    passwordMismatch: 'Mật khẩu không khớp',
+    // Auth errors
+    errRateLimit:     'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau vài phút.',
+    errEmailExists:   'Email này đã được đăng ký. Vui lòng dùng email khác hoặc đăng nhập.',
+    errInvalidEmail:  'Địa chỉ email không hợp lệ.',
+    errPassword:      'Mật khẩu không đáp ứng yêu cầu bảo mật.',
+    errEmailNotFound: 'Email không tồn tại. Vui lòng kiểm tra lại.',
+    errGeneral:       'Đã có lỗi xảy ra. Vui lòng thử lại.',
+    // Password strength
+    strengthWeak:  'Yếu',
+    strengthMid:   'Trung bình',
+    strengthStr:   'Mạnh',
+    strengthVStr:  'Rất mạnh',
+    condMin:       'Ít nhất 8 ký tự',
+    condUpper:     'Có chữ hoa (A-Z)',
+    condLower:     'Có chữ thường (a-z)',
+    condNum:       'Có số (0-9)',
+    condSpecial:   'Có ký tự đặc biệt (!@#...)',
+  },
+  en: {
+    // Login
+    loginTitle:    'Start your journey',
+    loginSub:      'Explore the world with Viloca today.',
+    emailLabel:    'EMAIL ADDRESS',
+    emailHint:     'hello@viloca.vn',
+    passwordLabel: 'PASSWORD',
+    passwordHint:  'Your password',
+    forgotPassword:'Forgot password?',
+    loginBtn:      'Sign in',
+    noAccount:     "Don't have an account?",
+    signUp:        'Join now',
+    loginError:    'Incorrect email or password',
+    fillAll:       'Please enter your email and password',
+    orWith:        'OR CONTINUE WITH',
+    continueGoogle:'Continue with Google',
+    // Register
+    registerTitle: 'Create account',
+    registerSub:   'Start your journey of discovery.',
+    nameLabel:     'FULL NAME',
+    nameHint:      'John Doe',
+    confirmLabel:  'CONFIRM PASSWORD',
+    confirmHint:   'Confirm password',
+    registerBtn:   'Create account',
+    hasAccount:    'Already have an account?',
+    signIn:        'Sign in',
+    passwordMismatch: 'Passwords do not match',
+    // Auth errors
+    errRateLimit:     'Too many requests. Please try again in a few minutes.',
+    errEmailExists:   'This email is already registered. Use a different email or sign in.',
+    errInvalidEmail:  'Invalid email address.',
+    errPassword:      'Password does not meet security requirements.',
+    errEmailNotFound: 'Email not found. Please check and try again.',
+    errGeneral:       'Something went wrong. Please try again.',
+    // Password strength
+    strengthWeak:  'Weak',
+    strengthMid:   'Fair',
+    strengthStr:   'Strong',
+    strengthVStr:  'Very strong',
+    condMin:       'At least 8 characters',
+    condUpper:     'Uppercase letter (A-Z)',
+    condLower:     'Lowercase letter (a-z)',
+    condNum:       'Number (0-9)',
+    condSpecial:   'Special character (!@#...)',
+  },
+} as const;
+
+export type StringKey = keyof typeof strings.vi;
+
+export function useT(): (key: StringKey) => string {
+  const lang = useLangStore((s) => s.lang);
+  return (key) => strings[lang][key];
+}

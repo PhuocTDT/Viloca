@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import supabase from '@/src/lib/supabase';
 import { colors } from '@/src/theme/colors';
+import { useT, type StringKey } from '@/src/lib/i18n';
+import { LangToggle } from '@/src/components/ui/LangToggle';
 
 const c = colors.nomad;
 
@@ -41,33 +43,34 @@ function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-const STRENGTH_CONFIG = [
-  { label: 'Yếu',        color: colors.error },
-  { label: 'Yếu',        color: colors.error },
-  { label: 'Trung bình', color: colors.warning },
-  { label: 'Mạnh',       color: '#EAB308' },
-  { label: 'Rất mạnh',   color: colors.success },
+const STRENGTH_CONFIG: { tKey: StringKey; color: string }[] = [
+  { tKey: 'strengthWeak', color: colors.error },
+  { tKey: 'strengthWeak', color: colors.error },
+  { tKey: 'strengthMid',  color: colors.warning },
+  { tKey: 'strengthStr',  color: '#EAB308' },
+  { tKey: 'strengthVStr', color: colors.success },
 ];
 
-const CONDITION_LABELS = [
-  { key: 'minLength' as const, label: 'Ít nhất 8 ký tự' },
-  { key: 'hasUpper'  as const, label: 'Có chữ hoa (A-Z)' },
-  { key: 'hasLower'  as const, label: 'Có chữ thường (a-z)' },
-  { key: 'hasNumber' as const, label: 'Có số (0-9)' },
-  { key: 'hasSpecial' as const, label: 'Có ký tự đặc biệt (!@#...)' },
+const CONDITION_LABELS: { key: keyof PasswordConditions; tKey: StringKey }[] = [
+  { key: 'minLength',  tKey: 'condMin' },
+  { key: 'hasUpper',   tKey: 'condUpper' },
+  { key: 'hasLower',   tKey: 'condLower' },
+  { key: 'hasNumber',  tKey: 'condNum' },
+  { key: 'hasSpecial', tKey: 'condSpecial' },
 ];
 
-function mapAuthError(message: string): string {
-  if (/rate limit/i.test(message))   return 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau vài phút.';
-  if (/already registered/i.test(message)) return 'Email này đã được đăng ký. Vui lòng dùng email khác hoặc đăng nhập.';
-  if (/invalid email/i.test(message)) return 'Địa chỉ email không hợp lệ.';
-  if (/password/i.test(message))      return 'Mật khẩu không đáp ứng yêu cầu bảo mật.';
-  if (/sending confirmation email|confirmation email/i.test(message)) return 'Email không tồn tại. Vui lòng kiểm tra lại.';
-  return 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+function mapAuthError(message: string, t: (key: StringKey) => string): string {
+  if (/rate limit/i.test(message))   return t('errRateLimit');
+  if (/already registered/i.test(message)) return t('errEmailExists');
+  if (/invalid email/i.test(message)) return t('errInvalidEmail');
+  if (/password/i.test(message))      return t('errPassword');
+  if (/sending confirmation email|confirmation email/i.test(message)) return t('errEmailNotFound');
+  return t('errGeneral');
 }
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
+  const t = useT();
   const [name, setName]                         = useState('');
   const [email, setEmail]                       = useState('');
   const [password, setPassword]                 = useState('');
@@ -111,15 +114,15 @@ export default function RegisterScreen() {
         return;
       }
       if (/already registered/i.test(authError.message)) {
-        setEmailError('Email này đã được đăng ký. Vui lòng dùng email khác hoặc đăng nhập.');
+        setEmailError(t('errEmailExists'));
         return;
       }
-      setError(mapAuthError(authError.message));
+      setError(mapAuthError(authError.message, t));
       return;
     }
 
     if (data.user && data.user.identities?.length === 0) {
-      setEmailError('Email này đã được đăng ký. Vui lòng dùng email khác hoặc đăng nhập.');
+      setEmailError(t('errEmailExists'));
       return;
     }
 
@@ -134,6 +137,11 @@ export default function RegisterScreen() {
     <View style={styles.screen}>
       <View style={[styles.blob, styles.blobTopRight]} />
       <View style={[styles.blob, styles.blobBottomLeft]} />
+
+      {/* ── Lang toggle ── */}
+      <View style={[styles.langToggleWrap, { top: insets.top + 8 }]}>
+        <LangToggle />
+      </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -161,8 +169,8 @@ export default function RegisterScreen() {
               <Image source={require('@/assets/viloca-logo.png')} style={styles.logo} resizeMode="contain" />
             </View>
             <View style={styles.headlineWrap}>
-              <Text style={styles.headline}>Tạo tài khoản</Text>
-              <Text style={styles.subheadline}>Bắt đầu hành trình khám phá của bạn.</Text>
+              <Text style={styles.headline}>{t('registerTitle')}</Text>
+              <Text style={styles.subheadline}>{t('registerSub')}</Text>
             </View>
           </View>
 
@@ -177,12 +185,12 @@ export default function RegisterScreen() {
 
             {/* Name */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>HỌ VÀ TÊN</Text>
+              <Text style={styles.fieldLabel}>{t('nameLabel')}</Text>
               <View style={styles.inputRow}>
                 <Ionicons name="person-outline" size={20} color={c.outline} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Nguyễn Văn A"
+                  placeholder={t('nameHint')}
                   placeholderTextColor={c.outlineVariant}
                   autoCapitalize="words"
                   autoCorrect={false}
@@ -194,12 +202,12 @@ export default function RegisterScreen() {
 
             {/* Email */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>ĐỊA CHỈ EMAIL</Text>
+              <Text style={styles.fieldLabel}>{t('emailLabel')}</Text>
               <View style={[styles.inputRow, emailError ? styles.inputRowError : null]}>
                 <Ionicons name="mail-outline" size={20} color={c.outline} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="hello@viloca.vn"
+                  placeholder={t('emailHint')}
                   placeholderTextColor={c.outlineVariant}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -213,12 +221,12 @@ export default function RegisterScreen() {
 
             {/* Password */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>MẬT KHẨU</Text>
+              <Text style={styles.fieldLabel}>{t('passwordLabel')}</Text>
               <View style={styles.inputRow}>
                 <Ionicons name="lock-closed-outline" size={20} color={c.outline} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Mật khẩu của bạn"
+                  placeholder={t('passwordHint')}
                   placeholderTextColor={c.outlineVariant}
                   secureTextEntry={!showPassword}
                   value={password}
@@ -244,10 +252,10 @@ export default function RegisterScreen() {
                     ))}
                   </View>
                   <Text style={[styles.strengthLabel, { color: STRENGTH_CONFIG[strength].color }]}>
-                    {STRENGTH_CONFIG[strength].label}
+                    {t(STRENGTH_CONFIG[strength].tKey)}
                   </Text>
                   <View style={styles.conditionList}>
-                    {CONDITION_LABELS.map(({ key, label }) => (
+                    {CONDITION_LABELS.map(({ key, tKey }) => (
                       <View key={key} style={styles.conditionRow}>
                         <Ionicons
                           name={conditions[key] ? 'checkmark-circle' : 'close-circle-outline'}
@@ -255,7 +263,7 @@ export default function RegisterScreen() {
                           color={conditions[key] ? colors.success : c.outlineVariant}
                         />
                         <Text style={[styles.conditionText, { color: conditions[key] ? colors.success : c.onSurfaceVariant }]}>
-                          {label}
+                          {t(tKey)}
                         </Text>
                       </View>
                     ))}
@@ -266,12 +274,12 @@ export default function RegisterScreen() {
 
             {/* Confirm Password */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>NHẬP LẠI MẬT KHẨU</Text>
+              <Text style={styles.fieldLabel}>{t('confirmLabel')}</Text>
               <View style={[styles.inputRow, submitted && !passwordsMatch ? styles.inputRowError : null]}>
                 <Ionicons name="lock-closed-outline" size={20} color={c.outline} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Nhập lại mật khẩu"
+                  placeholder={t('confirmHint')}
                   placeholderTextColor={c.outlineVariant}
                   secureTextEntry={!showConfirmPassword}
                   value={confirmPassword}
@@ -282,7 +290,7 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
               </View>
               {submitted && !passwordsMatch ? (
-                <Text style={styles.fieldError}>Mật khẩu không khớp</Text>
+                <Text style={styles.fieldError}>{t('passwordMismatch')}</Text>
               ) : null}
             </View>
 
@@ -297,7 +305,7 @@ export default function RegisterScreen() {
                 <ActivityIndicator color={c.onPrimary} />
               ) : (
                 <>
-                  <Text style={styles.primaryBtnText}>Tạo tài khoản</Text>
+                  <Text style={styles.primaryBtnText}>{t('registerBtn')}</Text>
                   <Ionicons name="arrow-forward" size={18} color={c.onPrimary} />
                 </>
               )}
@@ -307,10 +315,10 @@ export default function RegisterScreen() {
           {/* Footer */}
           <View style={styles.footer}>
             <View style={styles.loginRow}>
-              <Text style={styles.loginText}>Đã có tài khoản? </Text>
+              <Text style={styles.loginText}>{t('hasAccount')} </Text>
               <Link href="/(auth)/login" asChild>
                 <TouchableOpacity activeOpacity={0.7}>
-                  <Text style={styles.loginLink}>Đăng nhập</Text>
+                  <Text style={styles.loginLink}>{t('signIn')}</Text>
                 </TouchableOpacity>
               </Link>
             </View>
@@ -396,4 +404,6 @@ const styles = StyleSheet.create({
   loginRow: { flexDirection: 'row', alignItems: 'center' },
   loginText: { fontSize: 15, color: c.onSurface },
   loginLink: { fontSize: 15, fontWeight: '700', color: c.onSurface, borderBottomWidth: 2, borderBottomColor: c.outlineVariant },
+
+  langToggleWrap: { position: 'absolute', right: 20, zIndex: 10 },
 });
