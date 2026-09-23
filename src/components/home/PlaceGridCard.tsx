@@ -1,5 +1,4 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors } from '@/src/theme/colors';
 import type { Location } from '@/src/types';
@@ -21,7 +20,7 @@ export function PlaceGridCard({ location, distanceLabel, width }: Props) {
   const firstPhoto = location.photos?.split(',')[0]?.trim() ?? location.cover_image ?? undefined;
   const badgeLabel = location.style_tag ?? location.category?.split(',')[0]?.trim() ?? null;
   const addressParts = [location.district, cityLabel(location.city)].filter(Boolean);
-  const imageHeight = Math.round((width * 3) / 4); // 4:3 ratio
+  const imageHeight = Math.round(width * 0.72); // slightly taller than 4:3
 
   return (
     <TouchableOpacity
@@ -49,14 +48,12 @@ export function PlaceGridCard({ location, distanceLabel, width }: Props) {
 
         {addressParts.length > 0 ? (
           <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={11} color={colors.nomad.onSurfaceVariant} />
+            <Text style={styles.locationDot}>○</Text>
             <Text style={styles.locationText} numberOfLines={1}>
               {addressParts.join(', ')}
             </Text>
           </View>
         ) : null}
-
-        <View style={styles.divider} />
 
         <View style={styles.bottomRow}>
           {location.rating != null ? (
@@ -78,12 +75,12 @@ const styles = StyleSheet.create({
   imageFallback:  { width: '100%', backgroundColor: colors.nomad.surfaceContainer },
   imageBadge:     { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, maxWidth: '80%' },
   imageBadgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
-  body:           { padding: 10 },
-  name:           { fontSize: 16, fontWeight: '700', color: colors.nomad.onSurface, marginBottom: 5 },
-  locationRow:    { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 2 },
+  body:           { padding: 10, gap: 4 },
+  name:           { fontSize: 14, fontWeight: '700', color: colors.nomad.onSurface },
+  locationRow:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  locationDot:    { fontSize: 10, color: colors.nomad.onSurfaceVariant, lineHeight: 14 },
   locationText:   { fontSize: 12, color: colors.nomad.onSurfaceVariant, flex: 1 },
-  divider:        { height: 1, backgroundColor: '#F5F5F5', marginVertical: 8 },
-  bottomRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  bottomRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
   ratingText:     { fontSize: 13, color: colors.nomad.primary, fontWeight: '700' },
   distanceText:   { fontSize: 12, color: colors.nomad.onSurfaceVariant },
 });

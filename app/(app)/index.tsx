@@ -131,27 +131,38 @@ export default function HomeScreen() {
   const festivalRef  = useRef<ScrollView>(null);
 
   const { festivals, loading: festivalsLoading }  = useFestivals();
-  const { locations, loading: locationsLoading }   = useLocations(10, activeCategory);
+  const { locations, loading: locationsLoading }   = useLocations(20, activeCategory);
   const { location: featuredLocation }             = useFeaturedLocation(activeCategory);
   const { coords: userCoords, permissionDenied }   = useUserLocation();
-
-  // Build coords list for distance calculation (featured + grid)
-  const allCoordsForDistance = useMemo(() => [
-    ...(featuredLocation?.coordinates
-      ? [{ id: featuredLocation.id, lat: featuredLocation.coordinates.lat, lng: featuredLocation.coordinates.lng }]
-      : []),
-    ...locations
-      .filter((l) => l.coordinates != null && l.id !== featuredLocation?.id)
-      .map((l) => ({ id: l.id, lat: l.coordinates!.lat, lng: l.coordinates!.lng })),
-  ], [featuredLocation, locations]);
-
-  const distanceMap = usePlaceDistances(allCoordsForDistance, userCoords);
 
   // Grid excludes the featured card
   const gridLocations = useMemo(
     () => locations.filter((l) => l.id !== featuredLocation?.id),
     [locations, featuredLocation]
   );
+
+  // Pick 3 random per category — re-randomise when category changes, stable otherwise
+  const [displayLocations, setDisplayLocations] = useState<Location[]>([]);
+  const lastPickedCategoryRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (gridLocations.length === 0) return;
+    if (lastPickedCategoryRef.current === activeCategory && displayLocations.length > 0) return;
+    lastPickedCategoryRef.current = activeCategory;
+    const shuffled = [...gridLocations].sort(() => Math.random() - 0.5);
+    setDisplayLocations(shuffled.slice(0, 3));
+  }, [gridLocations, activeCategory]);
+
+  // Build coords list for distance calculation (featured + 3 grid cards)
+  const allCoordsForDistance = useMemo(() => [
+    ...(featuredLocation?.coordinates
+      ? [{ id: featuredLocation.id, lat: featuredLocation.coordinates.lat, lng: featuredLocation.coordinates.lng }]
+      : []),
+    ...displayLocations
+      .filter((l) => l.coordinates != null)
+      .map((l) => ({ id: l.id, lat: l.coordinates!.lat, lng: l.coordinates!.lng })),
+  ], [featuredLocation, displayLocations]);
+
+  const distanceMap = usePlaceDistances(allCoordsForDistance, userCoords);
 
   // Chỉ show festivals trong vòng 1 tháng tới
   const nearFestivals = festivals.filter(
@@ -283,14 +294,14 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* 2-column suggestion grid */}
+        {/* 2-column suggestion grid — 3 random per session */}
         {locationsLoading ? (
           <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 24 }} />
-        ) : gridLocations.length === 0 ? (
+        ) : displayLocations.length === 0 ? (
           <Text style={styles.emptyText}>Không có địa điểm nào trong danh mục này</Text>
         ) : (
           <View style={styles.grid}>
-            {gridLocations.map((loc) => (
+            {displayLocations.map((loc) => (
               <PlaceGridCard
                 key={loc.id}
                 location={loc}
