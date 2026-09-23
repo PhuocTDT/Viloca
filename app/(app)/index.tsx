@@ -21,12 +21,15 @@ import { PlaceGridCard } from '@/src/components/home/PlaceGridCard';
 import { useFeaturedLocation } from '@/src/hooks/useFeaturedLocation';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 import { usePlaceDistances } from '@/src/hooks/usePlaceDistances';
+import { VibeChips } from '@/src/components/home/VibeChips';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
 import type { Location } from '@/src/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CAROUSEL_W = SCREEN_W - 56;
-const CARD_WIDTH = Math.floor((SCREEN_W - 16 - 16 - 12) / 2);
+const CARD_WIDTH      = Math.floor((SCREEN_W - 16 - 16 - 12) / 2);
+const CARD_FULL_WIDTH = SCREEN_W - 16 - 16; // grid paddingHorizontal 16 each side
+
 
 function festivalBadge(f: FestivalWithStatus) {
   if (f.displayStatus === 'coming_soon') return 'Sắp diễn ra';
@@ -123,6 +126,7 @@ export default function HomeScreen() {
   const mascot = useMascot();
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeVibe,     setActiveVibe]     = useState<string | null>(null);
   const [sheetVisible, setSheetVisible]     = useState(false);
   const [sheetTab, setSheetTab]             = useState<FilterTab>('category');
   const [carouselIndex, setCarouselIndex]   = useState(0);
@@ -131,7 +135,7 @@ export default function HomeScreen() {
   const festivalRef  = useRef<ScrollView>(null);
 
   const { festivals, loading: festivalsLoading }  = useFestivals();
-  const { locations, loading: locationsLoading }   = useLocations(20, activeCategory);
+  const { locations, loading: locationsLoading }   = useLocations(20, activeCategory, activeVibe);
   const { location: featuredLocation }             = useFeaturedLocation(activeCategory);
   const { coords: userCoords, permissionDenied }   = useUserLocation();
 
@@ -247,7 +251,7 @@ export default function HomeScreen() {
               <Text style={styles.greetingName}>Chào {firstName},</Text>
               <Text style={styles.greetingTagline}>hôm nay mình{'\n'}đi đâu?</Text>
             </View>
-            <MascotAvatar emotion={mascot.emotion} size={130} />
+            <MascotAvatar emotion={mascot.emotion} size={108} />
           </View>
           <View style={styles.senBubbleTail} />
           <View style={styles.senBubble}>
@@ -265,6 +269,9 @@ export default function HomeScreen() {
             <Ionicons name="options-outline" size={18} color={colors.nomad.primary} />
           </TouchableOpacity>
         </View>
+
+        {/* ── Vibe chips (from DB vibes table) ── */}
+        <VibeChips selected={activeVibe} onSelect={setActiveVibe} />
 
         {/* ── Category chips (from DB) ── */}
         <CategoryChips
@@ -301,12 +308,14 @@ export default function HomeScreen() {
           <Text style={styles.emptyText}>Không có địa điểm nào trong danh mục này</Text>
         ) : (
           <View style={styles.grid}>
-            {displayLocations.map((loc) => (
+            {displayLocations.map((loc, i) => (
               <PlaceGridCard
                 key={loc.id}
                 location={loc}
                 distanceLabel={distanceMap.get(loc.id)}
-                width={CARD_WIDTH}
+                width={i === 0 ? CARD_FULL_WIDTH : CARD_WIDTH}
+                imageRatio={i === 0 ? 0.45 : 0.72}
+                overlay={i === 0}
               />
             ))}
           </View>
@@ -429,7 +438,7 @@ const styles = StyleSheet.create({
   notifDot:    { position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF4D6D', borderWidth: 1.5, borderColor: '#fff' },
 
   // Hero card
-  greetingCard:    { marginHorizontal: 16, marginBottom: 12, borderRadius: 24, padding: 16, overflow: 'hidden', shadowColor: '#3a6010', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
+  greetingCard:    { marginHorizontal: 16, marginTop: 10, marginBottom: 12, borderRadius: 24, padding: 12, paddingBottom: 10, overflow: 'hidden', shadowColor: '#3a6010', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
   heroDecorCircle: { position: 'absolute', bottom: -44, right: -44, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(160,210,100,0.22)' },
   heroCardBody:    { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 10 },
   heroCardLeft:    { flex: 1 },
