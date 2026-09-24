@@ -9,19 +9,21 @@ import supabase from '@/src/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius, shadow } from '@/src/theme/spacing';
+import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Post, PostComment } from '@/src/types';
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: (k: StringKey) => string): string {
   const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
-  if (diff < 60)    return 'vừa xong';
-  if (diff < 3600)  return `${Math.floor(diff / 60)} phút`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ`;
-  return `${Math.floor(diff / 86400)} ngày`;
+  if (diff < 60)    return t('timeJustNow');
+  if (diff < 3600)  return `${Math.floor(diff / 60)} ${t('timeMinAgo')}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ${t('timeHourAgo')}`;
+  return `${Math.floor(diff / 86400)} ${t('timeDayAgo')}`;
 }
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
+  const t = useT();
 
   const [post, setPost]         = useState<Post | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
@@ -70,7 +72,7 @@ export default function PostDetailScreen() {
 
   async function handleShare() {
     if (!post) return;
-    await Share.share({ message: `Xem bài viết trên Viloca: viloca://post/${post.id}` });
+    await Share.share({ message: `${t('postShareMsgPfx')}viloca://post/${post.id}` });
   }
 
   async function sendComment() {
@@ -105,10 +107,10 @@ export default function PostDetailScreen() {
     return <View style={styles.center}><ActivityIndicator size="large" color={colors.nomad.primary} /></View>;
   }
   if (!post) {
-    return <View style={styles.center}><Text style={{ color: colors.nomad.onSurfaceVariant }}>Không tìm thấy bài viết</Text></View>;
+    return <View style={styles.center}><Text style={{ color: colors.nomad.onSurfaceVariant }}>{t('postNotFound')}</Text></View>;
   }
 
-  const authorName = post.profiles?.full_name ?? 'Người dùng';
+  const authorName = post.profiles?.full_name ?? t('postUserFallback');
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -117,7 +119,7 @@ export default function PostDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={colors.nomad.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>Bài viết</Text>
+        <Text style={styles.topTitle}>{t('postTitle')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -131,7 +133,7 @@ export default function PostDetailScreen() {
           </View>
           <View>
             <Text style={styles.authorName}>{authorName}</Text>
-            <Text style={styles.postTime}>{timeAgo(post.created_at)}</Text>
+            <Text style={styles.postTime}>{timeAgo(post.created_at, t)}</Text>
           </View>
         </View>
 
@@ -151,23 +153,23 @@ export default function PostDetailScreen() {
         <View style={styles.actions}>
           <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
             <Ionicons name={liked ? 'heart' : 'heart-outline'} size={20} color={liked ? '#e74c3c' : colors.nomad.onSurfaceVariant} />
-            <Text style={styles.actionText}>{post.likes_count} thích</Text>
+            <Text style={styles.actionText}>{post.likes_count} {t('postLikes')}</Text>
           </TouchableOpacity>
           <View style={styles.actionBtn}>
             <Ionicons name="chatbubble-outline" size={19} color={colors.nomad.onSurfaceVariant} />
-            <Text style={styles.actionText}>{post.comments_count} bình luận</Text>
+            <Text style={styles.actionText}>{post.comments_count} {t('postComments')}</Text>
           </View>
           <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
             <Ionicons name="share-social-outline" size={20} color={colors.nomad.onSurfaceVariant} />
-            <Text style={styles.actionText}>Chia sẻ</Text>
+            <Text style={styles.actionText}>{t('postShare')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Comments */}
         <View style={styles.commentsSection}>
-          <Text style={styles.commentsTitle}>Bình luận</Text>
+          <Text style={styles.commentsTitle}>{t('postCommentsTitle')}</Text>
           {comments.length === 0 && (
-            <Text style={styles.noComments}>Chưa có bình luận nào. Hãy là người đầu tiên!</Text>
+            <Text style={styles.noComments}>{t('postNoComments')}</Text>
           )}
           {comments.map((c) => (
             <View key={c.id} style={styles.commentItem}>
@@ -178,9 +180,9 @@ export default function PostDetailScreen() {
                 }
               </View>
               <View style={styles.commentBubble}>
-                <Text style={styles.commentName}>{c.profiles?.full_name ?? 'Người dùng'}</Text>
+                <Text style={styles.commentName}>{c.profiles?.full_name ?? t('postUserFallback')}</Text>
                 <Text style={styles.commentText}>{c.content}</Text>
-                <Text style={styles.commentTime}>{timeAgo(c.created_at)}</Text>
+                <Text style={styles.commentTime}>{timeAgo(c.created_at, t)}</Text>
               </View>
             </View>
           ))}
@@ -191,7 +193,7 @@ export default function PostDetailScreen() {
       <View style={styles.commentInput}>
         <TextInput
           style={styles.commentTextInput}
-          placeholder="Viết bình luận..."
+          placeholder={t('postCommentPlaceholder')}
           placeholderTextColor={colors.nomad.onSurfaceVariant}
           value={newComment}
           onChangeText={setNewComment}

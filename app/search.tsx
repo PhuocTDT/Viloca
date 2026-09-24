@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocationSearch, CITY_OPTIONS } from '@/src/hooks/useLocationSearch';
 import { FilterSheet, FilterTab } from '@/src/components/home/FilterSheet';
 import { colors } from '@/src/theme/colors';
+import { useT } from '@/src/lib/i18n';
 import type { Location } from '@/src/types';
 
 const INITIAL_COUNT = 5;
@@ -18,8 +19,10 @@ const LOAD_MORE     = 7;
 
 // ─── Result card ─────────────────────────────────────────────────────────────
 function LocationResultCard({ location, onPick }: { location: Location; onPick?: (loc: Location) => void }) {
+  const t = useT();
   const firstPhoto = location.photos?.split(',')[0]?.trim();
-  const subtitle = [location.district, location.city === 'SG' ? 'TP. HCM' : location.city === 'HN' ? 'Hà Nội' : 'Đà Nẵng'].filter(Boolean).join(', ');
+  const cityLabel = location.city === 'SG' ? t('cityHCM') : location.city === 'HN' ? t('cityHN') : t('cityDN');
+  const subtitle = [location.district, cityLabel].filter(Boolean).join(', ');
   const firstCategory = location.category?.split(',')[0]?.trim();
 
   return (
@@ -73,6 +76,7 @@ function LocationResultCard({ location, onPick }: { location: Location; onPick?:
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const t = useT();
   const inputRef = useRef<TextInput>(null);
   const { query, setQuery, cityCode, setCityCode, results, loading } = useLocationSearch();
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -112,7 +116,7 @@ export default function SearchScreen() {
           <TextInput
             ref={inputRef}
             style={styles.input}
-            placeholder={isPickMode ? `Tìm địa điểm cho Ngày ${day ?? ''}...` : 'Tìm địa điểm...'}
+            placeholder={isPickMode ? `${t('searchPickPlaceholderPfx')}${day ?? ''}...` : t('searchPlaceholder')}
             placeholderTextColor={colors.nomad.outline}
             value={query}
             onChangeText={setQuery}
@@ -138,7 +142,7 @@ export default function SearchScreen() {
       {isPickMode && (
         <View style={styles.pickBanner}>
           <Ionicons name="add-circle-outline" size={14} color={colors.nomad.primary} />
-          <Text style={styles.pickBannerText}>Chọn địa điểm để thêm vào Ngày {day}</Text>
+          <Text style={styles.pickBannerText}>{t('searchPickBannerPfx')}{day}</Text>
         </View>
       )}
 
@@ -159,7 +163,7 @@ export default function SearchScreen() {
               onPress={() => setCityCode(active ? null : opt.code)}
             >
               <Text style={[styles.cityChipText, active && styles.cityChipTextActive]}>
-                {opt.label}
+                {t(opt.tKey)}
               </Text>
             </TouchableOpacity>
           );
@@ -172,8 +176,8 @@ export default function SearchScreen() {
       ) : results.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="location-outline" size={48} color={colors.nomad.outlineVariant} />
-          <Text style={styles.emptyTitle}>Không tìm thấy</Text>
-          <Text style={styles.emptyHint}>Thử từ khóa khác hoặc chọn thành phố khác</Text>
+          <Text style={styles.emptyTitle}>{t('searchEmptyTitle')}</Text>
+          <Text style={styles.emptyHint}>{t('searchEmptyHint')}</Text>
         </View>
       ) : (
         <FlatList

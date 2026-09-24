@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Location } from '@/src/types';
+import type { StringKey } from '@/src/lib/i18n';
 
 const DEBOUNCE_MS = 300;
 
-export const CITY_OPTIONS = [
-  { code: null,  label: 'Tất cả' },
-  { code: 'HN',  label: 'Hà Nội' },
-  { code: 'SG',  label: 'TP. HCM' },
-  { code: 'DN',  label: 'Đà Nẵng' },
-] as const;
+export const CITY_OPTIONS: { code: string | null; tKey: StringKey }[] = [
+  { code: null,  tKey: 'searchAllCities' },
+  { code: 'HN',  tKey: 'cityHN' },
+  { code: 'SG',  tKey: 'cityHCM' },
+  { code: 'DN',  tKey: 'cityDN' },
+];
 
 export type CityCode = (typeof CITY_OPTIONS)[number]['code'];
 
