@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/theme/colors';
+import { useT } from '@/src/lib/i18n';
 
 interface Props {
   title: string;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function HomeSectionHeader({ title, subtitle, onViewAll }: Props) {
+  const t = useT();
   return (
     <View style={styles.row}>
       <View style={styles.left}>
@@ -17,7 +19,7 @@ export function HomeSectionHeader({ title, subtitle, onViewAll }: Props) {
       </View>
       {onViewAll ? (
         <TouchableOpacity style={styles.viewAllBtn} onPress={onViewAll} activeOpacity={0.7}>
-          <Text style={styles.viewAllText}>Xem tất cả</Text>
+          <Text style={styles.viewAllText}>{t('viewAll')}</Text>
           <Ionicons name="chevron-forward" size={14} color={colors.nomad.primary} />
         </TouchableOpacity>
       ) : null}

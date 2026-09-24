@@ -23,6 +23,7 @@ import { useUserLocation } from '@/src/hooks/useUserLocation';
 import { usePlaceDistances } from '@/src/hooks/usePlaceDistances';
 import { VibeChips } from '@/src/components/home/VibeChips';
 import { useLangStore } from '@/src/store/langStore';
+import { useT, type StringKey } from '@/src/lib/i18n';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
 import type { Location } from '@/src/types';
 
@@ -32,21 +33,22 @@ const CARD_WIDTH      = Math.floor((SCREEN_W - 16 - 16 - 12) / 2);
 const CARD_FULL_WIDTH = SCREEN_W - 16 - 16; // grid paddingHorizontal 16 each side
 
 
-function festivalBadge(f: FestivalWithStatus) {
-  if (f.displayStatus === 'coming_soon') return 'Sắp diễn ra';
-  if (f.displayStatus === 'days_away')   return `${f.daysAway} ngày nữa`;
-  return `${f.monthsAway} tháng nữa`;
+function festivalBadge(f: FestivalWithStatus, t: (k: StringKey) => string) {
+  if (f.displayStatus === 'coming_soon') return t('festComingSoon');
+  if (f.displayStatus === 'days_away')   return `${f.daysAway} ${t('festDaysAway')}`;
+  return `${f.monthsAway} ${t('festMonthsAway')}`;
 }
 
-function cityLabel(code: string | null) {
-  if (code === 'SG') return 'TP. HCM';
-  if (code === 'HN') return 'Hà Nội';
-  if (code === 'DN') return 'Đà Nẵng';
+function cityLabel(code: string | null, t: (k: StringKey) => string) {
+  if (code === 'SG') return t('cityHCM');
+  if (code === 'HN') return t('cityHN');
+  if (code === 'DN') return t('cityDN');
   return code ?? '';
 }
 
 // ─── Festival carousel card ──────────────────────────────────────────────────
 function FestivalCarouselCard({ festival }: { festival: FestivalWithStatus }) {
+  const t = useT();
   return (
     <TouchableOpacity activeOpacity={0.9}>
       <ImageBackground
@@ -67,7 +69,7 @@ function FestivalCarouselCard({ festival }: { festival: FestivalWithStatus }) {
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.festivalBadge}>
-          <Text style={styles.festivalBadgeText}>{festivalBadge(festival)}</Text>
+          <Text style={styles.festivalBadgeText}>{festivalBadge(festival, t)}</Text>
         </View>
         <View style={styles.festivalInfo}>
           <Text style={styles.festivalTitle} numberOfLines={2}>{festival.name}</Text>
@@ -80,8 +82,9 @@ function FestivalCarouselCard({ festival }: { festival: FestivalWithStatus }) {
 
 // ─── Carousel card (auto-scroll) ─────────────────────────────────────────────
 function CarouselCard({ location }: { location: Location }) {
+  const t = useT();
   const firstPhoto    = location.photos?.split(',')[0]?.trim();
-  const subtitle      = [location.district, cityLabel(location.city)].filter(Boolean).join(', ');
+  const subtitle      = [location.district, cityLabel(location.city, t)].filter(Boolean).join(', ');
   const firstCategory = location.category?.split(',')[0]?.trim();
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={() => router.push(`/location/${location.id}`)}>
@@ -124,6 +127,7 @@ export default function HomeScreen() {
   const insets    = useSafeAreaInsets();
   const user      = useAuthStore((s) => s.user);
   const { lang, toggle: toggleLang } = useLangStore();
+  const t = useT();
   const firstName = user?.user_metadata?.full_name?.split(' ').pop() ?? 'bạn';
   const mascot = useMascot();
 
@@ -220,7 +224,7 @@ export default function HomeScreen() {
             <Image source={require('@/assets/viloca-logo.png')} style={styles.logoImg} resizeMode="contain" />
             <View>
               <Text style={styles.brandName}>Viloca</Text>
-              <Text style={styles.brandSub}>Chuyến đi theo phong cách của bạn</Text>
+              <Text style={styles.brandSub}>{t('homeTagline')}</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -249,10 +253,10 @@ export default function HomeScreen() {
             <View style={styles.heroCardLeft}>
               <View style={styles.heroBadge}>
                 <View style={styles.heroDot} />
-                <Text style={styles.heroLabelText}>Bạn đồng hành cùng bạn</Text>
+                <Text style={styles.heroLabelText}>{t('homeSidekick')}</Text>
               </View>
-              <Text style={styles.greetingName}>Chào {firstName},</Text>
-              <Text style={styles.greetingTagline}>hôm nay mình{'\n'}đi đâu?</Text>
+              <Text style={styles.greetingName}>{t('homeGreeting')} {firstName},</Text>
+              <Text style={styles.greetingTagline}>{t('homeTodayQ')}</Text>
             </View>
             <MascotAvatar emotion={mascot.emotion} size={108} />
           </View>
@@ -266,7 +270,7 @@ export default function HomeScreen() {
         <View style={styles.searchBar}>
           <TouchableOpacity style={styles.searchInput} activeOpacity={0.85} onPress={() => router.push('/search')}>
             <Ionicons name="search-outline" size={18} color="#9E9E9E" />
-            <Text style={styles.searchPlaceholder}>Tìm điểm đến, quán mộc, bảo tàng...</Text>
+            <Text style={styles.searchPlaceholder}>{t('homeSearchHint')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterBtn} onPress={() => { setSheetTab('category'); setSheetVisible(true); }}>
             <Ionicons name="options-outline" size={18} color={colors.nomad.primary} />
@@ -284,16 +288,14 @@ export default function HomeScreen() {
 
         {/* ── Dành riêng cho bạn ── */}
         <HomeSectionHeader
-          title="Dành riêng cho bạn"
-          subtitle="Gợi ý phù hợp theo sở thích di sản"
+          title={t('homeForYou')}
+          subtitle={t('homeForYouSub')}
           onViewAll={() => router.push('/(app)/explore')}
         />
 
         {/* Location hint when permission denied */}
         {permissionDenied && (
-          <Text style={styles.locationHint}>
-            📍 Bật định vị để xem khoảng cách đến từng nơi
-          </Text>
+          <Text style={styles.locationHint}>{t('homeLocationHint')}</Text>
         )}
 
         {/* Featured card */}
