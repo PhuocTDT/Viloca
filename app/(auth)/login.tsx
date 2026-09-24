@@ -169,9 +169,9 @@ export default function LoginScreen() {
               </Link>
             </View>
             <View style={styles.legalRow}>
-              <Text style={styles.legalLink}>Điều khoản dịch vụ</Text>
+              <Text style={styles.legalLink}>{t('termsOfService')}</Text>
               <View style={styles.legalDot} />
-              <Text style={styles.legalLink}>Chính sách bảo mật</Text>
+              <Text style={styles.legalLink}>{t('privacyPolicy')}</Text>
             </View>
             <Text style={styles.copyright}>© 2024 Viloca Travel. All rights reserved.</Text>
           </View>

@@ -13,12 +13,13 @@ import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
 import { getCoverForDestination } from '@/src/lib/destination-covers';
+import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Trip } from '@/src/types';
 
-const STATUS_LABEL: Record<string, string> = {
-  planning:  'Lên kế hoạch',
-  active:    'Đang đi',
-  completed: 'Hoàn thành',
+const STATUS_TKEY: Record<string, StringKey> = {
+  planning:  'tripStatusPlanning',
+  active:    'wsStatusActive',
+  completed: 'tripStatusCompleted',
 };
 const STATUS_COLOR: Record<string, 'warning' | 'forest' | 'neutral'> = {
   planning:  'warning',
@@ -40,6 +41,7 @@ const N = colors.nomad;
 
 export default function WorkspaceScreen() {
   const user = useAuthStore((s) => s.user);
+  const t = useT();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,16 +62,16 @@ export default function WorkspaceScreen() {
 
   function confirmDeleteTrip(trip: Trip) {
     Alert.alert(
-      'Xóa chuyến đi',
-      `Xóa "${trip.title}"? Hành động này không thể hoàn tác.`,
+      t('wsDeleteTitle'),
+      `${t('deleteBtn')} "${trip.title}"? ${t('wsDeleteBodyCannotUndo')}`,
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: t('cancelBtn'), style: 'cancel' },
         {
-          text: 'Xóa',
+          text: t('deleteBtn'),
           style: 'destructive',
           onPress: async () => {
             const { error } = await supabase.from('trips').delete().eq('id', trip.id);
-            if (!error) setTrips((prev) => prev.filter((t) => t.id !== trip.id));
+            if (!error) setTrips((prev) => prev.filter((item) => item.id !== trip.id));
           },
         },
       ],
@@ -88,21 +90,21 @@ export default function WorkspaceScreen() {
     <ScreenWrapper>
       <View style={styles.header}>
         <View>
-          <Text style={styles.heading}>Chuyến đi</Text>
-          <Text style={styles.subheading}>{trips.length} chuyến đi của bạn</Text>
+          <Text style={styles.heading}>{t('wsHeading')}</Text>
+          <Text style={styles.subheading}>{trips.length} {t('wsTripsOf')}</Text>
         </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/create-trip')}>
           <Ionicons name="add" size={20} color={N.onPrimary} />
-          <Text style={styles.addText}>Lộ trình mới</Text>
+          <Text style={styles.addText}>{t('wsNewTrip')}</Text>
         </TouchableOpacity>
       </View>
 
       {trips.length === 0 ? (
         <EmptyState
           icon="map-outline"
-          title="Chưa có chuyến đi nào"
-          body="Tạo chuyến đi đầu tiên để bắt đầu lên kế hoạch hành trình của bạn"
-          ctaLabel="Hành trình đầu tiên"
+          title={t('wsEmptyTitle')}
+          body={t('wsEmptyBody')}
+          ctaLabel={t('wsEmptyCtaLabel')}
           onCta={() => router.push('/create-trip')}
         />
       ) : (
@@ -130,7 +132,7 @@ export default function WorkspaceScreen() {
                   resizeMode="cover"
                 />
                 <View style={styles.tripBadgeWrap}>
-                  <Badge label={STATUS_LABEL[item.status]} color={STATUS_COLOR[item.status]} />
+                  <Badge label={t(STATUS_TKEY[item.status] ?? 'tripStatusPlanning')} color={STATUS_COLOR[item.status]} />
                   {item.is_ai_generated && (
                     <View style={styles.aiBadge}>
                       <Ionicons name="sparkles" size={11} color="#fff" />

@@ -128,7 +128,7 @@ export default function HomeScreen() {
   const user      = useAuthStore((s) => s.user);
   const { lang, toggle: toggleLang } = useLangStore();
   const t = useT();
-  const firstName = user?.user_metadata?.full_name?.split(' ').pop() ?? 'bạn';
+  const firstName = user?.user_metadata?.full_name?.split(' ').pop() ?? t('homeFallbackName');
   const mascot = useMascot();
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -310,7 +310,7 @@ export default function HomeScreen() {
         {locationsLoading ? (
           <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 24 }} />
         ) : displayLocations.length === 0 ? (
-          <Text style={styles.emptyText}>Không có địa điểm nào trong danh mục này</Text>
+          <Text style={styles.emptyText}>{t('homeEmptyCategory')}</Text>
         ) : (
           <View style={styles.grid}>
             {displayLocations.map((loc, i) => (
@@ -326,16 +326,16 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Đừng bỏ lỡ ── */}
+        {/* ── Don't Miss ── */}
         <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-          <Text style={styles.sectionTitle}>Đừng bỏ lỡ</Text>
-          <Text style={styles.seeAll}>Xem tất cả</Text>
+          <Text style={styles.sectionTitle}>{t('homeDontMiss')}</Text>
+          <Text style={styles.seeAll}>{t('viewAll')}</Text>
         </View>
 
         {festivalsLoading ? (
           <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 32 }} />
         ) : nearFestivals.length === 0 ? (
-          <Text style={styles.emptyText}>Không có sự kiện nào trong thời gian tới</Text>
+          <Text style={styles.emptyText}>{t('homeEmptyFestivals')}</Text>
         ) : (
           <View>
             <ScrollView
@@ -365,15 +365,15 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Dân local hay ghé (auto-scroll carousel) ── */}
+        {/* ── Must Visit (auto-scroll carousel) ── */}
         <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-          <Text style={styles.sectionTitle}>Phải ghé một lần</Text>
+          <Text style={styles.sectionTitle}>{t('homeMustVisit')}</Text>
         </View>
 
         {locationsLoading ? (
           <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 24 }} />
         ) : locations.length === 0 ? (
-          <Text style={styles.emptyText}>Không có địa điểm nào</Text>
+          <Text style={styles.emptyText}>{t('homeEmptyPlaces')}</Text>
         ) : (
           <View>
             <ScrollView
