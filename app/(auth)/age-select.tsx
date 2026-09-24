@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors } from '@/src/theme/colors';
+import { useT } from '@/src/lib/i18n';
 
 const ITEM_HEIGHT = 60;
 const VISIBLE_ITEMS = 5;
@@ -18,6 +19,7 @@ const DEFAULT_INDEX = 19; // age 20
 
 export default function AgeSelectScreen() {
   const { name } = useLocalSearchParams<{ name?: string }>();
+  const t = useT();
   const [selectedAge, setSelectedAge] = useState(AGES[DEFAULT_INDEX]);
   const scrollY = useRef(new Animated.Value(DEFAULT_INDEX * ITEM_HEIGHT)).current;
   const scrollRef = useRef<Animated.LegacyRef<Animated.ScrollView>>(null);
@@ -53,9 +55,9 @@ export default function AgeSelectScreen() {
           <View style={{ width: 64, height: 64, backgroundColor: colors.nomad.primary, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <Text style={{ color: colors.nomad.onPrimary, fontSize: 30, fontWeight: 'bold' }}>V</Text>
           </View>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.nomad.onSurface }}>Độ tuổi của bạn?</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.nomad.onSurface }}>{t('ageTitle')}</Text>
           <Text style={{ color: colors.nomad.onSurfaceVariant, fontSize: 14, marginTop: 8, textAlign: 'center' }}>
-            Giúp chúng tôi gợi ý hành trình phù hợp hơn
+            {t('ageSub')}
           </Text>
         </View>
 
@@ -143,7 +145,7 @@ export default function AgeSelectScreen() {
             </Animated.ScrollView>
           </View>
 
-          <Text style={{ color: colors.nomad.onSurfaceVariant, fontSize: 14, marginTop: 8 }}>tuổi</Text>
+          <Text style={{ color: colors.nomad.onSurfaceVariant, fontSize: 14, marginTop: 8 }}>{t('ageUnit')}</Text>
         </View>
 
         <TouchableOpacity
@@ -151,13 +153,13 @@ export default function AgeSelectScreen() {
           onPress={handleContinue}
           activeOpacity={0.8}
         >
-          <Text style={{ color: colors.nomad.onPrimary, fontWeight: '600', fontSize: 16 }}>Tiếp tục</Text>
+          <Text style={{ color: colors.nomad.onPrimary, fontWeight: '600', fontSize: 16 }}>{t('ageContinueBtn')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => router.push({ pathname: '/(auth)/register', params: { name: name ?? '' } })}
         >
-          <Text style={{ color: colors.nomad.onSurfaceVariant, fontSize: 14, textAlign: 'center' }}>Bỏ qua</Text>
+          <Text style={{ color: colors.nomad.onSurfaceVariant, fontSize: 14, textAlign: 'center' }}>{t('ageSkip')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

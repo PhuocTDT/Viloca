@@ -8,21 +8,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/src/theme/colors';
+import { useT, type StringKey } from '@/src/lib/i18n';
 
 const c = colors.nomad;
 
-function mapOtpError(message: string): string {
-  if (/rate limit/i.test(message))    return 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau vài phút.';
-  if (/expired/i.test(message))       return 'Mã đã hết hạn. Vui lòng nhấn "Gửi lại mã".';
-  if (/invalid/i.test(message))       return 'Mã không đúng. Vui lòng kiểm tra lại.';
-  if (/sending confirmation email|confirmation email/i.test(message)) return 'Không thể gửi email. Vui lòng kiểm tra lại địa chỉ email.';
-  return 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+function mapOtpError(message: string, t: (k: StringKey) => string): string {
+  if (/rate limit/i.test(message))    return t('otpErrRateLimit');
+  if (/expired/i.test(message))       return t('otpErrExpired');
+  if (/invalid/i.test(message))       return t('otpErrInvalid');
+  if (/sending confirmation email|confirmation email/i.test(message)) return t('otpErrEmail');
+  return t('otpErrGeneral');
 }
 
 const OTP_LENGTH = 6;
 
 export default function VerifyEmailScreen() {
   const insets = useSafeAreaInsets();
+  const t = useT();
   const { email, emailPending } = useLocalSearchParams<{ email: string; emailPending?: string }>();
   const pending  = emailPending === 'true';
   const [otpValue, setOtpValue] = useState('');
@@ -48,7 +50,7 @@ export default function VerifyEmailScreen() {
     });
     setLoading(false);
     if (verifyError) {
-      setError(mapOtpError(verifyError.message));
+      setError(mapOtpError(verifyError.message, t));
       setOtpValue('');
     } else {
       router.replace('/(app)');
@@ -66,7 +68,7 @@ export default function VerifyEmailScreen() {
     setError('');
     const { error: resendError } = await supabase.auth.resend({ email: email ?? '', type: 'signup' });
     if (resendError) {
-      setError(mapOtpError(resendError.message));
+      setError(mapOtpError(resendError.message, t));
     } else {
       setCountdown(60);
     }
@@ -95,8 +97,8 @@ export default function VerifyEmailScreen() {
               <View style={styles.logoGlow} />
               <Image source={require('@/assets/viloca-logo.png')} style={styles.logo} resizeMode="contain" />
             </View>
-            <Text style={styles.headline}>Xác nhận email</Text>
-            <Text style={styles.subheadline}>Nhập mã 6 số được gửi đến</Text>
+            <Text style={styles.headline}>{t('verifyHeadline')}</Text>
+            <Text style={styles.subheadline}>{t('verifySub')}</Text>
             <Text style={styles.emailText}>{email}</Text>
           </View>
 
@@ -105,7 +107,7 @@ export default function VerifyEmailScreen() {
             <View style={styles.warningBanner}>
               <Ionicons name="information-circle-outline" size={16} color="#92400E" />
               <Text style={styles.warningText}>
-                Email có thể chưa đến. Nhấn "Gửi lại mã" để thử lại.
+                {t('verifyPendingWarn')}
               </Text>
             </View>
           ) : null}
@@ -161,7 +163,7 @@ export default function VerifyEmailScreen() {
               <ActivityIndicator color={c.onPrimary} />
             ) : (
               <>
-                <Text style={styles.primaryBtnText}>Xác nhận</Text>
+                <Text style={styles.primaryBtnText}>{t('verifyConfirmBtn')}</Text>
                 <Ionicons name="checkmark" size={18} color={c.onPrimary} />
               </>
             )}
@@ -169,14 +171,14 @@ export default function VerifyEmailScreen() {
 
           {/* Resend */}
           <View style={styles.resendWrap}>
-            <Text style={styles.resendLabel}>Chưa nhận được mã?</Text>
+            <Text style={styles.resendLabel}>{t('verifyResendLabel')}</Text>
             {countdown > 0 ? (
               <Text style={styles.countdownText}>
-                Gửi lại sau <Text style={styles.countdownNum}>{countdown}s</Text>
+                {t('verifyCountdown')} <Text style={styles.countdownNum}>{countdown}s</Text>
               </Text>
             ) : (
               <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
-                <Text style={styles.resendLink}>Gửi lại mã</Text>
+                <Text style={styles.resendLink}>{t('verifyResendLink')}</Text>
               </TouchableOpacity>
             )}
           </View>
