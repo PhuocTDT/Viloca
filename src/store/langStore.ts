@@ -9,7 +9,7 @@ type LangState = {
 };
 
 export const useLangStore = create<LangState>((set) => ({
-  lang: 'vi',
+  lang: 'en',
   toggle: () => set((s) => ({ lang: s.lang === 'vi' ? 'en' : 'vi' })),
   setLang: (lang) => set({ lang }),
 }));

@@ -9,20 +9,22 @@ import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
+import { useT, type StringKey } from '@/src/lib/i18n';
 
-const MENU_ITEMS = [
-  { icon: 'grid-outline',          label: 'Bài viết & Đã lưu',  route: '/(app)/profile/posts' },
-  { icon: 'map-outline',           label: 'Chuyến đi của tôi',  route: '/(app)/profile/trips' },
-  { icon: 'heart-outline',         label: 'Địa điểm yêu thích', route: null },
-  { icon: 'star-outline',          label: 'Đánh giá của tôi',   route: null },
-  { icon: 'notifications-outline', label: 'Thông báo',           route: null },
-  { icon: 'shield-outline',        label: 'Quyền riêng tư',     route: null },
-  { icon: 'help-circle-outline',   label: 'Trợ giúp',           route: null },
+const MENU_ITEMS: { icon: string; tKey: StringKey; route: string | null }[] = [
+  { icon: 'grid-outline',          tKey: 'menuPosts',         route: '/(app)/profile/posts' },
+  { icon: 'map-outline',           tKey: 'menuTrips',         route: '/(app)/profile/trips' },
+  { icon: 'heart-outline',         tKey: 'menuFavorites',     route: null },
+  { icon: 'star-outline',          tKey: 'menuReviews',       route: null },
+  { icon: 'notifications-outline', tKey: 'menuNotifications', route: null },
+  { icon: 'shield-outline',        tKey: 'menuPrivacy',       route: null },
+  { icon: 'help-circle-outline',   tKey: 'menuHelp',          route: null },
 ];
 
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const { signOut, loading } = useAuth();
+  const t = useT();
   const [tripCount, setTripCount]   = useState(0);
   const [placeCount, setPlaceCount] = useState(0);
   const [userPlan, setUserPlan]     = useState<'free' | 'pro'>('free');
@@ -79,16 +81,16 @@ export default function ProfileScreen() {
             onPress={() => router.push('/(app)/profile/edit')}
           >
             <Ionicons name="pencil-outline" size={14} color={colors.nomad.primary} />
-            <Text style={styles.editText}>Chỉnh sửa hồ sơ</Text>
+            <Text style={styles.editText}>{t('profileEditBtn')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
           {[
-            { label: 'Chuyến đi', value: String(tripCount) },
-            { label: 'Địa điểm',  value: String(placeCount) },
-            { label: 'Đánh giá',  value: '0' },
+            { label: t('statTrips'),   value: String(tripCount)  },
+            { label: t('statPlaces'),  value: String(placeCount) },
+            { label: t('statReviews'), value: '0' },
           ].map((s) => (
             <View key={s.label} style={styles.statItem}>
               <Text style={styles.statValue}>{s.value}</Text>
@@ -106,12 +108,12 @@ export default function ProfileScreen() {
               </Text>
             </View>
             {userPlan === 'free' && (
-              <Text style={styles.planCredits}>{aiCredits} lượt giúp đỡ còn lại</Text>
+              <Text style={styles.planCredits}>{aiCredits} {t('aiCreditsLeft')}</Text>
             )}
           </View>
           {userPlan === 'free' && (
             <TouchableOpacity style={styles.planUpgradeBtn}>
-              <Text style={styles.planUpgradeText}>Nâng cấp Pro →</Text>
+              <Text style={styles.planUpgradeText}>{t('planUpgradeBtn')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -120,7 +122,7 @@ export default function ProfileScreen() {
         <View style={styles.menuSection}>
           {MENU_ITEMS.map((item, i) => (
             <TouchableOpacity
-              key={item.label}
+              key={item.tKey}
               style={[styles.menuRow, i > 0 && styles.menuBorder]}
               onPress={item.route ? () => router.push(item.route as any) : undefined}
             >
@@ -128,7 +130,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIcon}>
                   <Ionicons name={item.icon as any} size={18} color={colors.nomad.primary} />
                 </View>
-                <Text style={styles.menuLabel}>{item.label}</Text>
+                <Text style={styles.menuLabel}>{t(item.tKey)}</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.nomad.outlineVariant} />
             </TouchableOpacity>
@@ -139,7 +141,7 @@ export default function ProfileScreen() {
         <View style={styles.signOutSection}>
           <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} disabled={loading}>
             <Ionicons name="log-out-outline" size={18} color={colors.error} />
-            <Text style={styles.signOutText}>Đăng xuất</Text>
+            <Text style={styles.signOutText}>{t('profileSignOut')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

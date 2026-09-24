@@ -13,6 +13,7 @@ import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
 import { getCoverForDestination, DESTINATION_COVERS } from '@/src/lib/destination-covers';
 import { stripDiacritics } from '@/src/lib/trip-utils';
+import { useT, type StringKey } from '@/src/lib/i18n';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -29,7 +30,12 @@ const PROVINCES = [
   'Vĩnh Long','Vĩnh Phúc','Yên Bái',
 ];
 
-const PRESET_VIBES = ['Bình yên', 'Cổ kính', 'Hoang sơ', 'Ẩm thực'];
+const PRESET_VIBES: { value: string; tKey: StringKey }[] = [
+  { value: 'Bình yên', tKey: 'vibeSerene'  },
+  { value: 'Cổ kính',  tKey: 'vibeAncient' },
+  { value: 'Hoang sơ', tKey: 'vibeWild'    },
+  { value: 'Ẩm thực',  tKey: 'vibeFoodie'  },
+];
 
 // Tỉnh/thành hiện có dữ liệu địa điểm — cập nhật khi thêm tỉnh mới vào DB
 const SUPPORTED_DESTINATIONS = new Set([
@@ -38,29 +44,42 @@ const SUPPORTED_DESTINATIONS = new Set([
 
 const FIXED_GROUP_SIZE: Record<string, number> = { solo: 1, couple: 2 };
 
-const TRAVELING_WITH: { label: string; value: string }[] = [
-  { label: '🧍 Solo',        value: 'solo' },
-  { label: '💑 Cặp đôi',    value: 'couple' },
-  { label: '👨‍👩‍👧 Gia đình', value: 'family' },
-  { label: '👫 Nhóm bạn',   value: 'friends' },
+const TRAVELING_WITH: { tKey: StringKey; value: string }[] = [
+  { tKey: 'travelSolo',    value: 'solo'    },
+  { tKey: 'travelCouple',  value: 'couple'  },
+  { tKey: 'travelFamily',  value: 'family'  },
+  { tKey: 'travelFriends', value: 'friends' },
 ];
 
-const ACCOMMODATIONS = ['Homestay', 'Khách sạn', 'Camping', 'Resort'];
-const TRANSPORTS     = ['Xe máy', 'Thuê ô tô', 'Xe khách'];
-const ACTIVITY_LEVELS = ['Thư giãn', 'Vừa phải', 'Năng động'];
-
-const BUDGETS: { label: string; sublabel: string; value: number }[] = [
-  { label: 'Tiết kiệm',  sublabel: '< 300k/ngày',    value: 300000 },
-  { label: 'Trung bình', sublabel: '300–700k/ngày',  value: 500000 },
-  { label: 'Thoải mái',  sublabel: '700k–1.5M/ngày', value: 1000000 },
-  { label: 'Sang trọng', sublabel: '> 1.5M/ngày',    value: 2000000 },
+const ACCOMMODATIONS: { value: string; tKey: StringKey }[] = [
+  { value: 'Homestay',   tKey: 'accomHomestay' },
+  { value: 'Khách sạn',  tKey: 'accomHotel'    },
+  { value: 'Camping',    tKey: 'accomCamping'  },
+  { value: 'Resort',     tKey: 'accomResort'   },
+];
+const TRANSPORTS: { value: string; tKey: StringKey }[] = [
+  { value: 'Xe máy',    tKey: 'transMotorbike' },
+  { value: 'Thuê ô tô', tKey: 'transRentCar'   },
+  { value: 'Xe khách',  tKey: 'transBus'        },
+];
+const ACTIVITY_LEVELS: { value: string; tKey: StringKey }[] = [
+  { value: 'Thư giãn',  tKey: 'actRelax'    },
+  { value: 'Vừa phải',  tKey: 'actModerate' },
+  { value: 'Năng động', tKey: 'actActive'   },
 ];
 
-const AI_LOG_STEPS = [
-  'Đang tìm kiếm địa điểm...',
-  'Tối ưu hóa lộ trình di chuyển...',
-  'Đang chọn lọc địa điểm ăn uống...',
-  'Hoàn thiện chi tiết chuyến đi...',
+const BUDGETS: { label: StringKey; sublabel: StringKey; value: number }[] = [
+  { label: 'budgetEco',   sublabel: 'budgetEcoSub',   value: 300000  },
+  { label: 'budgetMid',   sublabel: 'budgetMidSub',   value: 500000  },
+  { label: 'budgetComfy', sublabel: 'budgetComfySub', value: 1000000 },
+  { label: 'budgetLux',   sublabel: 'budgetLuxSub',   value: 2000000 },
+];
+
+const AI_LOG_STEPS: StringKey[] = [
+  'aiLogSearching',
+  'aiLogOptimizing',
+  'aiLogFood',
+  'aiLogFinishing',
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -85,6 +104,7 @@ export default function CreateTripScreen() {
   const [cancelled, setCancelled]       = useState(false);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const abortRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const t = useT();
 
   // Step 1
   const [title, setTitle]                           = useState('');
@@ -126,8 +146,8 @@ export default function CreateTripScreen() {
   }
 
   function validateStep1(): boolean {
-    if (!title.trim()) { setError('Vui lòng nhập tên chuyến đi'); return false; }
-    if (!destination)  { setError('Vui lòng chọn điểm đến'); return false; }
+    if (!title.trim()) { setError(t('errNoTripName')); return false; }
+    if (!destination)  { setError(t('errNoDest')); return false; }
     setError('');
     return true;
   }
@@ -158,14 +178,14 @@ export default function CreateTripScreen() {
   }
 
   const showGroupSizePicker = !FIXED_GROUP_SIZE[travelingWith];
-  const customVibes = vibes.filter(v => !PRESET_VIBES.includes(v));
+  const customVibes = vibes.filter(v => !PRESET_VIBES.some(pv => pv.value === v));
 
   async function createManual() {
     if (saving) return;
     setSaving(true);
     setError('');
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setError('Phiên đăng nhập hết hạn'); setSaving(false); return; }
+    if (!session) { setError(t('errSessionExpired')); setSaving(false); return; }
 
     const { data, error: err } = await supabase.from('trips').insert({
       user_id: session.user.id, title: title.trim(), destination,
@@ -175,13 +195,13 @@ export default function CreateTripScreen() {
     }).select().single();
 
     setSaving(false);
-    if (err) { setError('Không thể tạo trip: ' + err.message); return; }
+    if (err) { setError(t('errCannotCreateTrip') + ' ' + err.message); return; }
     router.replace(`/trip/${data.id}`);
   }
 
   async function createWithAI() {
-    if (!vibes.length) { setError('Chọn ít nhất 1 phong cách'); return; }
-    if (!budget)       { setError('Chọn ngân sách dự kiến'); return; }
+    if (!vibes.length) { setError(t('errNoVibe')); return; }
+    if (!budget)       { setError(t('errNoBudget')); return; }
 
     setAiGenerating(true);
     setCancelled(false);
@@ -192,7 +212,7 @@ export default function CreateTripScreen() {
       setAiLogs(prev => [...prev, { msg, type }]);
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setError('Phiên đăng nhập hết hạn'); setAiGenerating(false); return; }
+    if (!session) { setError(t('errSessionExpired')); setAiGenerating(false); return; }
 
     // Preflight: kiểm tra điểm đến có dữ liệu không trước khi tạo trip
     const { count: destCount } = await supabase
@@ -209,11 +229,12 @@ export default function CreateTripScreen() {
     }
 
     log('Đang tạo chuyến đi...');
+    const travelOpt = TRAVELING_WITH.find(x => x.value === travelingWith);
     const summaryParts = [
-      travelingWith ? `Đi cùng: ${TRAVELING_WITH.find(x => x.value === travelingWith)?.label}` : null,
-      accommodation ? `Lưu trú: ${accommodation}` : null,
-      transport     ? `Di chuyển: ${transport}` : null,
-      activityLevel ? `Mức độ: ${activityLevel}` : null,
+      travelOpt     ? `${t('sectionWhoWith')} ${t(travelOpt.tKey)}` : null,
+      accommodation ? `${t('sectionAccom')}: ${t(ACCOMMODATIONS.find(a => a.value === accommodation)?.tKey ?? 'accomHotel')}` : null,
+      transport     ? `${t('sectionTransport')}: ${t(TRANSPORTS.find(tr => tr.value === transport)?.tKey ?? 'transMotorbike')}` : null,
+      activityLevel ? `${t('sectionActivity')}: ${t(ACTIVITY_LEVELS.find(al => al.value === activityLevel)?.tKey ?? 'actRelax')}` : null,
     ].filter(Boolean);
 
     const { data: trip, error: tripErr } = await supabase.from('trips').insert({
@@ -224,7 +245,7 @@ export default function CreateTripScreen() {
       is_ai_generated: true,
     }).select().single();
 
-    if (tripErr) { setError('Không thể tạo trip: ' + tripErr.message); setAiGenerating(false); return; }
+    if (tripErr) { setError(t('errCannotCreateTrip') + ' ' + tripErr.message); setAiGenerating(false); return; }
     log(`✓ Đã tạo trip "${title.trim()}"`, 'ok');
 
     log(`Đang gửi yêu cầu tới AI (${days} ngày, ${vibes.join(', ')})...`);
@@ -339,12 +360,12 @@ export default function CreateTripScreen() {
           <TouchableOpacity style={styles.headerBack} onPress={goBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="arrow-back" size={22} color={N.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Tạo lộ trình</Text>
+          <Text style={styles.headerTitle}>{t('createTripHeader')}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={styles.modeScreen}>
-          <Text style={styles.modeHeading}>Bạn muốn lên lịch{'\n'}thế nào?</Text>
+          <Text style={styles.modeHeading}>{t('modeQuestion')}</Text>
 
           {/* Sen / AI card */}
           <TouchableOpacity
@@ -356,12 +377,12 @@ export default function CreateTripScreen() {
               <Ionicons name="sparkles" size={26} color={N.primary} />
             </View>
             <View style={styles.modeCardBody}>
-              <Text style={styles.modeCardTitle}>Nhờ Sen lên kế hoạch</Text>
-              <Text style={styles.modeCardDesc}>Sen gợi ý lịch trình phù hợp dựa trên sở thích của bạn</Text>
+              <Text style={styles.modeCardTitle}>{t('modeAiTitle')}</Text>
+              <Text style={styles.modeCardDesc}>{t('modeAiDesc')}</Text>
               {userPlan === 'free' && (
                 <View style={styles.modeCardBadge}>
                   <Ionicons name="flash-outline" size={12} color={N.primary} />
-                  <Text style={styles.modeCardBadgeText}>{aiCredits} lượt giúp đỡ còn lại</Text>
+                  <Text style={styles.modeCardBadgeText}>{aiCredits} {t('aiCreditsLeft')}</Text>
                 </View>
               )}
             </View>
@@ -378,8 +399,8 @@ export default function CreateTripScreen() {
               <Ionicons name="create-outline" size={26} color={N.onSurfaceVariant} />
             </View>
             <View style={styles.modeCardBody}>
-              <Text style={styles.modeCardTitle}>Tự lên lịch trình</Text>
-              <Text style={styles.modeCardDesc}>Tự chọn điểm đến, ngày đi và sắp xếp theo ý muốn</Text>
+              <Text style={styles.modeCardTitle}>{t('modeManualTitle')}</Text>
+              <Text style={styles.modeCardDesc}>{t('modeManualDesc')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={N.onSurfaceVariant} />
           </TouchableOpacity>
@@ -412,12 +433,12 @@ export default function CreateTripScreen() {
           <View style={styles.loadingIconWrap}>
             <Ionicons name="sparkles" size={48} color={N.primary} />
           </View>
-          <Text style={styles.loadingTitle}>AI đang tạo lịch trình</Text>
+          <Text style={styles.loadingTitle}>{t('aiGeneratingTitle')}</Text>
           <Text style={styles.loadingSubtitle}>{title} · {destination} · {days} ngày</Text>
           <ActivityIndicator size="small" color={N.primary} style={{ marginTop: spacing.lg }} />
 
           <View style={styles.logBox}>
-            {AI_LOG_STEPS.map((msg, i) => {
+            {AI_LOG_STEPS.map((key, i) => {
               const state = stepState(i);
               return (
                 <View key={i} style={styles.logRow}>
@@ -430,7 +451,7 @@ export default function CreateTripScreen() {
                     state === 'done'    && { color: N.secondary },
                     state === 'pending' && { color: N.onSurfaceVariant, opacity: 0.4 },
                     state === 'error'   && { color: colors.error },
-                  ]}>{msg}</Text>
+                  ]}>{t(key)}</Text>
                 </View>
               );
             })}
@@ -438,13 +459,13 @@ export default function CreateTripScreen() {
         </View>
 
         <TouchableOpacity style={styles.cancelBtn} onPress={cancelAI}>
-          <Text style={styles.cancelBtnText}>Huỷ</Text>
+          <Text style={styles.cancelBtnText}>{t('cancelBtn')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
-  const headerTitle  = step === 'ai' ? 'Thiết lập sở thích' : step === 'manual' ? 'Chọn ngày đi' : 'Tạo chuyến đi';
+  const headerTitle  = step === 'ai' ? t('setupPrefHeader') : step === 'manual' ? t('chooseDateHeader') : t('createTripHeader');
   const progressStep = step === 1 ? 1 : 2;
   const hasCover     = !!destination && !!DESTINATION_COVERS[destination];
   const coverUri     = destination ? getCoverImage(destination) : null;
@@ -499,33 +520,33 @@ export default function CreateTripScreen() {
               ) : (
                 <View style={styles.heroPlaceholder}>
                   <Ionicons name="location-outline" size={36} color={N.primary + '80'} />
-                  <Text style={styles.heroPlaceholderText}>Chọn điểm đến</Text>
+                  <Text style={styles.heroPlaceholderText}>{t('destPlaceholder')}</Text>
                 </View>
               )}
             </View>
 
             <View style={styles.formSection}>
-              <Text style={styles.inputLabel}>Điểm đến</Text>
+              <Text style={styles.inputLabel}>{t('destLabel')}</Text>
               <TouchableOpacity
                 style={styles.pickerRow}
                 onPress={() => { setProvinceSearch(''); setShowProvincePicker(true); }}
                 activeOpacity={0.75}
               >
                 <Text style={destination ? styles.pickerRowText : styles.pickerRowPlaceholder}>
-                  {destination || 'Chọn tỉnh / thành phố...'}
+                  {destination || t('destPickerPlaceholder')}
                 </Text>
                 <Ionicons name="chevron-down" size={18} color={N.onSurfaceVariant} />
               </TouchableOpacity>
 
-              <Text style={[styles.inputLabel, { marginTop: spacing.lg }]}>Tên chuyến đi</Text>
+              <Text style={[styles.inputLabel, { marginTop: spacing.lg }]}>{t('tripNameLabel')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="VD: Hội An cuối tuần"
+                placeholder={t('tripNameHintLabel')}
                 placeholderTextColor={N.onSurfaceVariant}
                 value={title}
                 onChangeText={setTitle}
               />
-              <Text style={styles.inputHint}>Sử dụng tên dễ nhớ để tìm lại sau này.</Text>
+              <Text style={styles.inputHint}>{t('tripNameHintSub')}</Text>
 
               {!!destination && SUPPORTED_DESTINATIONS.has(destination) && (
                 <View style={styles.tipCard}>
@@ -552,8 +573,8 @@ export default function CreateTripScreen() {
         {step === 'ai' && (
           <View style={styles.formSection}>
 
-            {/* Đi cùng ai */}
-            <Text style={styles.sectionTitle}>Đi cùng ai?</Text>
+            {/* Who with */}
+            <Text style={styles.sectionTitle}>{t('sectionWhoWith')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipScrollContent}>
               {TRAVELING_WITH.map((opt) => {
                 const active = travelingWith === opt.value;
@@ -564,20 +585,20 @@ export default function CreateTripScreen() {
                     onPress={() => selectTravelingWith(opt.value)}
                     activeOpacity={0.75}
                   >
-                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{opt.label}</Text>
+                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{t(opt.tKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
 
-            {/* Phong cách */}
-            <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Phong cách chuyến đi *</Text>
+            {/* Trip vibe */}
+            <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>{t('sectionTripVibe')}</Text>
             <View style={styles.chipWrap}>
-              {PRESET_VIBES.map((v) => {
-                const active = vibes.includes(v);
+              {PRESET_VIBES.map((vibe) => {
+                const active = vibes.includes(vibe.value);
                 return (
-                  <TouchableOpacity key={v} style={[styles.pillChip, active && styles.pillChipActive]} onPress={() => toggleVibe(v)} activeOpacity={0.75}>
-                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{v}</Text>
+                  <TouchableOpacity key={vibe.value} style={[styles.pillChip, active && styles.pillChipActive]} onPress={() => toggleVibe(vibe.value)} activeOpacity={0.75}>
+                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{t(vibe.tKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -590,7 +611,7 @@ export default function CreateTripScreen() {
               {!showVibeInput && (
                 <TouchableOpacity style={styles.pillChipAdd} onPress={() => setShowVibeInput(true)} activeOpacity={0.75}>
                   <Ionicons name="add" size={15} color={N.onSurfaceVariant} />
-                  <Text style={styles.pillChipAddText}>Thêm</Text>
+                  <Text style={styles.pillChipAddText}>{t('addVibeBtn')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -598,7 +619,7 @@ export default function CreateTripScreen() {
               <View style={styles.vibeInputRow}>
                 <TextInput
                   style={styles.vibeInput}
-                  placeholder="VD: Thể thao, Chụp ảnh..."
+                  placeholder={t('vibeInputPlaceholder')}
                   placeholderTextColor={N.onSurfaceVariant}
                   value={vibeInput}
                   onChangeText={setVibeInput}
@@ -608,7 +629,7 @@ export default function CreateTripScreen() {
                   returnKeyType="done"
                 />
                 <TouchableOpacity style={styles.vibeInputBtn} onPress={addCustomVibe}>
-                  <Text style={styles.vibeInputBtnText}>Thêm</Text>
+                  <Text style={styles.vibeInputBtnText}>{t('addVibeBtn')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.vibeInputCancel} onPress={() => { setShowVibeInput(false); setVibeInput(''); }}>
                   <Ionicons name="close" size={18} color={N.onSurfaceVariant} />
@@ -620,7 +641,7 @@ export default function CreateTripScreen() {
             <View style={[styles.stepperRow, { marginTop: spacing.xl }]}>
               {showGroupSizePicker && (
                 <View style={styles.stepperCard}>
-                  <Text style={styles.stepperCardLabel}>Số người</Text>
+                  <Text style={styles.stepperCardLabel}>{t('sectionPeople')}</Text>
                   <View style={styles.stepperControls}>
                     <TouchableOpacity style={styles.stepperBtn} onPress={() => setGroupSize(Math.max(1, groupSize - 1))}>
                       <Text style={styles.stepperBtnText}>−</Text>
@@ -633,7 +654,7 @@ export default function CreateTripScreen() {
                 </View>
               )}
               <View style={[styles.stepperCard, !showGroupSizePicker && { flex: 1 }]}>
-                <Text style={styles.stepperCardLabel}>Số ngày</Text>
+                <Text style={styles.stepperCardLabel}>{t('sectionDays')}</Text>
                 <View style={styles.stepperControls}>
                   <TouchableOpacity style={styles.stepperBtn} onPress={() => setDays(Math.max(1, days - 1))}>
                     <Text style={styles.stepperBtnText}>−</Text>
@@ -646,55 +667,55 @@ export default function CreateTripScreen() {
               </View>
             </View>
 
-            {/* Ngân sách */}
-            <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Ngân sách / người / ngày *</Text>
+            {/* Budget */}
+            <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>{t('sectionBudget')}</Text>
             <View style={styles.budgetGrid}>
               {BUDGETS.map((b) => {
                 const active = budget === b.value;
                 return (
                   <TouchableOpacity key={b.value} style={[styles.budgetCard, active && styles.budgetCardActive]} onPress={() => setBudget(b.value)} activeOpacity={0.75}>
-                    <Text style={[styles.budgetLabel, active && styles.budgetLabelActive]}>{b.label}</Text>
-                    <Text style={styles.budgetSublabel}>{b.sublabel}</Text>
+                    <Text style={[styles.budgetLabel, active && styles.budgetLabelActive]}>{t(b.label)}</Text>
+                    <Text style={styles.budgetSublabel}>{t(b.sublabel)}</Text>
                     {active && <View style={styles.budgetCheck}><Ionicons name="checkmark-circle" size={18} color={N.primary} /></View>}
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            {/* Lưu trú */}
-            <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>Lưu trú</Text>
+            {/* Accommodation */}
+            <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>{t('sectionAccom')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipScrollContent}>
               {ACCOMMODATIONS.map((a) => {
-                const active = accommodation === a;
+                const active = accommodation === a.value;
                 return (
-                  <TouchableOpacity key={a} style={[styles.pillChip, active && styles.pillChipActive]} onPress={() => setAccommodation(active ? '' : a)} activeOpacity={0.75}>
-                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{a}</Text>
+                  <TouchableOpacity key={a.value} style={[styles.pillChip, active && styles.pillChipActive]} onPress={() => setAccommodation(active ? '' : a.value)} activeOpacity={0.75}>
+                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{t(a.tKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
 
-            {/* Phương tiện */}
-            <Text style={[styles.sectionLabel, { marginTop: spacing.lg }]}>Phương tiện</Text>
+            {/* Transport */}
+            <Text style={[styles.sectionLabel, { marginTop: spacing.lg }]}>{t('sectionTransport')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipScrollContent}>
-              {TRANSPORTS.map((t) => {
-                const active = transport === t;
+              {TRANSPORTS.map((tr) => {
+                const active = transport === tr.value;
                 return (
-                  <TouchableOpacity key={t} style={[styles.pillChip, active && styles.pillChipActive]} onPress={() => setTransport(active ? '' : t)} activeOpacity={0.75}>
-                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{t}</Text>
+                  <TouchableOpacity key={tr.value} style={[styles.pillChip, active && styles.pillChipActive]} onPress={() => setTransport(active ? '' : tr.value)} activeOpacity={0.75}>
+                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{t(tr.tKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
 
-            {/* Mức độ hoạt động */}
-            <Text style={[styles.sectionLabel, { marginTop: spacing.lg }]}>Mức độ hoạt động</Text>
+            {/* Activity level */}
+            <Text style={[styles.sectionLabel, { marginTop: spacing.lg }]}>{t('sectionActivity')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipScrollContent}>
-              {ACTIVITY_LEVELS.map((l) => {
-                const active = activityLevel === l;
+              {ACTIVITY_LEVELS.map((al) => {
+                const active = activityLevel === al.value;
                 return (
-                  <TouchableOpacity key={l} style={[styles.pillChip, active && styles.pillChipActive]} onPress={() => setActivityLevel(active ? '' : l)} activeOpacity={0.75}>
-                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{l}</Text>
+                  <TouchableOpacity key={al.value} style={[styles.pillChip, active && styles.pillChipActive]} onPress={() => setActivityLevel(active ? '' : al.value)} activeOpacity={0.75}>
+                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>{t(al.tKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -705,31 +726,31 @@ export default function CreateTripScreen() {
         {/* ── STEP MANUAL ── */}
         {step === 'manual' && (
           <View style={styles.formSection}>
-            <Text style={styles.manualQuestion}>Bạn định đi khi nào?</Text>
-            <Text style={styles.manualSubtitle}>Chọn thời gian để Viloca giúp bạn sắp xếp lịch trình tối ưu nhất.</Text>
+            <Text style={styles.manualQuestion}>{t('manualWhen')}</Text>
+            <Text style={styles.manualSubtitle}>{t('manualSubtitle')}</Text>
 
             <View style={styles.dateCard}>
-              <Text style={styles.dateCardLabel}>NGÀY ĐI</Text>
+              <Text style={styles.dateCardLabel}>{t('dateDepart')}</Text>
               <DatePicker
                 value={startDate}
                 onChange={(v) => { setStartDate(v); if (endDate && endDate < v) setEndDate(''); }}
-                placeholder="Chọn ngày khởi hành"
+                placeholder={t('dateDepartPlaceholder')}
               />
             </View>
 
             <View style={[styles.dateCard, { marginTop: spacing.md }]}>
-              <Text style={styles.dateCardLabel}>NGÀY VỀ</Text>
+              <Text style={styles.dateCardLabel}>{t('dateReturn')}</Text>
               <DatePicker
                 value={endDate}
                 onChange={setEndDate}
-                placeholder="Chọn ngày về"
+                placeholder={t('dateReturnPlaceholder')}
                 minDate={startDate ? new Date(startDate) : undefined}
               />
             </View>
 
             <View style={styles.dateHint}>
               <Ionicons name="information-circle-outline" size={14} color={N.onSurfaceVariant} />
-              <Text style={styles.dateHintText}>Ngày đi có thể thêm sau nếu bạn chưa chắc chắn.</Text>
+              <Text style={styles.dateHintText}>{t('dateOptionalHint')}</Text>
             </View>
           </View>
         )}
@@ -739,18 +760,18 @@ export default function CreateTripScreen() {
       {step === 1 && (
         <View style={styles.bottomBar}>
           <TouchableOpacity style={styles.primaryBtn} onPress={mode === 'ai' ? goAI : goManual} activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>Tiếp tục →</Text>
+            <Text style={styles.primaryBtnText}>{t('continueBtn')}</Text>
           </TouchableOpacity>
         </View>
       )}
       {step === 'ai' && (
         <View style={styles.bottomBar}>
-          <Button label="✨ Tạo lịch trình AI" onPress={createWithAI} />
+          <Button label={t('createAITripBtn')} onPress={createWithAI} />
         </View>
       )}
       {step === 'manual' && (
         <View style={styles.bottomBar}>
-          <Button label="Tạo lộ trình" onPress={createManual} loading={saving} />
+          <Button label={t('createManualTripBtn')} onPress={createManual} loading={saving} />
         </View>
       )}
 
@@ -760,7 +781,7 @@ export default function CreateTripScreen() {
           <SafeAreaView style={styles.provinceModal}>
             <View style={styles.modalHandle} />
             <View style={styles.provinceHeader}>
-              <Text style={styles.provinceTitle}>Chọn điểm đến</Text>
+              <Text style={styles.provinceTitle}>{t('selectDestTitle')}</Text>
               <TouchableOpacity onPress={() => setShowProvincePicker(false)}>
                 <Ionicons name="close" size={24} color={N.onSurfaceVariant} />
               </TouchableOpacity>
@@ -769,7 +790,7 @@ export default function CreateTripScreen() {
               <Ionicons name="search-outline" size={16} color={N.onSurfaceVariant} />
               <TextInput
                 style={styles.provinceSearchInput}
-                placeholder="Tìm tỉnh / thành phố..."
+                placeholder={t('searchProvincePlaceholder')}
                 placeholderTextColor={N.onSurfaceVariant}
                 value={provinceSearch}
                 onChangeText={setProvinceSearch}
@@ -807,15 +828,13 @@ export default function CreateTripScreen() {
         <View style={styles.creditsOverlay}>
           <View style={styles.creditsCard}>
             <Ionicons name="sparkles" size={32} color={N.primary} style={{ marginBottom: 12 }} />
-            <Text style={styles.creditsTitle}>Hết lượt giúp đỡ</Text>
-            <Text style={styles.creditsBody}>
-              Bạn đã dùng hết số lượt giúp đỡ miễn phí. Nâng cấp lên Pro để tạo lịch trình không giới hạn và xem đầy đủ thông tin địa điểm.
-            </Text>
+            <Text style={styles.creditsTitle}>{t('creditsModalTitle')}</Text>
+            <Text style={styles.creditsBody}>{t('creditsModalBody')}</Text>
             <TouchableOpacity style={styles.creditsUpgradeBtn} onPress={() => setShowCreditsModal(false)}>
-              <Text style={styles.creditsUpgradeBtnText}>Nâng cấp Pro →</Text>
+              <Text style={styles.creditsUpgradeBtnText}>{t('creditsUpgradeBtn')}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowCreditsModal(false)} style={styles.creditsDismiss}>
-              <Text style={styles.creditsDismissText}>Để sau</Text>
+              <Text style={styles.creditsDismissText}>{t('creditsDismissBtn')}</Text>
             </TouchableOpacity>
           </View>
         </View>

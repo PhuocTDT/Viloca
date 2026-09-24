@@ -9,6 +9,7 @@ import { router, useFocusEffect } from 'expo-router';
 import supabase from '@/src/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/src/theme/colors';
+import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Post } from '@/src/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -16,12 +17,12 @@ const PAGE_SIZE = 10;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: (k: StringKey) => string): string {
   const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
-  if (diff < 60)    return 'vừa xong';
-  if (diff < 3600)  return `${Math.floor(diff / 60)} phút trước`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
-  return `${Math.floor(diff / 86400)} ngày trước`;
+  if (diff < 60)    return t('timeJustNow');
+  if (diff < 3600)  return `${Math.floor(diff / 60)} ${t('timeMinAgo')}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ${t('timeHourAgo')}`;
+  return `${Math.floor(diff / 86400)} ${t('timeDayAgo')}`;
 }
 
 // ─── Image carousel ───────────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ function PostCard({ post, currentUserId, onLike, onSave, onDelete }: {
   onDelete: (postId: string) => void;
 }) {
   const [showFull, setShowFull] = useState(false);
+  const t = useT();
   const liked   = post.post_likes?.some((l) => l.user_id === currentUserId) ?? false;
   const saved   = post.post_saves?.some((s) => s.user_id === currentUserId) ?? false;
   const isMock  = post.id.startsWith('mock-');
@@ -82,14 +84,14 @@ function PostCard({ post, currentUserId, onLike, onSave, onDelete }: {
   function handleMenu() {
     if (isMock) return;
     if (isOwn) {
-      Alert.alert('Tùy chọn', undefined, [
-        { text: 'Xóa bài viết', style: 'destructive', onPress: () => {
-          Alert.alert('Xác nhận xóa', 'Bài viết sẽ bị xóa vĩnh viễn.', [
-            { text: 'Hủy', style: 'cancel' },
-            { text: 'Xóa', style: 'destructive', onPress: () => onDelete(post.id) },
+      Alert.alert(t('alertOptions'), undefined, [
+        { text: t('alertDeletePost'), style: 'destructive', onPress: () => {
+          Alert.alert(t('alertConfirmDelete'), t('alertDeleteMsg'), [
+            { text: t('alertCancel'), style: 'cancel' },
+            { text: t('alertDelete'), style: 'destructive', onPress: () => onDelete(post.id) },
           ]);
         }},
-        { text: 'Hủy', style: 'cancel' },
+        { text: t('alertCancel'), style: 'cancel' },
       ]);
     }
   }
@@ -106,8 +108,8 @@ function PostCard({ post, currentUserId, onLike, onSave, onDelete }: {
           : <View style={[s.avatar, { backgroundColor: colors.nomad.surfaceContainer, alignItems: 'center', justifyContent: 'center' }]}><Ionicons name="person" size={18} color={colors.nomad.onSurfaceVariant} /></View>
         }
         <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={s.postUserName}>{post.profiles?.full_name ?? 'Người dùng'}</Text>
-          <Text style={s.postTime}>{timeAgo(post.created_at)}</Text>
+          <Text style={s.postUserName}>{post.profiles?.full_name ?? t('postUserFallback')}</Text>
+          <Text style={s.postTime}>{timeAgo(post.created_at, t)}</Text>
         </View>
         {!isMock && (
           <TouchableOpacity style={{ padding: 4 }} onPress={handleMenu}>
@@ -121,7 +123,7 @@ function PostCard({ post, currentUserId, onLike, onSave, onDelete }: {
           <Text style={s.captionText} numberOfLines={showFull || !longText ? undefined : 3}>{post.content}</Text>
           {longText && (
             <TouchableOpacity onPress={() => setShowFull(!showFull)}>
-              <Text style={s.captionToggle}>{showFull ? 'Thu gọn' : 'Xem thêm'}</Text>
+              <Text style={s.captionToggle}>{showFull ? t('postCollapse') : t('postExpand')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -140,7 +142,7 @@ function PostCard({ post, currentUserId, onLike, onSave, onDelete }: {
         </TouchableOpacity>
         <TouchableOpacity style={s.actionBtn} onPress={() => Share.share({ message: `Xem bài viết trên Viloca: viloca://post/${post.id}` })} activeOpacity={0.7}>
           <Ionicons name="paper-plane-outline" size={21} color={colors.nomad.onSurfaceVariant} />
-          <Text style={s.actionCount}>Chia sẻ</Text>
+          <Text style={s.actionCount}>{t('postShare')}</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
         <TouchableOpacity style={{ padding: 4 }} onPress={() => onSave(post)}>
@@ -160,6 +162,7 @@ function PostCard({ post, currentUserId, onLike, onSave, onDelete }: {
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const user   = useAuthStore((s) => s.user);
+  const t = useT();
 
   const [realPosts, setRealPosts]     = useState<Post[]>([]);
   const [loading, setLoading]         = useState(true);
@@ -274,23 +277,23 @@ export default function ExploreScreen() {
           <Ionicons name="person" size={18} color={colors.nomad.onSurfaceVariant} />
         </View>
         <TouchableOpacity style={s.createInput} activeOpacity={0.7} onPress={() => router.push('/post/create')}>
-          <Text style={s.createPlaceholder}>Bạn vừa đi đâu về? Chia sẻ ngay!</Text>
+          <Text style={s.createPlaceholder}>{t('postCreatePlaceholder')}</Text>
         </TouchableOpacity>
       </View>
       <View style={s.createActions}>
         <TouchableOpacity style={s.createAction} onPress={() => router.push('/post/create')}>
           <Ionicons name="images-outline" size={18} color={colors.nomad.primary} />
-          <Text style={s.createActionText}>Ảnh</Text>
+          <Text style={s.createActionText}>{t('postPhotoBtn')}</Text>
         </TouchableOpacity>
         <View style={s.createDivider} />
         <TouchableOpacity style={s.createAction} onPress={() => router.push('/post/create')}>
           <Ionicons name="videocam-outline" size={18} color={colors.error} />
-          <Text style={[s.createActionText, { color: colors.error }]}>Reels</Text>
+          <Text style={[s.createActionText, { color: colors.error }]}>{t('postReelsBtn')}</Text>
         </TouchableOpacity>
         <View style={s.createDivider} />
         <TouchableOpacity style={s.createAction} onPress={() => router.push('/post/create')}>
           <Ionicons name="location-outline" size={18} color={colors.warning} />
-          <Text style={[s.createActionText, { color: colors.warning }]}>Địa điểm</Text>
+          <Text style={[s.createActionText, { color: colors.warning }]}>{t('postLocationBtn')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -315,7 +318,7 @@ export default function ExploreScreen() {
       />
 
       <View style={s.header}>
-        <Text style={s.headerTitle}>Khám phá</Text>
+        <Text style={s.headerTitle}>{t('exploreTitle')}</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <TouchableOpacity><Ionicons name="search-outline" size={24} color={colors.nomad.onSurface} /></TouchableOpacity>
           <TouchableOpacity><Ionicons name="notifications-outline" size={24} color={colors.nomad.onSurface} /></TouchableOpacity>
@@ -334,8 +337,8 @@ export default function ExploreScreen() {
         ListEmptyComponent={!loading ? (
           <View style={{ alignItems: 'center', paddingVertical: 48, gap: 8 }}>
             <Ionicons name="newspaper-outline" size={40} color={colors.nomad.outlineVariant} />
-            <Text style={{ fontSize: 14, color: colors.nomad.onSurfaceVariant }}>Chưa có bài viết nào</Text>
-            <Text style={{ fontSize: 12, color: colors.nomad.outlineVariant }}>Hãy là người đầu tiên chia sẻ!</Text>
+            <Text style={{ fontSize: 14, color: colors.nomad.onSurfaceVariant }}>{t('exploreNoPostsTitle')}</Text>
+            <Text style={{ fontSize: 12, color: colors.nomad.outlineVariant }}>{t('exploreNoPostsSub')}</Text>
           </View>
         ) : null}
         ListFooterComponent={loadingMore ? <ActivityIndicator style={{ padding: 16 }} color={colors.nomad.primary} /> : null}
