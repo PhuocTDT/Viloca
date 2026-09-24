@@ -11,6 +11,7 @@ import { consumePendingTripLocation } from '@/store/tripPick';
 import supabase from '@/src/lib/supabase';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
+import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Location, TimeSlot } from '@/src/types';
 
 const TIMES = [
@@ -21,14 +22,15 @@ const TIMES = [
 
 type SlimItem = { id: string; day_number: number; visit_time: string | null; location_id: string | null; sort_order: number };
 
-function cityLabel(code: string | null) {
-  if (code === 'SG') return 'TP. HCM';
-  if (code === 'HN') return 'Hà Nội';
-  if (code === 'DN') return 'Đà Nẵng';
+function cityLabel(code: string | null, t: (k: StringKey) => string) {
+  if (code === 'SG') return t('cityHCM');
+  if (code === 'HN') return t('cityHN');
+  if (code === 'DN') return t('cityDN');
   return code ?? '';
 }
 
 export default function AddLocationScreen() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { trip_id, day: dayParam } = useLocalSearchParams<{ trip_id: string; day: string }>();
 
@@ -83,7 +85,7 @@ export default function AddLocationScreen() {
       sort_order:  maxOrder,
     }).select('id').single();
     setAdding(false);
-    if (err || !inserted) { setError('Không thể thêm: ' + (err?.message ?? 'unknown')); return; }
+    if (err || !inserted) { setError(t('addLocErrCannotAdd') + (err?.message ?? 'unknown')); return; }
 
     // Re-sort toàn bộ items trong ngày theo visit_time để đảm bảo thứ tự đúng
     const allDay = [
@@ -104,7 +106,7 @@ export default function AddLocationScreen() {
       i => i.location_id === location.id && i.day_number === selectedDay
     );
     if (sameDay) {
-      setError(`"${location.name}" đã có trong lịch trình Ngày ${selectedDay}.`);
+      setError(`"${location.name}${t('addLocInDayMid')}${selectedDay}.`);
       return;
     }
 
@@ -113,7 +115,7 @@ export default function AddLocationScreen() {
     );
     if (otherDay) {
       setWarnModal({
-        message: `"${location.name}" đã có trong lịch trình Ngày ${otherDay.day_number}.\n\nVẫn muốn thêm vào Ngày ${selectedDay}?`,
+        message: `"${location.name}${t('addLocInDayMid')}${otherDay.day_number}.${t('addLocWarnSufPfx')}${selectedDay}?`,
         onConfirm: doAdd,
       });
       return;
@@ -131,7 +133,7 @@ export default function AddLocationScreen() {
   }
 
   const photo    = location.photos?.split(',')[0]?.trim() ?? location.cover_image;
-  const subtitle = [location.district, cityLabel(location.city)].filter(Boolean).join(', ');
+  const subtitle = [location.district, cityLabel(location.city, t)].filter(Boolean).join(', ');
   const cat      = location.category?.split(',')[0]?.trim();
 
   const openStr  = location.opening_hours?.slice(0, 5) ?? null;
@@ -147,7 +149,7 @@ export default function AddLocationScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={colors.nomad.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thêm vào lịch trình</Text>
+        <Text style={styles.headerTitle}>{t('addLocTitle')}</Text>
         <View style={{ width: 38 }} />
       </View>
 
@@ -187,7 +189,7 @@ export default function AddLocationScreen() {
         </ImageBackground>
 
         {/* Day selector */}
-        <Text style={styles.sectionLabel}>Chọn ngày</Text>
+        <Text style={styles.sectionLabel}>{t('addLocSelectDay')}</Text>
         <View style={styles.chipWrap}>
           {Array.from({ length: maxDays }, (_, i) => i + 1).map((d) => (
             <TouchableOpacity
@@ -196,7 +198,7 @@ export default function AddLocationScreen() {
               onPress={() => { setSelectedDay(d); setSelectedTime(''); setError(''); }}
             >
               <Text style={[styles.dayChipText, selectedDay === d && styles.dayChipTextActive]}>
-                Ngày {d}
+                {t('tripDayLabel')} {d}
               </Text>
             </TouchableOpacity>
           ))}
@@ -205,7 +207,7 @@ export default function AddLocationScreen() {
         {/* Time scroll */}
         <View style={styles.sectionLabelRow}>
           <Text style={styles.sectionLabel}>
-            Giờ tham quan{'  '}<Text style={{ color: colors.error }}>*</Text>
+            {t('addLocVisitTime')}{'  '}<Text style={{ color: colors.error }}>*</Text>
           </Text>
           {(openStr || closeStr) && (
             <Text style={styles.hoursHint}>
@@ -251,7 +253,7 @@ export default function AddLocationScreen() {
           {adding
             ? <ActivityIndicator size="small" color="#fff" />
             : <Ionicons name="add-circle-outline" size={20} color="#fff" />}
-          <Text style={styles.confirmBtnText}>Thêm vào Ngày {selectedDay}</Text>
+          <Text style={styles.confirmBtnText}>{t('addLocConfirmBtnPfx')}{selectedDay}</Text>
         </TouchableOpacity>
       </View>
 
@@ -262,17 +264,17 @@ export default function AddLocationScreen() {
             <View style={styles.warnIconWrap}>
               <Ionicons name="warning" size={32} color="#F59E0B" />
             </View>
-            <Text style={styles.warnTitle}>Địa điểm trùng lặp</Text>
+            <Text style={styles.warnTitle}>{t('addLocDupTitle')}</Text>
             <Text style={styles.warnMessage}>{warnModal?.message}</Text>
             <View style={styles.warnActions}>
               <TouchableOpacity style={styles.warnCancelBtn} onPress={() => setWarnModal(null)}>
-                <Text style={styles.warnCancelText}>Huỷ</Text>
+                <Text style={styles.warnCancelText}>{t('cancelBtn')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.warnConfirmBtn}
                 onPress={() => { setWarnModal(null); warnModal?.onConfirm(); }}
               >
-                <Text style={styles.warnConfirmText}>Vẫn thêm</Text>
+                <Text style={styles.warnConfirmText}>{t('addLocDupConfirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>

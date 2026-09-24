@@ -9,6 +9,7 @@ import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
+import { useT } from '@/src/lib/i18n';
 import type { Post } from '@/src/types';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -17,6 +18,7 @@ const POST_CELL = (SCREEN_W - spacing.lg * 2 - 4) / 3;
 type Tab = 'mine' | 'saved';
 
 export default function PostsScreen() {
+  const t = useT();
   const [activeTab, setActiveTab] = useState<Tab>('mine');
   const [loading, setLoading]     = useState(true);
   const [userPosts,  setUserPosts]  = useState<Pick<Post, 'id' | 'images' | 'content' | 'likes_count' | 'comments_count'>[]>([]);
@@ -65,9 +67,9 @@ export default function PostsScreen() {
   }
 
   function confirmDelete(postId: string) {
-    Alert.alert('Xóa bài viết', 'Bài viết sẽ bị xóa vĩnh viễn.', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Xóa', style: 'destructive', onPress: () => handleDeletePost(postId) },
+    Alert.alert(t('alertDeletePost'), t('alertDeleteMsg'), [
+      { text: t('alertCancel'), style: 'cancel' },
+      { text: t('alertDelete'), style: 'destructive', onPress: () => handleDeletePost(postId) },
     ]);
   }
 
@@ -89,7 +91,7 @@ export default function PostsScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={22} color={colors.nomad.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bài viết</Text>
+        <Text style={styles.headerTitle}>{t('postsTitle')}</Text>
         {activeTab === 'mine' ? (
           <TouchableOpacity onPress={() => router.push('/post/create')} hitSlop={12}>
             <Ionicons name="add-circle-outline" size={22} color={colors.nomad.primary} />
@@ -101,7 +103,7 @@ export default function PostsScreen() {
 
       {/* Tab pills */}
       <View style={styles.tabs}>
-        {([['mine', 'Của tôi'], ['saved', 'Đã lưu']] as [Tab, string][]).map(([key, label]) => (
+        {([['mine', t('postsTabMine')], ['saved', t('postsTabSaved')]] as [Tab, string][]).map(([key, label]) => (
           <TouchableOpacity
             key={key}
             style={[styles.tab, activeTab === key && styles.tabActive]}
@@ -124,12 +126,10 @@ export default function PostsScreen() {
             color={colors.nomad.outlineVariant}
           />
           <Text style={styles.emptyText}>
-            {activeTab === 'mine' ? 'Chưa có bài viết nào' : 'Chưa có bài lưu nào'}
+            {activeTab === 'mine' ? t('postsEmptyMine') : t('postsEmptySaved')}
           </Text>
           <Text style={styles.emptyHint}>
-            {activeTab === 'mine'
-              ? 'Nhấn + để đăng bài viết đầu tiên'
-              : 'Nhấn 🔖 trên bài viết trong Khám phá để lưu lại'}
+            {activeTab === 'mine' ? t('postsEmptyMineHint') : t('postsEmptySavedHint')}
           </Text>
         </View>
       ) : (

@@ -11,29 +11,45 @@ import { Avatar } from '@/src/components/ui/Avatar';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
+import { useT } from '@/src/lib/i18n';
 
 const N = colors.nomad;
 
 export default function EditProfileScreen() {
   const user    = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const [fullName,    setFullName]    = useState(user?.user_metadata?.full_name ?? '');
+  const t = useT();
+
+  const [fullName,      setFullName]      = useState(user?.user_metadata?.full_name ?? '');
+  const [username,      setUsername]      = useState('');
+  const [bio,           setBio]           = useState('');
+  const [age,           setAge]           = useState('');
   const [currentAvatar, setCurrentAvatar] = useState<string | null>(null);
   const [localAvatar,   setLocalAvatar]   = useState<string | null>(null);
-  const [saving,  setSaving]  = useState(false);
-  const [error,   setError]   = useState('');
+  const [saving,        setSaving]        = useState(false);
+  const [error,         setError]         = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return;
-      supabase.from('profiles').select('avatar_url').eq('id', session.user.id).single()
-        .then(({ data }) => { if (data?.avatar_url) setCurrentAvatar(data.avatar_url); });
+      supabase.from('profiles')
+        .select('full_name, username, bio, age_range, avatar_url')
+        .eq('id', session.user.id)
+        .single()
+        .then(({ data }) => {
+          if (!data) return;
+          if (data.full_name)  setFullName(data.full_name);
+          if (data.username)   setUsername(data.username);
+          if (data.bio)        setBio(data.bio);
+          if (data.age_range)  setAge(String(data.age_range));
+          if (data.avatar_url) setCurrentAvatar(data.avatar_url);
+        });
     });
   }, []);
 
   async function pickAvatar() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { setError('Cần quyền truy cập thư viện ảnh'); return; }
+    if (status !== 'granted') { setError(t('editErrPhotoPermission')); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -51,31 +67,41 @@ export default function EditProfileScreen() {
     const { error: uploadErr } = await supabase.storage
       .from('avatars')
       .upload(path, blob, { upsert: true, contentType: `image/${ext}` });
-    if (uploadErr) { setError('Không thể tải ảnh lên: ' + uploadErr.message); return null; }
+    if (uploadErr) { setError(t('editErrUploadPhoto') + uploadErr.message); return null; }
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
     return publicUrl;
   }
 
   async function handleSave() {
-    if (!fullName.trim()) { setError('Vui lòng nhập họ tên'); return; }
+    if (!fullName.trim()) { setError(t('editErrFullName')); return; }
     setSaving(true);
     setError('');
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setError('Phiên đăng nhập hết hạn'); setSaving(false); return; }
+    if (!session) { setError(t('errSessionExpired')); setSaving(false); return; }
     const uid = session.user.id;
 
     let avatarUrl = currentAvatar;
     if (localAvatar) {
       avatarUrl = await uploadAvatar(uid, localAvatar);
       if (!avatarUrl) { setSaving(false); return; }
-      await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', uid);
     }
 
-    const { data, error: err } = await supabase.auth.updateUser({
+    const profileUpdate: Record<string, any> = {
+      full_name:  fullName.trim(),
+      bio:        bio.trim() || null,
+      age_range:  age.trim() || null,
+      avatar_url: avatarUrl,
+    };
+    if (username.trim()) profileUpdate.username = username.trim().toLowerCase();
+
+    const { error: profileErr } = await supabase.from('profiles').update(profileUpdate).eq('id', uid);
+    if (profileErr) { setError(profileErr.message); setSaving(false); return; }
+
+    const { data, error: authErr } = await supabase.auth.updateUser({
       data: { full_name: fullName.trim(), avatar_url: avatarUrl },
     });
     setSaving(false);
-    if (err) { setError(err.message); return; }
+    if (authErr) { setError(authErr.message); return; }
     if (data.user) setUser(data.user);
     router.back();
   }
@@ -88,11 +114,11 @@ export default function EditProfileScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={N.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.heading}>Chỉnh sửa hồ sơ</Text>
+        <Text style={styles.heading}>{t('editProfileTitle')}</Text>
         <View style={{ width: 38 }} />
       </View>
 
-      {/* Avatar picker */}
+      {/* Avatar */}
       <View style={styles.avatarSection}>
         <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8} style={styles.avatarWrap}>
           <Avatar uri={displayUri} name={fullName || user?.user_metadata?.full_name} size={88} />
@@ -100,38 +126,84 @@ export default function EditProfileScreen() {
             <Ionicons name="camera" size={16} color="#fff" />
           </View>
         </TouchableOpacity>
-        <Text style={styles.avatarHint}>Nhấn để đổi ảnh</Text>
+        <Text style={styles.avatarHint}>{t('editAvatarHint')}</Text>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Text style={styles.label}>Họ và tên</Text>
-      <TextInput
-        style={styles.input}
-        value={fullName}
-        onChangeText={(v) => { setFullName(v); setError(''); }}
-        placeholder="Họ và tên"
-        placeholderTextColor={N.onSurfaceVariant}
-        autoCapitalize="words"
-      />
+      <Field label={t('editFieldFullName')}>
+        <TextInput
+          style={styles.input}
+          value={fullName}
+          onChangeText={(v) => { setFullName(v); setError(''); }}
+          placeholder={t('editFullNamePH')}
+          placeholderTextColor={N.onSurfaceVariant}
+          autoCapitalize="words"
+        />
+      </Field>
 
-      <Text style={styles.label}>Email</Text>
-      <TextInput
-        style={[styles.input, styles.inputDisabled]}
-        value={user?.email ?? ''}
-        editable={false}
-      />
-      <Text style={styles.hint}>Email không thể thay đổi</Text>
+      <Field label={t('editFieldUsername')}>
+        <View style={styles.inputPrefix}>
+          <Text style={styles.prefixText}>@</Text>
+          <TextInput
+            style={[styles.input, styles.inputFlex]}
+            value={username}
+            onChangeText={(v) => setUsername(v.replace(/\s/g, '').toLowerCase())}
+            placeholder={t('editUsernamePH')}
+            placeholderTextColor={N.onSurfaceVariant}
+            autoCapitalize="none"
+          />
+        </View>
+      </Field>
+
+      <Field label={t('editFieldBio')}>
+        <TextInput
+          style={[styles.input, styles.inputMultiline]}
+          value={bio}
+          onChangeText={setBio}
+          placeholder={t('editBioPH')}
+          placeholderTextColor={N.onSurfaceVariant}
+          multiline
+          numberOfLines={3}
+          textAlignVertical="top"
+        />
+      </Field>
+
+      <Field label={t('editFieldAge')}>
+        <TextInput
+          style={styles.input}
+          value={age}
+          onChangeText={(v) => setAge(v.replace(/\D/g, ''))}
+          placeholder=""
+          placeholderTextColor={N.onSurfaceVariant}
+          keyboardType="number-pad"
+          maxLength={3}
+        />
+      </Field>
 
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
         {saving
           ? <ActivityIndicator color={N.onPrimary} />
-          : <Text style={styles.saveText}>Lưu thay đổi</Text>
+          : <Text style={styles.saveText}>{t('editSaveBtn')}</Text>
         }
       </TouchableOpacity>
     </ScrollView>
   );
 }
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={fieldStyles.wrap}>
+      <Text style={fieldStyles.label}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+const fieldStyles = StyleSheet.create({
+  wrap:  { marginHorizontal: spacing.lg, marginTop: spacing.md },
+  label: { fontSize: 13, fontWeight: '500', color: N.onSurfaceVariant, marginBottom: 6 },
+});
 
 const styles = StyleSheet.create({
   container:     { flex: 1, backgroundColor: N.background },
@@ -143,10 +215,11 @@ const styles = StyleSheet.create({
   avatarWrap:    { position: 'relative' },
   cameraOverlay: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, backgroundColor: N.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: N.background },
   avatarHint:    { fontSize: 12, color: N.onSurfaceVariant },
-  label:         { fontSize: 13, fontWeight: '500', color: N.onSurfaceVariant, marginHorizontal: spacing.lg, marginBottom: 6, marginTop: spacing.md },
-  input:         { marginHorizontal: spacing.lg, borderWidth: 1, borderColor: N.outlineVariant, borderRadius: radius.lg, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: N.onSurface, backgroundColor: N.surfaceContainerLow },
-  inputDisabled: { backgroundColor: N.background, color: N.onSurfaceVariant },
-  hint:          { fontSize: 11, color: N.onSurfaceVariant, marginHorizontal: spacing.lg, marginTop: 4 },
+  input:         { borderWidth: 1, borderColor: N.outlineVariant, borderRadius: radius.lg, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: N.onSurface, backgroundColor: N.surfaceContainerLow },
+  inputFlex:     { flex: 1, borderWidth: 0, paddingLeft: 0 },
+  inputMultiline:{ minHeight: 88, paddingTop: 12 },
+  inputPrefix:   { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: N.outlineVariant, borderRadius: radius.lg, backgroundColor: N.surfaceContainerLow, paddingLeft: 16 },
+  prefixText:    { fontSize: 15, color: N.onSurfaceVariant, marginRight: 4 },
   error:         { color: colors.error, fontSize: 13, textAlign: 'center', marginBottom: spacing.md, marginHorizontal: spacing.lg },
   saveBtn:       { backgroundColor: N.primary, marginHorizontal: spacing.lg, marginTop: spacing.xl, paddingVertical: 16, borderRadius: radius.xl, alignItems: 'center' },
   saveText:      { color: N.onPrimary, fontWeight: '600', fontSize: 16 },

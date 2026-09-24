@@ -10,6 +10,7 @@ import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
 import { getCoverForDestination } from '@/src/lib/destination-covers';
+import { useT } from '@/src/lib/i18n';
 import type { Trip } from '@/src/types';
 
 const N = colors.nomad;
@@ -21,6 +22,7 @@ function formatDate(iso: string) {
 }
 
 export default function MyTripsScreen() {
+  const t = useT();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,16 +45,16 @@ export default function MyTripsScreen() {
 
   function confirmDelete(trip: Trip) {
     Alert.alert(
-      'Xóa chuyến đi',
-      `Xóa "${trip.title}"? Hành động này không thể hoàn tác.`,
+      t('wsDeleteTitle'),
+      `${t('myTripsDeleteBodyPfx')}${trip.title}${t('myTripsDeleteBodySfx')}`,
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: t('alertCancel'), style: 'cancel' },
         {
-          text: 'Xóa',
+          text: t('alertDelete'),
           style: 'destructive',
           onPress: async () => {
             const { error } = await supabase.from('trips').delete().eq('id', trip.id);
-            if (!error) setTrips((prev) => prev.filter((t) => t.id !== trip.id));
+            if (!error) setTrips((prev) => prev.filter((item) => item.id !== trip.id));
           },
         },
       ],
@@ -66,7 +68,7 @@ export default function MyTripsScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={22} color={N.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chuyến đi của tôi</Text>
+        <Text style={styles.headerTitle}>{t('myTripsTitle')}</Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -77,10 +79,10 @@ export default function MyTripsScreen() {
       ) : trips.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="checkmark-done-circle-outline" size={48} color={N.outlineVariant} />
-          <Text style={styles.emptyTitle}>Chưa có chuyến đi hoàn thành</Text>
-          <Text style={styles.emptyHint}>Các chuyến đi đã kết thúc sẽ xuất hiện ở đây</Text>
+          <Text style={styles.emptyTitle}>{t('myTripsEmptyTitle')}</Text>
+          <Text style={styles.emptyHint}>{t('myTripsEmptyHint')}</Text>
           <TouchableOpacity style={styles.goBtn} onPress={() => router.push('/(app)/workspace')}>
-            <Text style={styles.goBtnText}>Xem tất cả chuyến đi →</Text>
+            <Text style={styles.goBtnText}>{t('myTripsGoBtn')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -130,7 +132,7 @@ export default function MyTripsScreen() {
                     </View>
                   )}
                 </View>
-                <Text style={styles.hint}>Giữ lâu để xóa</Text>
+                <Text style={styles.hint}>{t('myTripsHint')}</Text>
               </View>
             </TouchableOpacity>
           )}

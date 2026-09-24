@@ -10,32 +10,35 @@ import { Button } from '@/src/components/ui/Button';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
+import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Location, Trip, TimeSlot, BookmarkStatus } from '@/src/types';
 
-const TIME_SLOTS: { value: TimeSlot; label: string; icon: string }[] = [
-  { value: 'morning',   label: 'Buổi sáng',  icon: '🌅' },
-  { value: 'afternoon', label: 'Buổi chiều', icon: '☀️' },
-  { value: 'evening',   label: 'Buổi tối',   icon: '🌙' },
+const TIME_SLOTS: { value: TimeSlot; tKey: StringKey; icon: string }[] = [
+  { value: 'morning',   tKey: 'slotMorning',   icon: '🌅' },
+  { value: 'afternoon', tKey: 'slotAfternoon', icon: '☀️' },
+  { value: 'evening',   tKey: 'slotEvening',   icon: '🌙' },
 ];
-const STATUS_LABEL: Record<string, string> = {
-  planning: 'Lên kế hoạch', active: 'Đang đi', completed: 'Hoàn thành',
+const STATUS_TKEY: Record<string, StringKey> = {
+  planning:  'tripStatusPlanning',
+  active:    'wsStatusActive',
+  completed: 'tripStatusCompleted',
 };
 const BOOKMARK_ICON_COLOR: Record<BookmarkStatus, string> = {
   want: '#EF4444', planned: '#F59E0B', done: '#22C55E',
 };
-const BOOKMARK_LABEL: Record<BookmarkStatus, string> = {
-  want: 'Muốn đi', planned: 'Đã kế hoạch', done: 'Đã đi',
+const BOOKMARK_TKEY: Record<BookmarkStatus, StringKey> = {
+  want: 'bmWant', planned: 'bmPlanned', done: 'bmDone',
 };
 
-function formatPrice(p: number) {
-  if (p === 0) return 'Miễn phí';
+function formatPrice(p: number, t: (k: StringKey) => string) {
+  if (p === 0) return t('expFree');
   return p.toLocaleString('vi-VN') + 'đ';
 }
-function formatDuration(mins: number) {
-  if (mins < 60) return `${mins} phút`;
+function formatDuration(mins: number, t: (k: StringKey) => string) {
+  if (mins < 60) return `${mins} ${t('expMinUnit')}`;
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return m > 0 ? `${h}g${m}p` : `${h} giờ`;
+  return m > 0 ? `${h}h${m}m` : `${h} ${t('expHrUnit')}`;
 }
 function tripDayCount(trip: Trip): number {
   if (trip.start_date && trip.end_date) {
@@ -53,6 +56,7 @@ function buildMapsUrl(loc: Location): string {
 }
 
 export default function ExperienceDetailScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { bookmarks, toggle, setStatus } = useBookmarks();
   const [location, setLocation]     = useState<Location | null>(null);
@@ -138,13 +142,13 @@ export default function ExperienceDetailScreen() {
       sort_order:  0,
     });
     setAdding(false);
-    if (error) { setAddError('Không thể thêm: ' + error.message); return; }
+    if (error) { setAddError(t('addLocErrCannotAdd') + error.message); return; }
     setShowModal(false);
     router.push(`/trip/${selectedTrip.id}`);
   }
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={colors.nomad.primary} /></View>;
-  if (!location) return <View style={styles.center}><Text style={{ color: colors.nomad.onSurfaceVariant }}>Không tìm thấy địa điểm</Text></View>;
+  if (!location) return <View style={styles.center}><Text style={{ color: colors.nomad.onSurfaceVariant }}>{t('locNotFound')}</Text></View>;
 
   const maxDays = selectedTrip ? tripDayCount(selectedTrip) : 7;
   const cityLine = [location.district, location.city ?? location.address].filter(Boolean).join(', ');
@@ -212,12 +216,12 @@ export default function ExperienceDetailScreen() {
           <View style={styles.metaRow}>
             <View style={styles.metaChip}>
               <Ionicons name="cash-outline" size={14} color={colors.nomad.onSurfaceVariant} />
-              <Text style={styles.metaText}>{formatPrice(location.price_per_person)}</Text>
+              <Text style={styles.metaText}>{formatPrice(location.price_per_person, t)}</Text>
             </View>
             <View style={styles.metaDot} />
             <View style={styles.metaChip}>
               <Ionicons name="time-outline" size={14} color={colors.nomad.onSurfaceVariant} />
-              <Text style={styles.metaText}>{formatDuration(location.duration_minutes)}</Text>
+              <Text style={styles.metaText}>{formatDuration(location.duration_minutes, t)}</Text>
             </View>
             {location.rating != null && (
               <>
@@ -249,7 +253,7 @@ export default function ExperienceDetailScreen() {
               <Text style={styles.desc}>{displayDesc}</Text>
               {needsTruncate && (
                 <TouchableOpacity onPress={() => setExpanded((e) => !e)}>
-                  <Text style={styles.expandBtn}>{expanded ? 'Ẩn bớt ▲' : 'Xem thêm ▼'}</Text>
+                  <Text style={styles.expandBtn}>{expanded ? t('locCollapse') : t('locExpand')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -258,13 +262,13 @@ export default function ExperienceDetailScreen() {
 
         {/* Giờ mở cửa accordion */}
         <TouchableOpacity style={styles.accordion} onPress={() => setOpenHours((v) => !v)} activeOpacity={0.8}>
-          <Text style={styles.accordionTitle}>Giờ mở cửa</Text>
+          <Text style={styles.accordionTitle}>{t('locOpenHours')}</Text>
           <Ionicons name={openHours ? 'chevron-up' : 'chevron-down'} size={18} color={colors.nomad.onSurfaceVariant} />
         </TouchableOpacity>
         {openHours && (
           <View style={styles.accordionBody}>
             <Text style={styles.accordionText}>
-              {location.opening_hours ?? 'Mở cửa hàng ngày · Liên hệ để xác nhận giờ cụ thể'}
+              {location.opening_hours ?? t('expFallbackHours')}
             </Text>
           </View>
         )}
@@ -272,7 +276,7 @@ export default function ExperienceDetailScreen() {
 
         {/* Liên hệ & Địa chỉ accordion */}
         <TouchableOpacity style={styles.accordion} onPress={() => setOpenContact((v) => !v)} activeOpacity={0.8}>
-          <Text style={styles.accordionTitle}>Liên hệ & Địa chỉ</Text>
+          <Text style={styles.accordionTitle}>{t('locContact')}</Text>
           <Ionicons name={openContact ? 'chevron-up' : 'chevron-down'} size={18} color={colors.nomad.onSurfaceVariant} />
         </TouchableOpacity>
         {openContact && (
@@ -290,7 +294,7 @@ export default function ExperienceDetailScreen() {
               </TouchableOpacity>
             ) : null}
             {!location.address && !location.phone && (
-              <Text style={styles.accordionText}>Chưa có thông tin liên hệ</Text>
+              <Text style={styles.accordionText}>{t('expNoContact')}</Text>
             )}
           </View>
         )}
@@ -301,11 +305,11 @@ export default function ExperienceDetailScreen() {
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.mapsBtn} onPress={() => Linking.openURL(buildMapsUrl(location))} activeOpacity={0.85}>
           <Ionicons name="map-outline" size={17} color={colors.nomad.onPrimary} />
-          <Text style={styles.mapsBtnText}>Mở Google Maps</Text>
+          <Text style={styles.mapsBtnText}>{t('locOpenMaps')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.addBtn} onPress={openModal} activeOpacity={0.85}>
           <Ionicons name="add-circle-outline" size={17} color={colors.nomad.primary} />
-          <Text style={styles.addBtnText}>Thêm vào Trip</Text>
+          <Text style={styles.addBtnText}>{t('expAddToTrip')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -315,7 +319,7 @@ export default function ExperienceDetailScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Thêm vào Trip</Text>
+              <Text style={styles.modalTitle}>{t('expAddToTrip')}</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
                 <Ionicons name="close" size={22} color={colors.nomad.onSurfaceVariant} />
               </TouchableOpacity>
@@ -339,63 +343,63 @@ export default function ExperienceDetailScreen() {
             ) : null}
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.stepLabel}>1. Chọn chuyến đi</Text>
+              <Text style={styles.stepLabel}>{t('expStep1')}</Text>
               {loadingTrips ? (
                 <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 16 }} />
               ) : trips.length === 0 ? (
                 <View style={styles.noTrips}>
-                  <Text style={styles.noTripsText}>Bạn chưa có chuyến đi nào.</Text>
+                  <Text style={styles.noTripsText}>{t('expNoTripsText')}</Text>
                   <TouchableOpacity onPress={() => { setShowModal(false); router.push('/(app)/workspace'); }}>
-                    <Text style={styles.noTripsLink}>Tạo trip mới →</Text>
+                    <Text style={styles.noTripsLink}>{t('expCreateTripLink')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                trips.map((t) => (
+                trips.map((trip) => (
                   <TouchableOpacity
-                    key={t.id}
-                    style={[styles.tripOption, selectedTrip?.id === t.id && styles.tripOptionActive]}
-                    onPress={() => { setSelectedTrip(t); setSelectedDay(1); }}
+                    key={trip.id}
+                    style={[styles.tripOption, selectedTrip?.id === trip.id && styles.tripOptionActive]}
+                    onPress={() => { setSelectedTrip(trip); setSelectedDay(1); }}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.tripOptionTitle, selectedTrip?.id === t.id && styles.tripOptionTitleActive]} numberOfLines={1}>{t.title}</Text>
-                      <Text style={styles.tripOptionSub}>📍 {t.destination} · {STATUS_LABEL[t.status]}</Text>
+                      <Text style={[styles.tripOptionTitle, selectedTrip?.id === trip.id && styles.tripOptionTitleActive]} numberOfLines={1}>{trip.title}</Text>
+                      <Text style={styles.tripOptionSub}>📍 {trip.destination} · {t(STATUS_TKEY[trip.status] ?? 'tripStatusPlanning')}</Text>
                     </View>
-                    {selectedTrip?.id === t.id && <Ionicons name="checkmark-circle" size={20} color={colors.nomad.primary} />}
+                    {selectedTrip?.id === trip.id && <Ionicons name="checkmark-circle" size={20} color={colors.nomad.primary} />}
                   </TouchableOpacity>
                 ))
               )}
 
               {selectedTrip && (
                 <>
-                  <Text style={[styles.stepLabel, { marginTop: spacing.lg }]}>2. Chọn ngày</Text>
+                  <Text style={[styles.stepLabel, { marginTop: spacing.lg }]}>{t('expStep2')}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4, alignItems: 'center' }}>
                     {Array.from({ length: maxDays }, (_, i) => i + 1).map((d) => (
                       <TouchableOpacity key={d} style={[styles.dayChip, selectedDay === d && styles.dayChipActive]} onPress={() => setSelectedDay(d)}>
-                        <Text style={[styles.dayChipText, selectedDay === d && styles.dayChipTextActive]}>Ngày {d}</Text>
+                        <Text style={[styles.dayChipText, selectedDay === d && styles.dayChipTextActive]}>{t('tripDayLabel')} {d}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
 
-                  <Text style={[styles.stepLabel, { marginTop: spacing.lg }]}>3. Thời điểm</Text>
+                  <Text style={[styles.stepLabel, { marginTop: spacing.lg }]}>{t('expStep3')}</Text>
                   <View style={styles.slotRow}>
                     {TIME_SLOTS.map((slot) => (
                       <TouchableOpacity key={slot.value} style={[styles.slotBtn, selectedSlot === slot.value && styles.slotBtnActive]} onPress={() => setSelectedSlot(slot.value)}>
                         <Text style={styles.slotIcon}>{slot.icon}</Text>
-                        <Text style={[styles.slotLabel, selectedSlot === slot.value && styles.slotLabelActive]}>{slot.label}</Text>
+                        <Text style={[styles.slotLabel, selectedSlot === slot.value && styles.slotLabelActive]}>{t(slot.tKey)}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
 
-                  <Text style={[styles.stepLabel, { marginTop: spacing.lg }]}>4. Ghi chú (tuỳ chọn)</Text>
+                  <Text style={[styles.stepLabel, { marginTop: spacing.lg }]}>{t('expStep4')}</Text>
                   <TextInput
                     style={styles.noteInput}
-                    placeholder="Đặt vé trước / Mang giày trekking / ..."
+                    placeholder={t('expNotePH')}
                     placeholderTextColor={colors.nomad.onSurfaceVariant}
                     value={note} onChangeText={setNote}
                     multiline numberOfLines={2} textAlignVertical="top"
                   />
                   <View style={{ marginTop: spacing.lg }}>
-                    <Button label="Thêm vào lịch trình" onPress={handleAddToTrip} loading={adding} />
+                    <Button label={t('addLocTitle')} onPress={handleAddToTrip} loading={adding} />
                   </View>
                 </>
               )}
@@ -409,12 +413,12 @@ export default function ExperienceDetailScreen() {
         <Pressable style={styles.bmOverlay} onPress={() => setShowBmSheet(false)}>
           <Pressable style={styles.bmSheet} onPress={(e) => e.stopPropagation()}>
             <View style={styles.bmHandle} />
-            <Text style={styles.bmSheetTitle}>Lưu địa điểm</Text>
+            <Text style={styles.bmSheetTitle}>{t('expBookmarkSave')}</Text>
             {(['want', 'planned', 'done'] as BookmarkStatus[]).map((s) => (
               <TouchableOpacity key={s} style={styles.bmItem} onPress={() => { if (id) setStatus(id, s); setShowBmSheet(false); }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Ionicons name="heart" size={18} color={BOOKMARK_ICON_COLOR[s]} />
-                  <Text style={[styles.bmItemText, bmStatus === s && { fontWeight: '700', color: colors.nomad.primary }]}>{BOOKMARK_LABEL[s]}</Text>
+                  <Text style={[styles.bmItemText, bmStatus === s && { fontWeight: '700', color: colors.nomad.primary }]}>{t(BOOKMARK_TKEY[s])}</Text>
                 </View>
                 {bmStatus === s && <Ionicons name="checkmark" size={18} color={colors.nomad.primary} />}
               </TouchableOpacity>
@@ -423,7 +427,7 @@ export default function ExperienceDetailScreen() {
               <TouchableOpacity style={[styles.bmItem, { borderBottomWidth: 0 }]} onPress={() => { if (id) setStatus(id, null); setShowBmSheet(false); }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Ionicons name="heart-dislike-outline" size={18} color={colors.nomad.onSurfaceVariant} />
-                  <Text style={[styles.bmItemText, { color: colors.nomad.onSurfaceVariant }]}>Bỏ lưu</Text>
+                  <Text style={[styles.bmItemText, { color: colors.nomad.onSurfaceVariant }]}>{t('expBookmarkUnsave')}</Text>
                 </View>
               </TouchableOpacity>
             )}
