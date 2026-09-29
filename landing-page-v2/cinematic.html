@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Viloca — Việt Nam, nhẹ như không trọng lực</title>
 <meta name="description" content="Một cuộn phim ngắn về văn hóa, thiên nhiên và con người Việt Nam. Viloca giúp bạn khám phá địa điểm, lễ hội và lịch trình theo cách của riêng mình.">
+<link rel="icon" type="image/webp" href="assets/viloca-logo.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="cinematic.css">
@@ -12,7 +13,7 @@
 <body>
 
 <header class="top">
-  <a class="logo" href="#top" aria-label="Viloca">Viloca</a>
+  <a class="logo" href="#top" aria-label="Viloca"><img src="assets/viloca-logo.webp" alt=""><span>Viloca</span></a>
   <div class="counter" aria-hidden="true"><b id="cur">01</b><span> / 06</span><em id="label">Mở đầu</em></div>
   <a class="pill" href="index.html#planner">Thử lịch trình</a>
 </header>
@@ -20,12 +21,12 @@
 
 <main class="film" id="top">
   <div class="stage">
-    <!-- Các lớp cảnh: video (poster là ảnh tĩnh) xếp chồng, GSAP dissolve + dolly theo cuộn -->
+    <!-- Các lớp cảnh: ảnh tĩnh xếp chồng; GSAP dissolve + zoom vào/ra theo tiến độ cuộn (không dùng video) -->
     <div class="reel" aria-hidden="true">
-      <div class="shot"><video muted loop playsinline preload="metadata" poster="media/hero.jpg"><source src="media/hero.mp4" type="video/mp4"></video></div>
-      <div class="shot"><video muted loop playsinline preload="metadata" poster="media/story-culture.jpg"><source src="media/story-culture.mp4" type="video/mp4"></video></div>
-      <div class="shot"><video muted loop playsinline preload="metadata" poster="media/story-nature.jpg"><source src="media/story-nature.mp4" type="video/mp4"></video></div>
-      <div class="shot"><video muted loop playsinline preload="metadata" poster="media/story-people.jpg"><source src="media/story-people.mp4" type="video/mp4"></video></div>
+      <div class="shot"><img src="media/hero.jpg" alt="" decoding="async"></div>
+      <div class="shot"><img src="media/story-culture.jpg" alt="" decoding="async"></div>
+      <div class="shot"><img src="media/story-nature.jpg" alt="" decoding="async"></div>
+      <div class="shot"><img src="media/story-people.jpg" alt="" decoding="async"></div>
       <div class="shot"><img src="media/lantern-festival.jpg" alt=""></div>
       <div class="shot"><img src="media/terrace-sunset.jpg" alt=""></div>
     </div>
@@ -36,10 +37,10 @@
 
     <!-- Lời thoại từng cảnh -->
     <section class="scene" data-label="Mở đầu">
-      <p class="kicker">Văn hóa · Thiên nhiên · Con người</p>
+      <p class="kicker">Ứng dụng khám phá Việt Nam</p>
       <h1><span class="ln"><span>Chạm vào Việt Nam</span></span><span class="ln"><span><em>nhẹ như không trọng lực</em></span></span></h1>
-      <p class="sub">Rời khỏi những lịch trình nặng nề. Đi đến nơi có câu chuyện, khói bếp và nụ cười người địa phương.</p>
-      <p class="cue">Cuộn để bay</p>
+      <p class="sub">Viloca giúp bạn tìm địa điểm, lập lịch trình và đi theo cách của riêng mình — để văn hóa, thiên nhiên và con người Việt Nam đến gần hơn.</p>
+      <p class="cue">__________</p>
     </section>
 
     <section class="scene left" data-label="Văn hóa">
@@ -60,21 +61,22 @@
       <p class="sub">Bữa cơm bên hiên nhà, câu chuyện kể dưới mái ngói — phần đáng nhớ nhất của mọi chuyến đi.</p>
     </section>
 
-    <section class="scene" data-label="Lễ hội">
-      <p class="kicker">Lễ hội</p>
-      <h2><span class="ln"><span>Theo nhịp</span></span><span class="ln"><span><em>mùa lễ hội</em></span></span></h2>
+    <section class="scene" data-label="Ứng dụng">
+      <p class="kicker">Viloca trong tay bạn</p>
+      <h2><span class="ln"><span>Mọi thứ cho chuyến đi</span></span><span class="ln"><span><em>trong một ứng dụng</em></span></span></h2>
       <ul class="chips">
-        <li>Đêm hoa đăng Hội An</li><li>Hội chùa Hương</li><li>Lễ hội Cầu Ngư</li><li>Trung thu phố cổ</li><li>Tết Nguyên Đán</li>
+        <li>Khám phá địa điểm</li><li>Tìm kiếm &amp; lọc theo thành phố</li><li>Theo dõi lễ hội</li><li>Lịch trình do AI gợi ý</li><li>Bản đồ &amp; chỉ đường</li><li>Chia sẻ cùng cộng đồng</li>
       </ul>
-      <p class="fine">Lịch lễ hội có thể thay đổi theo năm — hãy kiểm tra lại trước khi đi.</p>
+      <p class="fine">Lịch trình, giá vé và lịch lễ hội chỉ mang tính tham khảo và có thể thay đổi.</p>
     </section>
 
     <section class="scene" data-label="Cất cánh">
-      <p class="kicker">Cất cánh</p>
-      <h2><span class="ln"><span>Sẵn sàng nhẹ bẫng</span></span><span class="ln"><span><em>giữa lòng Việt Nam?</em></span></span></h2>
-      <p class="sub">Chọn nơi muốn đến, nói về phong cách của bạn, rồi tinh chỉnh lịch trình tham khảo theo ý mình.</p>
+      <img class="sen-cta" src="assets/sen-cheer.webp" alt="Bé Sen, linh vật của Viloca, đang ăn mừng">
+      <!--<p class="kicker">Cất cánh</p> -->
+      <h2><span class="ln"><span>Sẵn sàng đi cùng</span></span><span class="ln"><span><em>Viloca?</em></span></span></h2>
+      <p class="sub">Chọn điểm đến, nói về phong cách của bạn, rồi để Viloca gợi ý lịch trình để bạn tinh chỉnh.</p>
       <div class="actions">
-        <a class="btn" href="index.html#planner">Thử lịch trình</a>
+        <a class="btn" href="index.html#planner">Thử lịch trình mẫu</a>
         <!-- TODO: thêm nút tải ứng dụng khi có URL cửa hàng chính thức. -->
         <a class="btn ghost" href="index.html">Xem bản đầy đủ</a>
       </div>
