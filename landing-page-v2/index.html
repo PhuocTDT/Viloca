@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Viloca — Chạm vào Việt Nam, nhẹ như không trọng lực</title>
+  <meta name="description" content="Viloca đưa bạn đến gần văn hóa, thiên nhiên và con người Việt Nam: khám phá làng nghề di sản, theo dõi lễ hội và tham khảo lịch trình theo cách của riêng bạn.">
+  <meta name="keywords" content="Viloca, du lịch Việt Nam, du lịch bản địa, văn hóa Việt Nam, làng nghề truyền thống, lịch trình du lịch, lễ hội Việt Nam">
+  <meta property="og:title" content="Viloca — Chạm vào Việt Nam, nhẹ như không trọng lực">
+  <meta property="og:description" content="Khám phá điểm đến, làng nghề di sản, lễ hội và tham khảo lịch trình du lịch Việt Nam giàu bản sắc.">
+  <meta property="og:image" content="media/hero.jpg">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="../landing-page/assets/brand/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress" aria-hidden="true"><i id="progress-bar"></i></div>
+
+  <!-- NAVIGATION -->
+  <header class="nav" id="navbar">
+    <a class="logo" href="#hero" aria-label="Viloca Trang chủ">
+      <span class="logo-mark">V</span>
+      <span class="logo-text">Viloca</span>
+    </a>
+    <nav class="nav-links" aria-label="Điều hướng chính">
+      <a href="#story" class="nav-link">Hành trình</a>
+      <a href="#places" class="nav-link">Điểm đến</a>
+      <a href="#planner" class="nav-link">AI Lịch trình</a>
+      <a href="#festivals" class="nav-link">Lễ hội</a>
+      <a href="#values" class="nav-link">Giá trị</a>
+      <a href="#how" class="nav-link">Cách dùng</a>
+      <a href="#faq" class="nav-link">Hỏi đáp</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="sound-toggle" id="sound-toggle" type="button" aria-label="Bật/Tắt âm thanh thiên nhiên" title="Âm thanh thiên nhiên">
+        <span class="sound-waves">
+          <i></i><i></i><i></i><i></i>
+        </span>
+        <span class="sound-label">Âm thanh</span>
+      </button>
+      <a class="btn btn-sm" href="#planner">Thử lịch trình</a>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <span class="logo-text">Viloca</span>
+        <button class="drawer-close" id="drawer-close" type="button" aria-label="Đóng menu">&times;</button>
+      </div>
+      <nav class="drawer-nav">
+        <a href="#hero" class="drawer-link">Trang chủ</a>
+        <a href="#story" class="drawer-link">Hành trình 3 tầng</a>
+        <a href="#places" class="drawer-link">Điểm đến chọn lọc</a>
+        <a href="#planner" class="drawer-link">Thử AI Lịch trình</a>
+        <a href="#festivals" class="drawer-link">Mùa lễ hội</a>
+        <a href="#values" class="drawer-link">Giá trị bản địa</a>
+        <a href="#how" class="drawer-link">Cách thức hoạt động</a>
+        <a href="#faq" class="drawer-link">Câu hỏi thường gặp</a>
+      </nav>
+      <div class="drawer-footer">
+        <a class="btn btn-block" href="#planner">Khám phá ngay</a>
+        <p class="drawer-sub">Viloca · Việt Nam, nhẹ như không trọng lực</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO SECTION -->
+  <section id="hero" class="hero" aria-label="Mở đầu">
+    <video class="hero-video" autoplay muted loop playsinline poster="media/hero.jpg" preload="metadata">
+      <source src="media/hero.mp4" type="video/mp4">
+    </video>
+    <div class="hero-bg" style="background-image: url('media/hero.jpg');"></div>
+    <div class="hero-overlay"></div>
+
+    <!-- Floating Cards (Weightless Parallax) -->
+    <div class="float f1" data-depth="1.3">
+      <div class="float-inner">
+        <img src="media/story-nature.jpg" alt="Rừng dừa nước Bảy Mẫu" loading="eager">
+        <div class="float-tag"><span>Rừng dừa nước</span></div>
+      </div>
+    </div>
+    <div class="float f2" data-depth="0.7">
+      <div class="float-inner">
+        <img src="media/portrait-weaver.jpg" alt="Bà cụ dệt thổ cẩm" loading="eager">
+        <div class="float-tag"><span>Nghệ nhân dệt</span></div>
+      </div>
+    </div>
+    <div class="float f3" data-depth="1.5">
+      <div class="float-inner">
+        <img src="media/lantern-festival.jpg" alt="Đêm hoa đăng Hội An" loading="eager">
+        <div class="float-tag"><span>Đêm hoa đăng</span></div>
+      </div>
+    </div>
+    <div class="float f4" data-depth="0.9">
+      <div class="float-inner">
+        <img src="media/terrace-sunset.jpg" alt="Ruộng bậc thang hoàng hôn" loading="eager">
+        <div class="float-tag"><span>Mù Cang Chải</span></div>
+      </div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="hero-copy">
+      <div class="eyebrow-pill">
+        <span class="sparkle">✦</span>
+        <span>Văn hóa · Thiên nhiên · Con người</span>
+      </div>
+      <h1>Chạm vào Việt Nam<br><em>nhẹ như không trọng lực</em></h1>
+      <p class="lead">
+        Rời khỏi những lịch trình dập khuôn và vội vã. Viloca đưa bạn đến gần nơi có câu chuyện làng nghề, 
+        sắc màu thiên nhiên nguyên bản và nụ cười hiền hậu của con người địa phương.
+      </p>
+      <div class="hero-cta-group">
+        <a class="btn btn-primary" href="#story">
+          <span>Bắt đầu hành trình</span>
+          <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a class="btn btn-glass" href="#planner">
+          <span>Thử AI Lịch trình</span>
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <strong>45+</strong>
+          <span>Điểm đến chọn lọc</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <strong>100%</strong>
+          <span>Bản sắc bản địa</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <strong>0đ</strong>
+          <span>Trải nghiệm tự do</span>
+        </div>
+      </div>
+    </div>
+
+    <a class="scroll-hint" href="#story" aria-label="Cuộn xuống để xem tiếp">
+      <span class="mouse-icon"><i></i></span>
+      <span class="hint-text">Cuộn để cất cánh</span>
+    </a>
+  </section>
+
+  <!-- PINNED STORY SECTION (3 CHAPTERS CROSSFADE) -->
+  <section id="story" class="story" aria-label="Hành trình ba tầng cảm xúc">
+    <div class="story-stage">
+      <!-- Crossfade Layers with Video & Poster -->
+      <div class="layer layer-1" style="background-image:url('media/story-culture.jpg')">
+        <video class="layer-video" autoplay muted loop playsinline poster="media/story-culture.jpg" preload="metadata">
+          <source src="media/story-culture.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="layer layer-2" style="background-image:url('media/story-nature.jpg')">
+        <video class="layer-video" autoplay muted loop playsinline poster="media/story-nature.jpg" preload="metadata">
+          <source src="media/story-nature.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="layer layer-3" style="background-image:url('media/story-people.jpg')">
+        <video class="layer-video" autoplay muted loop playsinline poster="media/story-people.jpg" preload="metadata">
+          <source src="media/story-people.mp4" type="video/mp4">
+        </video>
+      </div>
+      
+      <div class="story-shade"></div>
+      <div class="story-vignette"></div>
+
+      <!-- Chapter Articles -->
+      <div class="chapters">
+        <article class="chapter" data-index="0">
+          <div class="chapter-meta">
+            <span class="chapter-badge">Chương 01</span>
+            <span class="chapter-theme">Văn hóa &amp; Di sản</span>
+          </div>
+          <h2>Mỗi làng nghề<br>là một trang sử sống.</h2>
+          <p class="chapter-desc">
+            Từ làng mộc Kim Bồng, làng gốm mộc mạc, khung dệt thổ cẩm đến phố cổ trầm mặc — chạm vào nơi ký ức văn hóa dân tộc được lưu giữ bằng đôi bàn tay tài hoa và cái tâm của những người nghệ nhân.
+          </p>
+          <div class="chapter-tags">
+            <span class="tag">Khắc gỗ Kim Bồng</span>
+            <span class="tag">Thổ cẩm Tây Bắc</span>
+            <span class="tag">Gốm nung cổ truyền</span>
+          </div>
+        </article>
+
+        <article class="chapter" data-index="1">
+          <div class="chapter-meta">
+            <span class="chapter-badge">Chương 02</span>
+            <span class="chapter-theme">Thiên nhiên nguyên bản</span>
+          </div>
+          <h2>Sông nước, rừng dừa,<br>đồi chè bát ngát.</h2>
+          <p class="chapter-desc">
+            Tìm lại sự tĩnh lặng giữa những khoảng xanh thuần khiết. Lắng nghe tiếng chèo thúng khua nhẹ trên sóng nước rừng dừa Bảy Mẫu, ngắm làn sương mỏng trên đồi chè và hít thở theo nhịp thở của đất trời.
+          </p>
+          <div class="chapter-tags">
+            <span class="tag">Rừng dừa Bảy Mẫu</span>
+            <span class="tag">Đồi chè sương sớm</span>
+            <span class="tag">Ruộng bậc thang</span>
+          </div>
+        </article>
+
+        <article class="chapter" data-index="2">
+          <div class="chapter-meta">
+            <span class="chapter-badge">Chương 03</span>
+            <span class="chapter-theme">Con người &amp; Nếp sống</span>
+          </div>
+          <h2>Điều đọng lại sau cùng<br>là những nụ cười.</h2>
+          <p class="chapter-desc">
+            Một bát cơm dọn vội bên hiên nhà gỗ, làn khói bếp lam chiều thơm mùi củi mới, câu chuyện kể mộc mạc của người già — sợi dây gắn kết chân phương chính là linh hồn của mọi chuyến đi.
+          </p>
+          <div class="chapter-tags">
+            <span class="tag">Bữa cơm hiên nhà</span>
+            <span class="tag">Khói bếp chiều quê</span>
+            <span class="tag">Nụ cười chân tình</span>
+          </div>
+        </article>
+      </div>
+
+      <!-- Chapter Navigation Dots -->
+      <div class="story-indicators" aria-hidden="true">
+        <button class="dot-btn on" data-target="0" type="button" aria-label="Chương 1">
+          <span class="dot-num">01</span>
+          <span class="dot-pill"></span>
+        </button>
+        <button class="dot-btn" data-target="1" type="button" aria-label="Chương 2">
+          <span class="dot-num">02</span>
+          <span class="dot-pill"></span>
+        </button>
+        <button class="dot-btn" data-target="2" type="button" aria-label="Chương 3">
+          <span class="dot-num">03</span>
+          <span class="dot-pill"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLOATING PLACES CLOUD -->
+  <section id="places" class="places" aria-label="Điểm đến nổi bật">
+    <div class="container">
+      <div class="section-head text-center">
+        <p class="eyebrow">Điểm đến chọn lọc</p>
+        <h2>Những nơi đang lơ lửng<br>trong danh sách của bạn</h2>
+        <p class="section-sub">
+          Dữ liệu địa điểm được tuyển chọn tập trung vào chiều sâu văn hóa, cảnh sắc thiên nhiên và làng nghề bản địa.
+        </p>
+        
+        <!-- Filter Tabs -->
+        <div class="place-filter" role="tablist">
+          <button class="filter-btn active" data-filter="all" role="tab" aria-selected="true">Tất cả</button>
+          <button class="filter-btn" data-filter="culture" role="tab" aria-selected="false">Văn hóa &amp; Làng nghề</button>
+          <button class="filter-btn" data-filter="nature" role="tab" aria-selected="false">Thiên nhiên &amp; Cảnh sắc</button>
+          <button class="filter-btn" data-filter="heritage" role="tab" aria-selected="false">Di sản &amp; Phố cổ</button>
+        </div>
+      </div>
+
+      <div class="cloud">
+        <figure class="place-card c1" data-depth="0.6" data-category="culture">
+          <div class="card-media">
+            <img loading="lazy" src="media/portrait-weaver.jpg" alt="Làng dệt thổ cẩm truyền thống">
+            <span class="card-chip">Làng nghề</span>
+          </div>
+          <figcaption>
+            <div class="caption-content">
+              <h3>Thổ cẩm Tây Bắc</h3>
+              <p>Hòa Bình / Sapa · Nghệ thuật dệt thủ công</p>
+            </div>
+            <span class="card-arrow">&rarr;</span>
+          </figcaption>
+        </figure>
+
+        <figure class="place-card c2" data-depth="1.2" data-category="nature">
+          <div class="card-media">
+            <img loading="lazy" src="media/terrace-sunset.jpg" alt="Ruộng bậc thang Mù Cang Chải">
+            <span class="card-chip">Thiên nhiên</span>
+          </div>
+          <figcaption>
+            <div class="caption-content">
+              <h3>Mù Cang Chải</h3>
+              <p>Yên Bái · Biển vàng bậc thang hoàng hôn</p>
+            </div>
+            <span class="card-arrow">&rarr;</span>
+          </figcaption>
+        </figure>
+
+        <figure class="place-card c3" data-depth="0.8" data-category="heritage">
+          <div class="card-media">
+            <img loading="lazy" src="media/lantern-festival.jpg" alt="Đêm hoa đăng sông Hoài Hội An">
+            <span class="card-chip">Di sản</span>
+          </div>
+          <figcaption>
+            <div class="caption-content">
+              <h3>Phố Cổ Hội An</h3>
+              <p>Quảng Nam · Dòng sông ánh sáng lung linh</p>
+            </div>
+            <span class="card-arrow">&rarr;</span>
+          </figcaption>
+        </figure>
+
+        <figure class="place-card c4" data-depth="1.4" data-category="nature">
+          <div class="card-media">
+            <img loading="lazy" src="media/story-nature.jpg" alt="Rừng dừa Bảy Mẫu Hội An">
+            <span class="card-chip">Sông nước</span>
+          </div>
+          <figcaption>
+            <div class="caption-content">
+              <h3>Rừng Dừa Bảy Mẫu</h3>
+              <p>Hội An · Chèo thuyền thúng len lỏi rạch dừa</p>
+            </div>
+            <span class="card-arrow">&rarr;</span>
+          </figcaption>
+        </figure>
+
+        <figure class="place-card c5" data-depth="0.7" data-category="culture">
+          <div class="card-media">
+            <img loading="lazy" src="media/story-culture.jpg" alt="Làng mộc Kim Bồng">
+            <span class="card-chip">Nghệ nhân</span>
+          </div>
+          <figcaption>
+            <div class="caption-content">
+              <h3>Làng Mộc Kim Bồng</h3>
+              <p>Hội An · Hơn 500 năm chạm khắc gỗ truyền thống</p>
+            </div>
+            <span class="card-arrow">&rarr;</span>
+          </figcaption>
+        </figure>
+
+        <figure class="place-card c6" data-depth="1.0" data-category="heritage">
+          <div class="card-media">
+            <img loading="lazy" src="../landing-page/assets/Danang/Ky_uc_hoi_an.jpg" alt="Ký ức Hội An">
+            <span class="card-chip">Trình diễn</span>
+          </div>
+          <figcaption>
+            <div class="caption-content">
+              <h3>Ký Ức Hội An</h3>
+              <p>Quảng Nam · Tái hiện 400 năm thương cảng</p>
+            </div>
+            <span class="card-arrow">&rarr;</span>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE AI PLANNER PREVIEW SECTION -->
+  <section id="planner" class="planner-section" aria-label="Trình tham khảo lịch trình">
+    <div class="container">
+      <div class="planner-wrapper">
+        <div class="planner-intro">
+          <p class="eyebrow">Trợ lý lịch trình Viloca</p>
+          <h2>Lên hành trình thong thả,<br>đúng gu bạn muốn</h2>
+          <p class="planner-desc">
+            Không cần lướt hàng chục trang diễn đàn. Chọn điểm đến, nhịp điệu và thời gian bạn có — Viloca gợi ý ngay một khung lịch trình cân bằng và đậm chất bản địa.
+          </p>
+
+          <div class="planner-features-list">
+            <div class="p-feature">
+              <span class="p-icon">🎯</span>
+              <div>
+                <h4>Tập trung trải nghiệm sâu</h4>
+                <p>Hạn chế di chuyển dồn dập, ưu tiên thời gian lắng nghe và cảm nhận.</p>
+              </div>
+            </div>
+            <div class="p-feature">
+              <span class="p-icon">🌿</span>
+              <div>
+                <h4>Gắn kết văn hóa địa phương</h4>
+                <p>Đan xen các làng nghề thủ công, quán ẩm thực truyền thống và cảnh đẹp tự nhiên.</p>
+              </div>
+            </div>
+            <div class="p-feature">
+              <span class="p-icon">🗺️</span>
+              <div>
+                <h4>Tùy chỉnh linh hoạt</h4>
+                <p>Dễ dàng thay đổi điểm dừng chân theo sở thích cá nhân bất cứ lúc nào.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Planner Card -->
+        <div class="planner-card">
+          <div class="planner-card-header">
+            <div class="card-status">
+              <span class="pulse-dot"></span>
+              <span>Bộ thử nghiệm lịch trình Viloca</span>
+            </div>
+            <span class="badge-tag">Demo tương tác</span>
+          </div>
+
+          <form id="planner-form" class="planner-form" onsubmit="return false;">
+            <!-- Destination Field -->
+            <div class="form-group">
+              <label for="plan-dest" class="form-label">Điểm đến mong muốn</label>
+              <div class="select-pill-group" id="plan-dest-group">
+                <button type="button" class="pill-option active" data-dest="danang">Đà Nẵng · Hội An</button>
+                <button type="button" class="pill-option" data-dest="hanoi">Hà Nội &amp; Vùng ven</button>
+                <button type="button" class="pill-option" data-dest="taybac">Tây Bắc hùng vĩ</button>
+                <button type="button" class="pill-option" data-dest="dalat">Đà Lạt sương mù</button>
+              </div>
+            </div>
+
+            <!-- Vibe Field -->
+            <div class="form-group">
+              <label for="plan-vibe" class="form-label">Phong cách chuyến đi</label>
+              <div class="select-pill-group" id="plan-vibe-group">
+                <button type="button" class="pill-option active" data-vibe="culture">🏛️ Văn hóa làng nghề</button>
+                <button type="button" class="pill-option" data-vibe="nature">🍃 Thiên nhiên thư thái</button>
+                <button type="button" class="pill-option" data-vibe="food">🍜 Ẩm thực &amp; Đời sống</button>
+              </div>
+            </div>
+
+            <!-- Duration Field -->
+            <div class="form-group">
+              <label for="plan-days" class="form-label">Thời lượng dự kiến</label>
+              <div class="select-pill-group" id="plan-days-group">
+                <button type="button" class="pill-option active" data-days="2">2 Ngày 1 Đêm</button>
+                <button type="button" class="pill-option" data-days="3">3 Ngày 2 Đêm</button>
+                <button type="button" class="pill-option" data-days="4">4 Ngày 3 Đêm</button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Generated Itinerary Result -->
+          <div class="planner-result" id="planner-result">
+            <div class="result-header">
+              <div class="result-title-box">
+                <span class="result-eyebrow" id="res-badge">Gợi ý lịch trình</span>
+                <h3 id="res-title">Hành trình Di sản Sông Hoài &amp; Làng Nghề</h3>
+              </div>
+              <span class="res-tag" id="res-time">3 Ngày 2 Đêm</span>
+            </div>
+
+            <div class="timeline" id="res-timeline">
+              <!-- Timeline Items injected by JavaScript -->
+            </div>
+
+            <div class="result-footer">
+              <div class="res-note">
+                <small>* Gợi ý tham khảo dựa trên dữ liệu địa điểm Viloca đã xác nhận.</small>
+              </div>
+              <a class="btn btn-sm btn-primary" href="../landing-page/index.html#planner">
+                Xem chi tiết trên ứng dụng
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FESTIVALS HORIZONTAL PINNED TRACK -->
+  <section id="festivals" class="fest" aria-label="Mùa lễ hội Việt Nam">
+    <div class="fest-pin">
+      <div class="fest-title">
+        <p class="eyebrow">Lễ hội &amp; Sự kiện</p>
+        <h2>Theo nhịp<br>mùa lễ hội</h2>
+        <p class="fest-lead">
+          Đắm mình vào không gian hội hè truyền thống, nơi câu ca điệu múa và tín ngưỡng dân gian vẫn vẹn nguyên sức sống.
+        </p>
+        <p class="fest-notice">
+          * Lịch lễ hội âm lịch và thời gian thực tế có thể thay đổi theo từng năm — hãy kiểm tra lại trước ngày khởi hành.
+        </p>
+        <div class="fest-controls">
+          <button class="fest-nav-btn prev" id="fest-prev" type="button" aria-label="Lễ hội trước">&larr;</button>
+          <button class="fest-nav-btn next" id="fest-next" type="button" aria-label="Lễ hội tiếp theo">&rarr;</button>
+        </div>
+      </div>
+
+      <div class="fest-track-wrapper">
+        <div class="fest-track" id="fest-track">
+          <figure class="fest-card">
+            <div class="fest-img-box">
+              <img loading="lazy" src="media/lantern-festival.jpg" alt="Đêm đèn lồng Hội An">
+              <div class="fest-date-badge">14 Âm lịch hàng tháng</div>
+            </div>
+            <figcaption>
+              <div class="fest-loc">Hội An · Quảng Nam</div>
+              <h3>Đêm Đèn Lồng Phố Cổ</h3>
+              <p>Tắt điện đường, thắp sáng hàng ngàn lồng đèn lụa và thả hoa đăng ước nguyện trên dòng sông Hoài.</p>
+            </figcaption>
+          </figure>
+
+          <figure class="fest-card">
+            <div class="fest-img-box">
+              <img loading="lazy" src="../landing-page/assets/Festival/le_hoi_chua_huong.PNG" alt="Hội chùa Hương">
+              <div class="fest-date-badge">Mùng 6 tháng Giêng — Tháng 3 ÂL</div>
+            </div>
+            <figcaption>
+              <div class="fest-loc">Mỹ Đức · Hà Nội</div>
+              <h3>Lễ Hội Chùa Hương</h3>
+              <p>Hành trình trẩy hội trên suối Yến thanh tịnh, hướng về miền cõi Phật linh thiêng giữa non nước.</p>
+            </figcaption>
+          </figure>
+
+          <figure class="fest-card">
+            <div class="fest-img-box">
+              <img loading="lazy" src="../landing-page/assets/Festival/le-hoi-cau-ngu.jpg" alt="Lễ hội Cầu Ngư">
+              <div class="fest-date-badge">Tháng Giêng / Tháng 2 ÂL</div>
+            </div>
+            <figcaption>
+              <div class="fest-loc">Đà Nẵng &amp; Duyên Hải Miền Trung</div>
+              <h3>Lễ Hội Cầu Ngư</h3>
+              <p>Nghi lễ tạ ơn thần Nam Hải (Cá Ông), cầu cho mưa thuận gió hòa, sóng yên biển lặng và mùa tôm cá bội thu.</p>
+            </figcaption>
+          </figure>
+
+          <figure class="fest-card">
+            <div class="fest-img-box">
+              <img loading="lazy" src="../landing-page/assets/Festival/tet_trung_thu_pho_co_hoi_an.jpg" alt="Tết Trung thu phố cổ">
+              <div class="fest-date-badge">Rằm tháng 8 Âm lịch</div>
+            </div>
+            <figcaption>
+              <div class="fest-loc">Hội An · Toàn quốc</div>
+              <h3>Tết Trung Thu Phố Cổ</h3>
+              <p>Múa lân sư rồng rộn rã, trẻ em rước đèn ông sao, phố cổ rực rỡ sắc màu ký ức tuổi thơ.</p>
+            </figcaption>
+          </figure>
+
+          <figure class="fest-card">
+            <div class="fest-img-box">
+              <img loading="lazy" src="../landing-page/assets/Festival/tet_nguyen_dan.jpg" alt="Tết Nguyên Đán">
+              <div class="fest-date-badge">Mùng 1 — Mùng 3 tháng Giêng</div>
+            </div>
+            <figcaption>
+              <div class="fest-loc">Cả nước</div>
+              <h3>Tết Nguyên Đán Cổ Truyền</h3>
+              <p>Mùa đoàn viên, hương bánh chưng xanh, cành đào sắc mai và không khí sum họp thiêng liêng.</p>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUES PILLARS SECTION -->
+  <section id="values" class="values-section" aria-label="Giá trị cốt lõi của Viloca">
+    <div class="container">
+      <div class="section-head text-center">
+        <p class="eyebrow">Tại sao chọn Viloca</p>
+        <h2>Hành trình nhẹ nhàng,<br>chạm vào chiều sâu văn hóa</h2>
+        <p class="section-sub">
+          Chúng tôi tin rằng du lịch không phải là check-in vội vã, mà là những khoảnh khắc được sống chậm và thấu hiểu.
+        </p>
+      </div>
+
+      <div class="values-grid">
+        <div class="value-card">
+          <div class="value-icon-box">🌿</div>
+          <h3>Không gian thở &amp; Tự nhiên</h3>
+          <p>
+            Gợi ý những điểm đến có nhịp sống thong dong, không gian thoáng đãng để bạn thực sự tái tạo năng lượng sau chuỗi ngày bận rộn.
+          </p>
+        </div>
+
+        <div class="value-card">
+          <div class="value-icon-box">🏺</div>
+          <h3>Làng nghề &amp; Di sản sống</h3>
+          <p>
+            Đưa bạn đến tận xưởng mộc, lò gốm, khung dệt thủ công để tận mắt chứng kiến tinh hoa nghề truyền thống Việt Nam.
+          </p>
+        </div>
+
+        <div class="value-card">
+          <div class="value-icon-box">🕊️</div>
+          <h3>Lịch trình không áp lực</h3>
+          <p>
+            Trợ lý gợi ý thông minh sắp xếp điểm đến liền mạch theo cung đường, giúp bạn không bị quá tải hay kiệt sức vì di chuyển.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (3 STEPS) -->
+  <section id="how" class="how" aria-label="Cách thức sử dụng">
+    <div class="container">
+      <div class="section-head text-center">
+        <p class="eyebrow">Cách thức sử dụng</p>
+        <h2>Ba bước đơn giản để cất cánh</h2>
+      </div>
+
+      <ol class="steps-grid">
+        <li class="step-card">
+          <div class="step-badge">1</div>
+          <h3>Chọn điểm đến yêu thích</h3>
+          <p>Duyệt qua danh mục địa điểm, làng nghề, danh lam thắng cảnh và lễ hội theo từng tỉnh thành.</p>
+          <div class="step-illustration">
+            <span class="illus-icon">📍</span>
+            <span class="illus-text">Khám phá bản đồ</span>
+          </div>
+        </li>
+
+        <li class="step-card">
+          <div class="step-badge">2</div>
+          <h3>Tùy chọn phong cách</h3>
+          <p>Xác định số ngày bạn có, sở thích trải nghiệm (văn hóa, thiên nhiên hay ẩm thực) và ngân sách dự kiến.</p>
+          <div class="step-illustration">
+            <span class="illus-icon">✨</span>
+            <span class="illus-text">Gợi ý thông minh</span>
+          </div>
+        </li>
+
+        <li class="step-card">
+          <div class="step-badge">3</div>
+          <h3>Tinh chỉnh &amp; Lên đường</h3>
+          <p>Sắp xếp lại thứ tự điểm dừng theo ý muốn, lưu lại hành trình và sẵn sàng cho chuyến đi thong thả.</p>
+          <div class="step-illustration">
+            <span class="illus-icon">🎒</span>
+            <span class="illus-text">Hành trình nhẹ bẫng</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section id="faq" class="faq-section" aria-label="Câu hỏi thường gặp">
+    <div class="container">
+      <div class="section-head text-center">
+        <p class="eyebrow">Giải đáp thắc mắc</p>
+        <h2>Câu hỏi thường gặp về Viloca</h2>
+      </div>
+
+      <div class="faq-accordion" id="faq-accordion">
+        <div class="faq-item">
+          <button class="faq-question" type="button" aria-expanded="false">
+            <span>Viloca là ứng dụng gì và dành cho ai?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              Viloca là ứng dụng đồng hành khám phá du lịch bản địa tại Việt Nam, tập trung vào chiều sâu văn hóa, làng nghề truyền thống, cảnh quan thiên nhiên và các lễ hội dân gian. Ứng dụng dành cho những ai muốn du lịch thong thả, có chiều sâu và tự do lên kế hoạch theo sở thích riêng.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" type="button" aria-expanded="false">
+            <span>Trợ lý lập lịch trình hoạt động như thế nào?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              Trợ lý dựa trên cơ sở dữ liệu các điểm đến đã được biên soạn và xác thực để gợi ý lộ trình hợp lý theo số ngày, khu vực và phong cách chuyến đi của bạn. Bạn hoàn toàn có thể tự do tùy chỉnh, thêm bớt hoặc đổi thứ tự các điểm dừng chân.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" type="button" aria-expanded="false">
+            <span>Tôi có phải trả phí để sử dụng Viloca không?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              Bạn có thể tự do duyệt xem thông tin các điểm đến, tra cứu mùa lễ hội và thử nghiệm công cụ gợi ý lịch trình hoàn toàn miễn phí.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" type="button" aria-expanded="false">
+            <span>Thông tin về giá vé, giờ mở cửa và lễ hội có bảo đảm chính xác tuyệt đối không?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              Các thông tin về giá vé, giờ mở cửa và lịch lễ hội âm lịch có thể thay đổi tùy thuộc vào ban quản lý địa phương và điều kiện thực tế. Viloca luôn nỗ lực cập nhật dữ liệu mới nhất, song khuyến khích bạn kiểm tra lại trước ngày khởi hành.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section id="cta" class="cta" aria-label="Kêu gọi hành động">
+    <div class="container">
+      <div class="cta-card">
+        <div class="cta-glow"></div>
+        <p class="eyebrow">Khởi đầu hành trình mới</p>
+        <h2>Sẵn sàng nhẹ bẫng<br>giữa lòng Việt Nam?</h2>
+        <p class="cta-sub">
+          Đón nhận những thanh âm mộc mạc, hương khói bếp làng quê và nét đẹp bình dị đang chờ bạn khám phá.
+        </p>
+        <div class="cta-actions">
+          <a class="btn btn-primary btn-lg" href="../landing-page/index.html#planner">
+            <span>Bắt đầu thử lịch trình</span>
+            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a class="btn btn-glass btn-lg" href="#places">
+            <span>Xem các điểm đến</span>
+          </a>
+        </div>
+        <div class="cta-app-note">
+          <span>📱 Ứng dụng di động đang trong giai đoạn hoàn thiện. Hãy trải nghiệm bản web ngay hôm nay!</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="logo">
+            <span class="logo-mark">V</span>
+            <span class="logo-text">Viloca</span>
+          </div>
+          <p class="brand-desc">
+            Chạm vào Việt Nam theo cách của riêng bạn. Khám phá chiều sâu văn hóa, cảnh sắc thiên nhiên và con người chân thật.
+          </p>
+        </div>
+
+        <div class="footer-links-col">
+          <h4>Khám phá</h4>
+          <ul>
+            <li><a href="#story">Hành trình 3 chương</a></li>
+            <li><a href="#places">Điểm đến nổi bật</a></li>
+            <li><a href="#planner">AI Trợ lý lịch trình</a></li>
+            <li><a href="#festivals">Mùa lễ hội bốn phương</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <h4>Thông tin</h4>
+          <ul>
+            <li><a href="#values">Giá trị Viloca</a></li>
+            <li><a href="#how">Cách thức sử dụng</a></li>
+            <li><a href="#faq">Câu hỏi thường gặp</a></li>
+            <li><a href="../landing-page/index.html">Bản web đầy đủ</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p class="foot-copy">© 2026 Viloca. Mọi nội dung và hình ảnh là bản minh họa trải nghiệm du lịch bản địa.</p>
+        <p class="foot-disclaimer">Bảng màu đất nung &amp; xanh lá · Thiết kế tôn trọng bản sắc Việt Nam.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
