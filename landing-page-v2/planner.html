@@ -121,6 +121,42 @@ select:hover{border-color:var(--primary)}
 
 @media(max-width:960px){.panel{position:static}.grid{grid-template-columns:1fr}.nav a,.nav button{padding:8px 13px}.brand span{display:none}}
 @media(max-width:560px){.stop{grid-template-columns:64px 1fr}.stop img{display:none}.nav{left:82px;right:12px;justify-content:space-between}}
+
+/* ---- form gọn: nằm trọn trong một khung hình ---- */
+.grid{grid-template-columns:330px 1fr}
+.panel{padding:14px 16px 13px;border-radius:20px;top:100px}
+.sen-row{gap:8px;margin:0 0 9px;padding-bottom:8px}
+.sen-av img{height:54px}
+.sen-say{font-size:.74rem;padding:6px 10px;margin:0 0 2px;line-height:1.35}
+.field{margin-bottom:9px}
+.field>label:not(.chk),.field>span{margin-bottom:5px;font-size:.68rem}
+.field output{font-size:.8rem}
+select{padding:.48rem 2rem .48rem .8rem;font-size:.86rem;border-radius:11px}
+.selwrap::after{right:13px;width:7px;height:7px}
+.range{height:5px}
+.range::-webkit-slider-thumb{width:18px;height:18px;border-width:3px}
+.ticks{margin-top:4px;font-size:.62rem}
+.styles{margin:0 0 8px;display:grid;grid-template-columns:1fr 1fr;column-gap:8px}
+.styles legend{font-size:.68rem;margin-bottom:4px}
+.styles output{font-size:.8rem}
+.chk{gap:8px;padding:.28rem .1rem;font-size:.8rem}
+.chk input{width:18px;height:18px;border-radius:6px}
+.chk input::after{width:5px;height:9px;border-width:0 2px 2px 0}
+.go{margin-top:2px;padding:.62rem 1rem;font-size:.9rem}
+.note{margin:8px 0 0;font-size:.64rem;line-height:1.4}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+
+/* ---- giới thiệu nằm ở cột phải để form hiện ngay trong khung hình đầu ---- */
+main{padding-top:100px;padding-bottom:40px}
+.grid{margin-top:0;gap:22px}
+.intro{margin-bottom:16px}
+.intro .kicker{margin-bottom:.4rem}
+.intro h1{font-size:clamp(1.7rem,3vw,2.6rem)}
+.intro .lead{margin-top:.55rem;font-size:.9rem;line-height:1.6;max-width:none}
+main.has-result .intro{display:none}
+.out{min-height:0}
+.empty{min-height:300px}
+@media(max-width:960px){.right{display:contents}.intro{order:-1}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -133,14 +169,10 @@ select:hover{border-color:var(--primary)}
 </nav>
 
 <main>
-  <p class="kicker">Thử tạo lịch trình</p>
-  <h1>Bạn chọn điều mình thích,<br><em>Viloca gợi ý lịch trình</em></h1>
-  <p class="lead">Chọn điểm đến, số ngày và phong cách du lịch, Viloca sẽ sắp xếp các địa điểm theo từng buổi và cho biết vì sao gợi ý mỗi nơi. Đây là bản thử dùng dữ liệu mẫu có sẵn, chưa gọi dịch vụ AI thật.</p>
 
   <div class="grid">
     <form class="panel" id="form" aria-label="Tuỳ chọn lịch trình">
       <div class="sen-row"><span class="sen-av"><img src="assets/sen-wave.webp" id="sen-img" alt="Bé Sen, linh vật của Viloca"></span><p class="sen-say" id="sen-say"></p></div>
-      <h2>Chuyến đi của bạn</h2>
       <div class="field"><label for="city">Điểm đến</label>
         <div class="selwrap"><select id="city">
           <option value="hanoi">Hà Nội</option>
@@ -153,20 +185,26 @@ select:hover{border-color:var(--primary)}
       <div class="field"><label for="pace">Số điểm mỗi ngày <output id="pace-out" for="pace">3 điểm</output></label>
         <input class="range" type="range" id="pace" min="1" max="5" step="1" value="3" aria-valuetext="3 điểm">
         <div class="ticks" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div>
-      <fieldset class="field styles" id="styles"><legend>Phong cách du lịch <output id="style-out">2/3</output></legend>
+      <fieldset class="field styles" id="styles"><legend>Phong cách du lịch (tối đa 3) <output id="style-out">2/3</output></legend>
         <label class="chk"><input type="checkbox" name="style" value="culture" checked><span>Văn hóa &amp; Lịch sử</span></label>
         <label class="chk"><input type="checkbox" name="style" value="food" checked><span>Ẩm thực &amp; Cà phê</span></label>
         <label class="chk"><input type="checkbox" name="style" value="nature"><span>Thiên nhiên</span></label>
         <label class="chk"><input type="checkbox" name="style" value="photo"><span>Chụp hình &amp; Check-in</span></label>
-        <p class="hint">Chọn tối đa 3 phong cách.</p>
       </fieldset>
       <button class="go" type="submit" id="go">Tạo lịch trình</button>
-      <p class="note">Kết quả chỉ mang tính tham khảo. Giờ mở cửa, giá vé và thời gian di chuyển thực tế có thể thay đổi, bạn nhớ kiểm tra lại trước khi đi.</p>
+      <p class="note">Kết quả chỉ mang tính tham khảo. Giờ mở cửa, giá vé và thời gian di chuyển thực tế có thể thay đổi.</p>
     </form>
 
+    <div class="right">
+      <div class="intro">
+      <p class="kicker">Thử tạo lịch trình</p>
+      <h1>Bạn chọn điều mình thích,<br><em>Viloca gợi ý lịch trình</em></h1>
+      <p class="lead">Chọn điểm đến, số ngày và phong cách du lịch, Viloca sẽ sắp xếp các địa điểm theo từng buổi và cho biết vì sao gợi ý mỗi nơi. Đây là bản thử dùng dữ liệu mẫu có sẵn, chưa gọi dịch vụ AI thật.</p>
+      </div>
     <section class="out" id="out" aria-live="polite">
       <div class="empty"><div><b>Lịch trình của bạn sẽ hiện ở đây</b>Chọn thông tin bên trái rồi bấm “Tạo lịch trình”.</div></div>
     </section>
+    </div>
   </div>
 </main>
 
@@ -209,14 +247,61 @@ select:hover{border-color:var(--primary)}
       { n: 'Bếp cuốn Đà Nẵng', loc: 'Đà Nẵng', img: 'dn-bepcuon', t: ['food'], slot: 'a', why: { food: 'thử món cuốn địa phương trong không gian ấm cúng' } },
       { n: 'Giồng Cafe', loc: 'Đà Nẵng', img: 'dn-giong', t: ['food', 'photo'], slot: 'a', why: { food: 'không gian cà phê thư giãn', photo: 'không gian đẹp để check-in' } },
       { n: 'Ký ức Hội An', loc: 'Hội An', img: 'fun-kyuc', t: ['culture', 'photo'], slot: 'e', why: { culture: 'show thực cảnh tái hiện lịch sử thương cảng', photo: 'sân khấu ngoài trời rực rỡ ánh sáng' } },
-      { n: 'Đêm phố cổ & thả đèn hoa đăng', loc: 'Hội An', img: 'sel-lantern', t: ['photo', 'culture'], slot: 'e', why: { photo: 'phố cổ lung linh ánh đèn lồng về đêm', culture: 'nét sinh hoạt đặc trưng bên sông Hoài' } }] },
+      { n: 'Đêm phố cổ & thả đèn hoa đăng', loc: 'Hội An', img: 'dn-demhoian', t: ['photo', 'culture'], slot: 'e', why: { photo: 'phố cổ lung linh ánh đèn lồng về đêm', culture: 'nét sinh hoạt đặc trưng bên sông Hoài' } },
+      { n: 'Cầu Rồng', loc: 'Hải Châu', img: 'dn-01', t: ['photo'], slot: 'e', why: { photo: 'cầu hình rồng dài 666m, một số tối cuối tuần có biểu diễn phun lửa và phun nước' } },
+      { n: 'Cầu Sông Hàn', loc: 'Hải Châu', img: 'dn-02', t: ['culture', 'photo'], slot: 'e', why: { culture: 'cây cầu quay đầu tiên do người Đà Nẵng cùng xây dựng', photo: 'lung linh ánh đèn về đêm bên sông Hàn' } },
+      { n: 'Cầu Vàng – Bà Nà Hills', loc: 'Hòa Vang', img: 'dn-03', t: ['photo', 'nature'], slot: 'm', why: { photo: 'cây cầu dài 150m được nâng bởi đôi bàn tay đá giữa mây ngàn', nature: 'không khí mát mẻ trên núi ở độ cao hơn 1.400m' } },
+      { n: 'Cầu Tình Yêu & Cá Chép Hóa Rồng', loc: 'Sơn Trà', img: 'dn-04', t: ['photo'], slot: 'e', why: { photo: 'hàng cột đèn trái tim rực đỏ và tượng cá chép hóa rồng bên sông' } },
+      { n: 'Cầu Thuận Phước', loc: 'Hải Châu', img: 'dn-05', t: ['photo'], slot: 'e', why: { photo: 'cầu treo dây võng dài nhất Việt Nam bắc qua cửa sông Hàn' } },
+      { n: 'Bán đảo Sơn Trà', loc: 'Sơn Trà', img: 'dn-07', t: ['nature'], slot: 'm', why: { nature: 'lá phổi xanh của thành phố, nơi cư trú của loài voọc chà vá chân nâu' } },
+      { n: 'Ghềnh Bàng', loc: 'Sơn Trà', img: 'dn-10', t: ['nature', 'photo'], slot: 'a', why: { nature: 'bờ biển đá hoang sơ, nước trong thấy đáy', photo: 'những phiến đá nhấp nhô làm nền cho ảnh biển' } },
+      { n: 'Hải đăng Tiên Sa', loc: 'Sơn Trà', img: 'dn-11', t: ['culture', 'photo'], slot: 'm', why: { culture: 'ngọn hải đăng cổ do người Pháp xây từ năm 1902', photo: 'tông vàng cổ điển nổi bật giữa rừng và biển' } },
+      { n: 'Bãi Bụt & Bãi Rạng', loc: 'Sơn Trà', img: 'dn-13', t: ['nature', 'food'], slot: 'a', why: { nature: 'vịnh kín gió nước xanh ngọc, bãi cát thoai thoải', food: 'chòi lá nghỉ chân cùng hải sản tươi bắt tại chỗ' } },
+      { n: 'Mũi Nghê', loc: 'Sơn Trà', img: 'dn-14', t: ['nature', 'photo'], slot: 'm', why: { nature: 'điểm đón những tia nắng bình minh đầu tiên của thành phố', photo: 'khối đá ra biển tạo khung hình hoang sơ' } },
+      { n: 'Bãi biển Mỹ Khê', loc: 'Sơn Trà', img: 'dn-15', t: ['nature', 'photo'], slot: 'm', why: { nature: 'bãi cát trắng mịn trải dài, sóng biển hiền hòa', photo: 'ngắm bình minh và dạo biển buổi sáng' } },
+      { n: 'Bãi biển Non Nước', loc: 'Ngũ Hành Sơn', img: 'dn-16', t: ['nature'], slot: 'a', why: { nature: 'bãi biển dài thoai thoải dưới chân Ngũ Hành Sơn' } },
+      { n: 'Công viên Biển Đông', loc: 'Sơn Trà', img: 'dn-17', t: ['photo', 'nature'], slot: 'e', why: { photo: 'quảng trường biển sôi động, nơi tổ chức nhiều sự kiện', nature: 'hóng gió biển buổi chiều' } },
+      { n: 'Danh thắng Ngũ Hành Sơn', loc: 'Ngũ Hành Sơn', img: 'dn-19', t: ['culture', 'nature'], slot: 'm', why: { culture: 'quần thể núi đá vôi cùng các ngôi cổ tự và hang động', nature: 'leo núi, khám phá hang động và ngắm toàn cảnh' } },
+      { n: 'Thành Điện Hải', loc: 'Hải Châu', img: 'dn-20', t: ['culture'], slot: 'a', why: { culture: 'pháo đài cổ xây từ thời Gia Long, lưu giữ lịch sử của Đà Nẵng' } },
+      { n: 'Nhà thờ Chính Tòa', loc: 'Hải Châu', img: 'dn-22', t: ['culture', 'photo'], slot: 'm', why: { culture: 'nhà thờ Gothic xây năm 1923 với tháp chuông cao 70m', photo: 'vòm cửa nhọn và mặt tiền dễ lên ảnh' } },
+      { n: 'Đèo Hải Vân', loc: 'Liên Chiểu', img: 'dn-23', t: ['nature', 'photo'], slot: 'a', why: { nature: 'cung đèo dài 21km ôm trọn biển Đông', photo: 'núi biển hùng vĩ cùng cửa ải Hải Vân Quan thời Nguyễn' } },
+      { n: 'Hồ Hòa Trung', loc: 'Hòa Vang', img: 'dn-24', t: ['nature', 'photo'], slot: 'm', why: { nature: 'hồ nước ôm giữa những ngọn đồi thoai thoải', photo: 'mùa nước cạn hiện lên như thảo nguyên xanh' } },
+      { n: 'Giếng Trời', loc: 'Hòa Vang', img: 'dn-25', t: ['nature'], slot: 'm', why: { nature: 'thác nước đổ từ độ cao hơn 25m xuống hồ xanh ngọc giữa rừng' } },
+      { n: 'Suối Mơ', loc: 'Hòa Vang', img: 'dn-27', t: ['nature'], slot: 'a', why: { nature: 'con suối mát lạnh, thác nhỏ và hồ tắm rợp bóng cây' } },
+      { n: 'Chợ Cồn', loc: 'Hải Châu', img: 'dn-28', t: ['food'], slot: 'm', why: { food: 'thiên đường ăn vặt với đình ẩm thực trong nhà và phố ẩm thực ngoài trời' } },
+      { n: 'Chợ đêm Helio', loc: 'Hải Châu', img: 'dn-29', t: ['food', 'photo'], slot: 'e', why: { food: 'chợ đêm ẩm thực có nhạc acoustic mỗi tối', photo: 'ánh sáng nghệ thuật lung linh' } },
+      { n: 'Công viên Vườn tượng APEC', loc: 'Hải Châu', img: 'dn-30', t: ['photo', 'culture'], slot: 'a', why: { photo: 'mái vòm cánh diều bằng thép và vườn tượng ven sông', culture: 'không gian nghệ thuật ngoài trời' } },
+      { n: 'Cung Văn hóa Thiếu nhi', loc: 'Hải Châu', img: 'dn-31', t: ['photo'], slot: 'a', why: { photo: 'kiến trúc lấy cảm hứng từ Tangram với mảng màu rực rỡ' } },
+    ] },
     hcm: { name: 'TP. Hồ Chí Minh', places: [
-      { n: 'Bưu điện Thành phố', loc: 'Quận 1', img: 'hcm-buudien', t: ['culture', 'photo'], slot: 'm', why: { culture: 'công trình kiến trúc Pháp nổi bật của Sài Gòn', photo: 'nội thất và mái vòm đẹp để chụp ảnh' } },
-      { n: 'Dinh Độc Lập', loc: 'Quận 1', img: 'his-dinhdoclap', t: ['culture'], slot: 'm', why: { culture: 'di tích gắn với những cột mốc lịch sử của thành phố' } },
-      { n: 'Bảo tàng Lịch sử', loc: 'Quận 1', img: 'hcm-lichsu', t: ['culture'], slot: 'a', why: { culture: 'tổng quan lịch sử và văn hóa Việt Nam qua hiện vật' } },
-      { n: 'Bảo tàng Chứng tích Chiến tranh', loc: 'Quận 3', img: 'hcm-chungtich', t: ['culture'], slot: 'a', why: { culture: 'tìm hiểu một giai đoạn lịch sử qua hình ảnh và hiện vật' } },
-      { n: 'Chợ Bến Thành', loc: 'Quận 1', img: 'eat-benthanh', t: ['food', 'culture'], slot: 'a', why: { food: 'thử nhiều món ăn Nam Bộ trong một điểm', culture: 'biểu tượng thương mại lâu đời của thành phố' } },
-      { n: 'Nhà hát Thành phố', loc: 'Quận 1', img: 'hcm-nhahat', t: ['culture', 'photo'], slot: 'e', why: { culture: 'nơi diễn ra nhiều chương trình nghệ thuật', photo: 'kiến trúc đẹp nhất khi lên đèn buổi tối' } }] }
+      { n: 'Dinh Độc Lập', loc: 'Quận 1', img: 'hcm-01', t: ['culture'], slot: 'm', why: { culture: 'công trình kiến trúc độc đáo, gắn với ngày 30/4/1975' } },
+      { n: 'Nhà thờ Đức Bà Sài Gòn', loc: 'Quận 1', img: 'hcm-02', t: ['culture', 'photo'], slot: 'm', why: { culture: 'vương cung thánh đường khởi công năm 1877', photo: 'gạch đỏ và tháp chuông nổi bật giữa trung tâm' } },
+      { n: 'Bưu điện Trung tâm Sài Gòn', loc: 'Quận 1', img: 'hcm-03', t: ['culture', 'photo'], slot: 'm', why: { culture: 'công trình kiến trúc Pháp xây từ 1886 đến 1891', photo: 'vòm trần sắt uốn cong và nền gạch hoa cổ' } },
+      { n: 'Nhà hát Thành phố', loc: 'Quận 1', img: 'hcm-04', t: ['culture', 'photo'], slot: 'e', why: { culture: 'nhà hát kiểu Gothic khánh thành năm 1900', photo: 'mặt tiền chạm phù điêu tinh xảo, đẹp khi lên đèn' } },
+      { n: 'Chợ Bến Thành', loc: 'Quận 1', img: 'hcm-06', t: ['food', 'culture'], slot: 'a', why: { food: 'gần 1.500 gian hàng với nhiều món ăn Nam Bộ', culture: 'khu chợ lịch sử từ năm 1914 với tháp đồng hồ bốn mặt' } },
+      { n: 'Bảo tàng Chứng tích Chiến tranh', loc: 'Quận 3', img: 'hcm-07', t: ['culture'], slot: 'a', why: { culture: 'trưng bày hơn 20.000 hiện vật và tư liệu về chiến tranh' } },
+      { n: 'Bảo tàng Lịch sử TP. Hồ Chí Minh', loc: 'Quận 1', img: 'hcm-09', t: ['culture'], slot: 'm', why: { culture: 'kiến trúc Đông Dương cách tân, lưu giữ hàng chục nghìn cổ vật' } },
+      { n: 'Landmark 81', loc: 'Bình Thạnh', img: 'hcm-12', t: ['photo'], slot: 'e', why: { photo: 'tòa tháp cao nhất Việt Nam, có đài quan sát ở tầng 79 đến 81' } },
+      { n: 'Phố đi bộ Nguyễn Huệ', loc: 'Quận 1', img: 'hcm-15', t: ['photo', 'culture'], slot: 'e', why: { photo: 'quảng trường đi bộ dài 670m nối ra bờ sông Sài Gòn', culture: 'nơi diễn ra nhiều lễ hội văn hóa lớn' } },
+      { n: 'Chung cư Cà phê 42 Nguyễn Huệ', loc: 'Quận 1', img: 'hcm-16', t: ['food', 'photo'], slot: 'a', why: { food: 'tổ hợp quán cà phê nghệ thuật trong khối chung cư từ thập niên 1960', photo: 'nhiều góc check-in độc đáo' } },
+      { n: 'Đường Sách', loc: 'Quận 1', img: 'hcm-17', t: ['culture', 'food'], slot: 'a', why: { culture: 'phố sách rợp bóng me với các gian hàng nhà xuất bản', food: 'ngồi cà phê sách ngoài trời' } },
+      { n: 'Phố đi bộ Bùi Viện', loc: 'Quận 1', img: 'hcm-18', t: ['food'], slot: 'e', why: { food: 'phố đi bộ sôi động về đêm với quán ăn, quán bar và âm nhạc' } },
+      { n: 'Bến Bạch Đằng', loc: 'Quận 1', img: 'hcm-19', t: ['nature', 'photo'], slot: 'a', why: { nature: 'công viên ven sông, nơi xuất phát tuyến buýt sông Sài Gòn', photo: 'ngắm hoàng hôn bên sông' } },
+      { n: 'Cầu Ba Son', loc: 'Quận 1', img: 'hcm-20', t: ['photo'], slot: 'e', why: { photo: 'cầu dây văng bất đối xứng dài 1.465m, sáng đèn về đêm' } },
+      { n: 'Chợ hoa đêm Hồ Thị Kỷ', loc: 'Quận 10', img: 'hcm-21', t: ['food', 'photo'], slot: 'e', why: { food: 'phố ẩm thực với hàng trăm món ăn cạnh chợ hoa', photo: 'chợ hoa tươi thâu đêm đầy màu sắc' } },
+      { n: 'Chợ Tân Định', loc: 'Quận 1', img: 'hcm-22', t: ['food', 'culture'], slot: 'm', why: { food: 'khu ẩm thực trong ngôi chợ cổ', culture: 'chợ xây năm 1926 với mặt tiền ba tháp chuông' } },
+      { n: 'Phố lồng đèn Lương Nhữ Học', loc: 'Quận 5', img: 'hcm-23', t: ['culture', 'photo'], slot: 'a', why: { culture: 'con phố thủ công truyền thống rực rỡ dịp Trung Thu và Tết', photo: 'hàng vạn chiếc lồng đèn rất hợp chụp ảnh' } },
+      { n: 'Thảo Cầm Viên Sài Gòn', loc: 'Quận 1', img: 'hcm-24', t: ['nature'], slot: 'm', why: { nature: 'vườn thú lâu đời từ năm 1864, một lá phổi xanh giữa thành phố' } },
+      { n: 'Cầu Ánh Sao', loc: 'Quận 7', img: 'hcm-26', t: ['photo'], slot: 'e', why: { photo: 'cầu bộ hành cong như mặt trăng, về đêm có đèn LED và nước phun' } },
+      { n: 'Địa đạo Củ Chi', loc: 'Củ Chi', img: 'hcm-27', t: ['culture', 'nature'], slot: 'm', why: { culture: 'hệ thống địa đạo dài hơn 250km, đào hoàn toàn bằng tay', nature: 'khu rừng xanh mát ngoại thành' } },
+      { n: 'Rừng ngập mặn Cần Giờ', loc: 'Cần Giờ', img: 'hcm-28', t: ['nature'], slot: 'm', why: { nature: 'khu dự trữ sinh quyển thế giới với rừng đước bạt ngàn và Đảo Khỉ' } },
+      { n: 'Chùa Bửu Long', loc: 'Thủ Đức', img: 'hcm-29', t: ['culture', 'photo'], slot: 'm', why: { culture: 'ngôi chùa có kiến trúc Phật giáo nổi bật', photo: 'bảo tháp trắng cao 70m làm điểm nhấn' } },
+      { n: 'Chùa Bà Thiên Hậu', loc: 'Quận 5', img: 'hcm-32', t: ['culture', 'photo'], slot: 'a', why: { culture: 'chùa cổ hơn 260 năm tuổi của người Hoa', photo: 'hàng trăm vòng nhang treo lơ lửng trong điện' } },
+      { n: 'Chợ Bình Tây', loc: 'Quận 6', img: 'hcm-34', t: ['food', 'culture'], slot: 'a', why: { food: 'nhiều món ăn Chợ Lớn quanh khu chợ', culture: 'chợ xây năm 1928 với mái ngói chồng lớp kiểu vảy cá' } },
+      { n: 'Cầu Mống', loc: 'Quận 1', img: 'hcm-35', t: ['photo', 'culture'], slot: 'e', why: { photo: 'cây cầu sắt xanh ngọc bích, góc ảnh cổ kính', culture: 'cây cầu xây từ năm 1893' } },
+      { n: 'Đền Mariamman', loc: 'Quận 1', img: 'hcm-39', t: ['culture', 'photo'], slot: 'm', why: { culture: 'đền Ấn Độ giáo của cộng đồng người Tamil', photo: 'tháp cổng đắp nổi nhiều tượng thần' } },
+      { n: 'Phố ẩm thực Hà Tôn Quyền', loc: 'Quận 11', img: 'hcm-45', t: ['food'], slot: 'e', why: { food: 'thủ phủ sủi cảo của người Hoa với nước lèo ninh tôm mực' } },
+    ] }
   };
   const TIMES = { 1: [['Cả ngày', '09:00']], 2: [['Sáng', '09:00'], ['Chiều', '15:00']], 3: [['Sáng', '08:30'], ['Chiều', '14:00'], ['Tối', '18:30']], 4: [['Sáng', '08:00'], ['Trưa', '11:30'], ['Chiều', '15:00'], ['Tối', '19:00']], 5: [['Sáng', '07:30'], ['Sáng', '10:00'], ['Trưa', '12:30'], ['Chiều', '15:30'], ['Tối', '19:00']] };
   const STYLE_NAME = { culture: 'Văn hóa & Lịch sử', food: 'Ẩm thực & Cà phê', nature: 'Thiên nhiên', photo: 'Chụp hình & Check-in' };
@@ -297,12 +382,20 @@ select:hover{border-color:var(--primary)}
       </div>`).join('');
     $('#out').innerHTML = `<div class="result-head"><h2>${res.city.name} · ${res.days.length} ngày</h2><span class="badge">Lịch trình tham khảo · dữ liệu mẫu</span></div>${res.trimmed ? `<p class="note" style="color:#ffffffcc;margin:0 0 14px">Dữ liệu mẫu của ${res.city.name} hiện chỉ đủ cho ${res.days.length} ngày với lựa chọn này nên mình rút gọn lịch giúp bạn.</p>` : ''}${html}
       <div class="actions"><button class="btn2" type="button" id="again">Tạo lại với lựa chọn khác</button></div>`;
+    document.querySelector('main').classList.add('has-result');
     $('#again').addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
   }
 
   // ---- mô phỏng quá trình "AI" theo từng bước ----
   const STEPS = ['Đọc lựa chọn của bạn', 'Tìm địa điểm hợp với sở thích', 'Sắp xếp theo từng ngày và buổi', 'Viết lý do gợi ý cho từng nơi'];
   const wait = ms => new Promise(r => setTimeout(r, ms));
+  function pickSeconds(n = 4, lo = 1, hi = 7) {
+    for (;;) {
+      const d = Array.from({ length: n }, () => lo + Math.floor(Math.random() * (hi - lo + 1)));
+      const count = {}; d.forEach(x => count[x] = (count[x] || 0) + 1);
+      if (Object.values(count).every(c => c < 3)) return d;
+    }
+  }
   let running = false;
   $('#form').addEventListener('submit', async e => {
     e.preventDefault(); if (running) return; running = true; sen('run');
@@ -310,7 +403,14 @@ select:hover{border-color:var(--primary)}
     const box = $('#out');
     box.innerHTML = `<div class="steps"><h3>Sen và Viloca đang sắp xếp lịch trình…</h3>${STEPS.map((t, i) => `<div class="step" data-i="${i}"><i>✓</i>${t}</div>`).join('')}</div>`;
     const els = [...box.querySelectorAll('.step')];
-    for (let i = 0; i < els.length; i++) { els[i].classList.add('now'); await wait(matchMedia('(prefers-reduced-motion: reduce)').matches ? 50 : 650); els[i].classList.replace('now', 'done'); }
+    // mỗi bước chạy một số giây ngẫu nhiên từ 1 đến 7; không giá trị nào xuất hiện từ 3 lần trở lên trong 4 bước
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const secs = pickSeconds();
+    for (let i = 0; i < els.length; i++) {
+      els[i].classList.add('now');
+      await wait(still ? 50 : secs[i] * 1000);
+      els[i].classList.replace('now', 'done');
+    }
     const res = generate(); render(res); sen(res.trimmed ? 'trim' : 'done');
     go.disabled = false; go.textContent = 'Tạo lại lịch trình'; running = false;
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });

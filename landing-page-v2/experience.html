@@ -188,7 +188,7 @@ body:not(.intro-ready) .cine,body:not(.intro-ready) .header,body:not(.intro-read
 .cine{inset:0;display:grid;place-items:center;padding:12vh clamp(1.2rem,8vw,7rem);text-align:center;pointer-events:none;font-family:'Be Vietnam Pro',sans-serif}
 .cine-scene{grid-area:1/1;display:none;flex-direction:column;align-items:center;max-width:56rem}
 .cine-scene.on{display:flex}
-.cine-scene[data-s="0"]{max-width:none}
+.cine-scene[data-s="0"]{max-width:none;transform:translateY(-6vh)}
 @media(min-width:721px){.cine h1 .ln,.cine h2 .ln{white-space:nowrap}}
 .cine h1,.cine h2{margin:0;font-family:'Playfair Display',serif;font-weight:500;line-height:1.08;text-shadow:0 1px 12px #0009}
 .cine h1{font-size:clamp(2.4rem,6vw,5.6rem)}
@@ -205,14 +205,39 @@ body:not(.intro-ready) .cine,body:not(.intro-ready) .header,body:not(.intro-read
 .cine .btn{display:inline-block;padding:.95rem 1.9rem;border-radius:99px;background:#C8602E;color:#fff;text-decoration:none;font-weight:600;transition:transform .35s cubic-bezier(.2,.7,.1,1),background .3s}
 .cine .btn:hover{transform:translateY(-3px);background:#e07a45}
 .cine .btn.ghost{background:#0007;border:1px solid #fff6}
-.guide{right:clamp(18px,3.4vw,60px);bottom:clamp(14px,3.6vh,40px);display:flex;align-items:flex-end;gap:2px;pointer-events:none;z-index:6}
-.experience[data-kind="feature"] .guide{display:none}
+.experience[data-planet="trip"] .showcase .mascot,.experience[data-planet="community"] .showcase .mascot{width:360px}
+.experience[data-planet="trip"] .showcase .mascot .say,.experience[data-planet="community"] .showcase .mascot .say{max-width:200px}
+.guide{display:flex;align-items:flex-end;gap:2px;pointer-events:none;z-index:6;--pad:clamp(18px,3.4vw,60px)}
+.experience[data-mascot^="phone"] .guide{display:none}
+.experience[data-mascot="free"] .showcase .mascot{display:none}
+.experience[data-mascot="phone-top"] .showcase .mascot{bottom:auto;top:0;align-items:flex-start}
+.experience[data-mascot="phone-top"] .showcase .mascot .say{margin-top:18px}
 .guide .avatar{order:2;flex:none;display:block}
 .guide .avatar img{display:block;height:clamp(96px,15vh,138px);width:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.45))}
+.guide[data-flip="1"] .avatar img{transform:scaleX(-1)}
 .guide .say{order:1;align-self:flex-end;margin:0 0 clamp(26px,5vh,44px);max-width:min(270px,26vw);padding:10px 14px;font-size:.84rem;line-height:1.45}
+/* vị trí: br góc phải dưới, bl góc trái dưới, tr góc phải trên. Lời dẫn luôn nằm CẠNH Sen (không nằm dưới) */
+.guide[data-spot="br"]{right:var(--pad);bottom:clamp(14px,3.6vh,40px)}
+.guide[data-spot="bl"]{left:var(--pad);bottom:clamp(14px,3.6vh,40px);flex-direction:row-reverse}
+.guide[data-spot="bl"] .avatar{order:1}
+.guide[data-spot="bl"] .say{order:2;border-radius:16px 16px 16px 4px}
+.guide[data-spot="tr"]{right:var(--pad);top:clamp(84px,13vh,120px);align-items:flex-start}
+.guide[data-spot="tr"] .say{align-self:flex-start;margin:16px 0 0;max-width:min(200px,16vw)}
 .content-revealing .guide{animation:fact-rise .8s cubic-bezier(.22,1,.36,1) both}
 body:not(.intro-ready) .guide{opacity:0}
+@media(max-height:780px){
+  .phone{height:min(40vh,330px)}
+  .mascot .avatar img{height:clamp(96px,16vh,120px)}
+  .mascot .say{font-size:.76rem;padding:8px 11px;max-width:150px}
+  .experience[data-planet="trip"] .showcase .mascot .say,.experience[data-planet="community"] .showcase .mascot .say{max-width:175px}
+  .panel .pcard img{height:clamp(84px,12vh,110px)}
+  .guide[data-spot="br"] .say,.guide[data-spot="bl"] .say{margin-bottom:6px}
+  .guide .avatar img{height:clamp(78px,13vh,100px)}
+  .guide .say{font-size:.76rem;padding:8px 11px;max-width:min(215px,20vw)}
+  .guide[data-spot="tr"] .say{max-width:min(190px,16vw);margin-top:10px}
+}
 @media(max-width:640px){.guide .say{display:none}}
+.fl2{display:block}
 .stores{margin-top:1.8rem}
 .store{display:inline-flex;align-items:center;gap:12px;padding:.6rem 1.3rem .6rem 1rem;border-radius:14px;background:#000;border:1px solid #ffffff66;color:#fff;text-decoration:none;text-align:left;transition:transform .3s cubic-bezier(.2,.7,.1,1),background .3s,border-color .3s}
 .store:hover{transform:translateY(-3px);background:#111;border-color:#fff}
@@ -365,23 +390,23 @@ body:not(.intro-ready) .guide{opacity:0}
           <div class="feed-top">Khám phá <i>🔍 ＋</i></div>
           <div class="stories">
             <div class="story add"><b>＋</b>Thêm</div>
-            <div class="story"><b style="background-image:url(assets/st-weaver.webp)"></b>Làng nghề</div>
-            <div class="story"><b style="background-image:url(assets/st-nature.webp)"></b>Sông nước</div>
-            <div class="story"><b style="background-image:url(assets/st-lantern.webp)"></b>Lễ hội</div>
-            <div class="story"><b style="background-image:url(assets/st-hero.webp)"></b>Non nước</div>
+            <div class="story"><b style="background-image:url(assets/places/st-sontra.webp)"></b>Sơn Trà</div>
+            <div class="story"><b style="background-image:url(assets/places/st-nguyenhue.webp)"></b>Nguyễn Huệ</div>
+            <div class="story"><b style="background-image:url(assets/places/st-haidang.webp)"></b>Hải đăng</div>
+            <div class="story"><b style="background-image:url(assets/places/st-cumong.webp)"></b>Cầu Mống</div>
           </div>
           <div class="compose"><p>Bạn vừa đi đâu về? Chia sẻ ngay!</p><div><span>🖼 Ảnh</span><span style="color:#EF4444">▶ Reels</span></div></div>
           <article class="post">
-            <header><span class="av">🌿</span><div><b>Người dùng minh họa</b><span>2 giờ trước</span></div></header>
-            <div class="pic" style="background-image:url(assets/feed-terrace.webp)"></div>
-            <p class="cap">Hoàng hôn trên ruộng bậc thang, đi chậm mới thấy hết cái đẹp của đất. Ai cùng đi lần sau nào?</p>
+            <header><span class="av">🌊</span><div><b>Người dùng minh họa</b><span>2 giờ trước</span></div></header>
+            <div class="pic" style="background-image:url(assets/places/feed-mykhe.webp)"></div>
+            <p class="cap">Sáng sớm ở biển Mỹ Khê, cát mịn và sóng hiền. Ai cùng đi lần sau nào?</p>
             <div class="acts"><span class="like">❤️ Yêu thích</span><span>💬 Bình luận</span><span>↗ Chia sẻ</span><span class="save">🔖</span>
               <div class="picker"><span>👍</span><span>❤️</span><span>😂</span><span>😮</span><span>😢</span><span>😡</span></div></div>
           </article>
           <article class="post">
-            <header><span class="av">🏮</span><div><b>Người dùng minh họa</b><span>Hôm qua</span></div></header>
-            <div class="pic" style="background-image:url(assets/feed-people.webp)"></div>
-            <p class="cap">Bữa cơm chiều bên hiên nhà, khói bếp và tiếng cười. Chuyến đi đáng nhớ nhất là những cuộc gặp.</p>
+            <header><span class="av">📚</span><div><b>Người dùng minh họa</b><span>Hôm qua</span></div></header>
+            <div class="pic" style="background-image:url(assets/places/feed-duongsach.webp)"></div>
+            <p class="cap">Chiều Sài Gòn ghé Đường Sách, ngồi đọc một cuốn cùng ly cà phê. Chuyến đi đáng nhớ nhất là những lúc được chậm lại.</p>
             <div class="acts"><span>🤍 Thích</span><span>💬 Bình luận</span><span>↗ Chia sẻ</span><span class="save">🔖</span></div>
           </article>
         </div>
@@ -420,7 +445,7 @@ body:not(.intro-ready) .guide{opacity:0}
           <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M4.6 2.6c-.3.2-.4.6-.4 1v16.8c0 .4.1.8.4 1l9.4-9.4-9.4-9.4zm10.7 8.2 2.6-2.6L7 3.1c-.2-.1-.5-.2-.7-.1l9 7.8zm3.7 1.2 2.8 1.6c.8.5.8 1.3 0 1.7l-2.8 1.6-2.8-2.8L19 12zm-3.7 1.2L6.3 21c.2.1.5 0 .7-.1l10.9-6.1-2.6-2.6z"/></svg>
           <span><small>Tải trên</small><b>Google Play</b></span></a>
       </div>
-      <p class="fine">Viloca đang hoàn thiện để sớm có mặt trên cửa hàng ứng dụng. Lịch trình, giá vé và lịch lễ hội chỉ mang tính tham khảo và có thể thay đổi.</p>
+      <p class="fine"><span class="fl2">Viloca đang hoàn thiện để sớm có mặt trên cửa hàng ứng dụng.</span><span class="fl2">Lịch trình, giá vé và lịch lễ hội chỉ mang tính tham khảo và có thể thay đổi.</span></p>
     </div>
     <div class="cine-scene" data-s="7">
       <p class="kicker">Bắt đầu hành trình</p>
@@ -455,7 +480,7 @@ body:not(.intro-ready) .guide{opacity:0}
 
     <div class="panel-scene" data-s="5">
       <p class="kicker">Điểm đến chọn lọc</p>
-      <h2>Những nơi đáng để dừng chân</h2>
+      <h2>Nơi đáng để dừng chân</h2>
       <p class="sub">Từ làng nghề, phố cổ đến rừng dừa và ruộng bậc thang, mỗi nơi giữ một câu chuyện riêng. Chọn một nhóm để xem.</p>
       <div class="chips-row" role="tablist" aria-label="Lọc điểm đến">
         <button class="chipb on" type="button" data-f="all">Tất cả</button>
@@ -465,11 +490,11 @@ body:not(.intro-ready) .guide{opacity:0}
       </div>
       <div class="float-row">
         <figure class="fl" data-c="culture" style="--d:0s"><img src="assets/places/sel-weaver.webp" alt="Làng dệt thổ cẩm" loading="lazy"><span class="ftag">Làng nghề</span><figcaption><h3>Thổ cẩm Tây Bắc</h3><p>Hòa Bình / Sa Pa · Nghệ thuật dệt thủ công</p></figcaption></figure>
-        <figure class="fl" data-c="nature" style="--d:-1.2s"><img src="assets/places/sel-terrace.webp" alt="Ruộng bậc thang Mù Cang Chải" loading="lazy"><span class="ftag">Thiên nhiên</span><figcaption><h3>Mù Cang Chải</h3><p>Yên Bái · Biển vàng bậc thang hoàng hôn</p></figcaption></figure>
-        <figure class="fl" data-c="heritage" style="--d:-2.4s"><img src="assets/places/sel-lantern.webp" alt="Đêm hoa đăng sông Hoài" loading="lazy"><span class="ftag">Di sản</span><figcaption><h3>Phố Cổ Hội An</h3><p>Quảng Nam · Dòng sông ánh sáng lung linh</p></figcaption></figure>
-        <figure class="fl" data-c="nature" style="--d:-3.6s"><img src="assets/places/sel-nature.webp" alt="Rừng dừa Bảy Mẫu" loading="lazy"><span class="ftag">Sông nước</span><figcaption><h3>Rừng Dừa Bảy Mẫu</h3><p>Hội An · Chèo thuyền thúng len lỏi rạch dừa</p></figcaption></figure>
+        <figure class="fl" data-c="nature" style="--d:-1.2s"><img src="assets/places/dn-07.webp" alt="Bán đảo Sơn Trà" loading="lazy"><span class="ftag">Thiên nhiên</span><figcaption><h3>Bán đảo Sơn Trà</h3><p>Đà Nẵng · Lá phổi xanh của thành phố</p></figcaption></figure>
+        <figure class="fl" data-c="heritage" style="--d:-2.4s"><img src="assets/places/hcm-32.webp" alt="Chùa Bà Thiên Hậu" loading="lazy"><span class="ftag">Di sản</span><figcaption><h3>Chùa Bà Thiên Hậu</h3><p>TP. Hồ Chí Minh · Chùa cổ hơn 260 năm tuổi</p></figcaption></figure>
+        <figure class="fl" data-c="nature" style="--d:-3.6s"><img src="assets/places/dn-23.webp" alt="Đèo Hải Vân" loading="lazy"><span class="ftag">Đèo & biển</span><figcaption><h3>Đèo Hải Vân</h3><p>Đà Nẵng · Cung đèo ôm biển Đông dài 21km</p></figcaption></figure>
         <figure class="fl" data-c="culture" style="--d:-4.8s"><img src="assets/places/sel-culture.webp" alt="Làng mộc Kim Bồng" loading="lazy"><span class="ftag">Nghệ nhân</span><figcaption><h3>Làng Mộc Kim Bồng</h3><p>Hội An · Nghề chạm khắc gỗ truyền thống</p></figcaption></figure>
-        <figure class="fl" data-c="heritage" style="--d:-6s"><img src="assets/places/sel-kyuc.webp" alt="Ký ức Hội An" loading="lazy"><span class="ftag">Trình diễn</span><figcaption><h3>Ký Ức Hội An</h3><p>Quảng Nam · Show thực cảnh tái hiện thương cảng</p></figcaption></figure>
+        <figure class="fl" data-c="heritage" style="--d:-6s"><img src="assets/places/hcm-39.webp" alt="Đền Mariamman" loading="lazy"><span class="ftag">Di sản</span><figcaption><h3>Đền Mariamman</h3><p>TP. Hồ Chí Minh · Đền Ấn Độ giáo giữa phố thị</p></figcaption></figure>
       </div>
     </div>
 
@@ -523,38 +548,38 @@ body:not(.intro-ready) .guide{opacity:0}
   // pos: vị trí khung xem trước KHI xem màn này từ một màn dạng feature; từ màn cine thì khung lệch sang phải để không che chữ giữa.
   const states = [
     { kind: 'cine', key: 'open', name: 'Mở đầu', image: 'media/hero.jpg', pos: [50, 44],
-      sen: ['sen-wave', 'Xin chào, mình là Sen! Mình sẽ dẫn bạn đi một vòng quanh Viloca. Bấm vào bất kỳ đâu hoặc cuộn để mình đi tiếp nhé.'] },
+      spot: 'br', sen: ['sen-wave', 'Xin chào, mình là Sen! Mình sẽ dẫn bạn đi một vòng quanh Viloca. Bấm vào bất kỳ đâu hoặc cuộn để mình đi tiếp nhé.'] },
     { kind: 'feature', key: 'discover', name: 'Khám phá', image: 'media/story-nature.jpg', pos: [50, 44], phone: true,
       screens: [{ src: 'app-home', y: 0 }, { src: 'app-search', y: 0 }],
-      sen: ['sen-tea', 'Ở đây bạn xem được địa điểm, lễ hội và lưu lại nơi mình thích. Cứ thong thả lướt nhé!'], facts: [
+      spot: 'phone', sen: ['sen-tea', 'Ở đây bạn xem được địa điểm, lễ hội và lưu lại nơi mình thích. Cứ thong thả lướt nhé!'], facts: [
       ['Viloca:', 'Người bạn đồng hành khám phá văn hóa và thiên nhiên Việt Nam.'],
       ['Địa điểm:', 'Xem ảnh, mô tả và thông tin tham khảo từng nơi, lưu lại chỗ bạn thích.'],
       ['Tìm kiếm:', 'Tìm theo tên, lọc theo thành phố và sở thích.'],
       ['Lễ hội:', 'Theo dõi lễ hội sắp diễn ra kèm đếm ngược ngày.']] },
     { kind: 'feature', key: 'trip', name: 'Lịch trình', image: 'media/bg-trip.jpg', pos: [57, 41], phone: true,
       screens: [{ src: 'app-trip', y: 0 }, { src: 'app-map', y: 0, fit: true }],
-      sen: ['sen-map', 'Bạn cho mình biết điểm đến, số ngày và ngân sách, mình gợi ý lịch trình để bạn chỉnh lại theo ý nhé!'], facts: [
+      spot: 'phone', sen: ['sen-map', 'Bạn cho mình biết điểm đến, số ngày và ngân sách, mình gợi ý lịch trình để bạn chỉnh lại theo ý nhé!'], facts: [
       ['Tạo chuyến đi:', 'Tự sắp xếp, hoặc để trợ lý AI gợi ý từ điểm đến, số ngày, ngân sách và phong cách của bạn.'],
       ['Lý do gợi ý:', 'Mỗi địa điểm đều kèm lý do để bạn hiểu vì sao nên ghé.'],
       ['Bản đồ:', 'Xem các điểm dừng và tuyến đường giữa các nơi ngay trên bản đồ.'],
       ['Lưu ý:', 'Lịch trình và chi phí chỉ mang tính tham khảo; màn hình bản đồ trong khung điện thoại là hình minh họa.']] },
     { kind: 'feature', key: 'community', name: 'Cộng đồng', image: 'media/story-people.jpg', pos: [53, 38], phone: true,
       screens: [{ src: 'feed' }],
-      sen: ['sen-wave', 'Đi về nhớ kể mình nghe với! Bạn có thể chia sẻ ảnh, xem bài của mọi người và thả cảm xúc.'], facts: [
+      spot: 'phone-top', sen: ['sen-wave', 'Đi về nhớ kể mình nghe với! Bạn có thể chia sẻ ảnh, xem bài của mọi người và thả cảm xúc.'], facts: [
       ['Bài đăng:', 'Chia sẻ trải nghiệm và xem bài viết của mọi người.'],
       ['Tương tác:', 'Thả cảm xúc, bình luận và lưu bài bạn thích.'],
       ['Chia sẻ:', 'Gửi chuyến đi và bài viết cho bạn bè.'],
       ['Lưu ý:', 'Màn hình bảng tin trong khung điện thoại là hình minh họa.']] },
     { kind: 'panel', key: 'festivals', name: 'Lễ hội', image: 'assets/places/bg-fest.webp', pos: [50, 42],
-      sen: ['sen-cheer', 'Lễ hội là lúc văn hóa sống động nhất! Ngày đếm ngược chỉ là mốc dự kiến, bạn nhớ kiểm tra lại trước khi đi nhé.'] },
+      spot: 'tr', sen: ['sen-cheer', 'Lễ hội là lúc văn hóa sống động nhất! Ngày đếm ngược chỉ là mốc dự kiến nhé.'] },
     { kind: 'panel', key: 'select', name: 'Điểm đến', image: 'assets/places/bg-select.webp', pos: [50, 42],
-      sen: ['sen-map', 'Mình mê làng nghề và phố cổ lắm! Bấm vào bộ lọc để chọn kiểu nơi bạn thích nhé.'] },
+      spot: 'tr', flip: true, sen: ['sen-map', 'Mình mê làng nghề lắm! Chọn bộ lọc để xem nhé.'] },
     { kind: 'panel', key: 'cats', name: 'Theo sở thích', image: 'assets/places/bg-cats.webp', pos: [50, 42],
-      sen: ['sen-tea', 'Đói bụng thì ghé mục ăn uống, thích ảnh đẹp thì qua mục check-in. Mình gợi ý sẵn cho bạn đây!'] },
+      spot: 'tr', flip: true, sen: ['sen-tea', 'Đói thì ghé ăn uống, thích ảnh đẹp thì qua check-in nhé!'] },
     { kind: 'cine', key: 'start', name: 'Cất cánh', image: 'media/lantern-festival.jpg', pos: [50, 42],
-      sen: ['sen-cheer', 'Thử tạo một lịch trình mẫu đi bạn! Mình háo hức lắm rồi đó.'] },
+      spot: 'br', sen: ['sen-cheer', 'Thử tạo một lịch trình mẫu đi bạn! Mình háo hức lắm rồi đó.'] },
     { kind: 'cine', key: 'app', name: 'Ứng dụng', image: 'media/terrace-sunset.jpg', pos: [50, 42],
-      sen: ['sen-wave', 'Ứng dụng sắp ra mắt rồi! Hẹn gặp bạn trên App Store và Google Play nhé.'] }
+      spot: 'br', sen: ['sen-wave', 'Ứng dụng sắp ra mắt rồi! Hẹn gặp bạn trên App Store và Google Play nhé.'] }
   ];
   const N = states.length;
   const wrap = i => ((i % N) + N) % N;                                            // chỉ số vòng lặp
@@ -675,24 +700,24 @@ body:not(.intro-ready) .guide{opacity:0}
   const PLACES = {
     eat: [
       ['eat-giang', 'Hoàn Kiếm, Hà Nội', 'Cà Phê Giảng — Hương Vị Trứng Khởi Nguồn 1946', 'Ly cà phê béo ngậy được sáng tạo thời khan hiếm sữa tươi, lưu giữ ký ức ẩm thực của người Hà Thành.'],
-      ['eat-benthanh', 'Quận 1, TP. Hồ Chí Minh', 'Chợ Bến Thành & Ẩm Thực Hẻm', 'Trái tim thương mại trăm tuổi của Sài Gòn, giao thoa ẩm thực Nam Bộ: bánh xèo, chè, hủ tiếu, cà phê vợt.'],
-      ['eat-duongtau', 'Hà Nội', 'Cà Phê Đường Tàu', 'Ngồi cà phê bên con phố có đường tàu chạy qua, nét riêng rất Hà Nội.'],
-      ['eat-dinh', 'Hà Nội', 'Cà Phê Đinh', 'Thêm một địa chỉ cà phê trứng để bạn thử và so sánh hương vị.']],
+      ['hcm-16', 'Quận 1, TP. Hồ Chí Minh', 'Chung Cư Cà Phê 42 Nguyễn Huệ', 'Khối chung cư từ thập niên 1960 được tái sinh thành tổ hợp quán cà phê nghệ thuật và tiệm gốm thủ công.'],
+      ['dn-28', 'Hải Châu, Đà Nẵng', 'Chợ Cồn', 'Thiên đường ăn vặt với đình ẩm thực trong nhà và phố ẩm thực ngoài trời, từ mì Quảng đến bún mắm.'],
+      ['hcm-21', 'Quận 10, TP. Hồ Chí Minh', 'Chợ Hoa Đêm & Phố Ẩm Thực Hồ Thị Kỷ', 'Chợ hoa tươi thâu đêm kết hợp phố ẩm thực với hàng trăm món ăn.']],
     his: [
-      ['his-longbien', 'Sông Hồng, Hà Nội', 'Cầu Long Biên — Hoàng Hôn Vắt Ngang Thế Kỷ', 'Cây cầu sắt hơn 120 năm tuổi soi bóng sông Hồng, hợp đi dạo buổi chiều.'],
-      ['his-vanmieu', 'Đống Đa, Hà Nội', 'Văn Miếu – Quốc Tử Giám', 'Di tích gắn với truyền thống khoa cử và giáo dục của người Việt.'],
-      ['his-thanglong', 'Ba Đình, Hà Nội', 'Hoàng Thành Thăng Long', 'Dấu tích nhiều triều đại, là di sản văn hóa thế giới.'],
-      ['his-dinhdoclap', 'Quận 1, TP. Hồ Chí Minh', 'Dinh Độc Lập', 'Di tích gắn với những cột mốc lịch sử của Sài Gòn.']],
+      ['hcm-01', 'Quận 1, TP. Hồ Chí Minh', 'Dinh Độc Lập', 'Công trình kiến trúc kết hợp triết lý phương Đông và hiện đại, gắn với ngày 30/4/1975.'],
+      ['hcm-27', 'Củ Chi, TP. Hồ Chí Minh', 'Địa Đạo Củ Chi', 'Hệ thống địa đạo dài hơn 250km, đào hoàn toàn bằng tay thời kháng chiến.'],
+      ['dn-20', 'Hải Châu, Đà Nẵng', 'Bảo Tàng Đà Nẵng & Thành Điện Hải', 'Pháo đài cổ xây từ thời Gia Long, nơi lưu giữ lịch sử của Đà Nẵng.'],
+      ['hcm-02', 'Quận 1, TP. Hồ Chí Minh', 'Nhà Thờ Đức Bà Sài Gòn', 'Vương cung thánh đường khởi công năm 1877, gạch đỏ và ngói Marseille đưa từ Pháp sang.']],
     fun: [
-      ['fun-muaroi', 'Hà Nội', 'Múa Rối Nước Thăng Long', 'Nghệ thuật múa rối nước truyền thống của người Việt, hợp cho cả gia đình.'],
-      ['fun-kyuc', 'Hội An, Quảng Nam', 'Ký Ức Hội An', 'Show thực cảnh tái hiện lịch sử thương cảng bên sông Hoài.'],
-      ['fun-rungdua', 'Cẩm Thanh, Hội An', 'Rừng Dừa Bảy Mẫu', 'Ngồi thuyền thúng len lỏi rạch dừa nước, một trải nghiệm vui và rất địa phương.'],
-      ['fun-datnung', 'Thanh Hà, Hội An', 'Công Viên Đất Nung Thanh Hà', 'Không gian gốm đất nung để dạo chơi và tìm hiểu nghề làm gốm.']],
+      ['dn-03', 'Hòa Vang, Đà Nẵng', 'Cầu Vàng – Sun World Bà Nà Hills', 'Cây cầu dài 150m được nâng bởi đôi bàn tay đá khổng lồ giữa mây ngàn.'],
+      ['hcm-25', 'Quận 11, TP. Hồ Chí Minh', 'Công Viên Văn Hóa Đầm Sen', 'Tổ hợp giải trí xanh rộng hơn 50ha với nhiều trò chơi, rạp xiếc, thủy cung và công viên nước.'],
+      ['hcm-43', 'TP. Thủ Đức, TP. Hồ Chí Minh', 'Khu Du Lịch Văn Hóa Suối Tiên', 'Công viên chủ đề văn hóa và thần thoại Việt Nam trên diện tích 150ha.'],
+      ['fun-kyuc', 'Hội An, Quảng Nam', 'Ký Ức Hội An', 'Show thực cảnh tái hiện lịch sử thương cảng bên sông Hoài.']],
     pic: [
-      ['pic-hoankiem', 'Hoàn Kiếm, Hà Nội', 'Hồ Hoàn Kiếm', 'Điểm dạo bộ và chụp ảnh quen thuộc giữa lòng thủ đô.'],
-      ['pic-congtroi', 'Đông Giang, Quảng Nam', 'Cổng Trời Đông Giang', 'Săn mây, ngắm núi rừng và những khung ảnh rộng.'],
-      ['pic-dalat', 'Cầu Đất, Đà Lạt', 'Đồi Chè Cầu Đất', 'Đón bình minh giữa biển mây phủ đồi chè, nhâm nhi ly cà phê trong tiếng thông reo.'],
-      ['pic-sapa', 'Mường Hoa, Sa Pa', 'Ruộng Bậc Thang Mường Hoa', 'Ruộng bậc thang uốn lượn dưới chân dãy Hoàng Liên Sơn.']]
+      ['dn-01', 'Hải Châu, Đà Nẵng', 'Cầu Rồng', 'Cầu vòm thép hình rồng dài 666m, một biểu tượng check-in của thành phố.'],
+      ['hcm-26', 'Quận 7, TP. Hồ Chí Minh', 'Cầu Ánh Sao & Hồ Bán Nguyệt', 'Cầu bộ hành cong như mặt trăng, về đêm có đèn LED nhiều màu và nước phun.'],
+      ['dn-15b', 'Sơn Trà, Đà Nẵng', 'Bãi Biển Mỹ Khê', 'Bãi cát trắng mịn trải dài, sóng hiền hòa, hợp ngắm bình minh và dạo biển.'],
+      ['pic-dalat', 'Cầu Đất, Đà Lạt', 'Đồi Chè Cầu Đất', 'Đón bình minh giữa biển mây phủ đồi chè, nhâm nhi ly cà phê trong tiếng thông reo.']]
   };
   const pgrid = $('pgrid');
   function showTab(t) {
@@ -767,6 +792,9 @@ body:not(.intro-ready) .guide{opacity:0}
     } else clearInterval(cycleTimer);
     setLanterns(s.kind === 'cine');
     $('gsen').src = 'assets/' + s.sen[0] + '.webp'; $('gsay').textContent = s.sen[1];
+    const onPhone = s.spot.startsWith('phone');
+    $('guide').dataset.spot = onPhone ? 'br' : s.spot; $('guide').dataset.flip = s.flip ? '1' : '';
+    exp.dataset.mascot = onPhone ? s.spot : 'free';
     showBg(current);
     sel = current; renderMenu(true);
     needsDraw = true;
@@ -999,7 +1027,7 @@ body:not(.intro-ready) .guide{opacity:0}
 
   // ---- boot ----
   ['app-home', 'app-search', 'app-trip', 'app-map'].forEach(n => { const im = new Image(); im.src = 'assets/' + n + '.webp'; im.decode && im.decode().catch(() => {}); });
-  ['st-weaver', 'st-nature', 'st-lantern', 'st-hero', 'feed-terrace', 'feed-people'].forEach(n => { const im = new Image(); im.src = 'assets/' + n + '.webp'; im.decode && im.decode().catch(() => {}); });
+  ['places/st-sontra', 'places/st-nguyenhue', 'places/st-haidang', 'places/st-cumong', 'places/feed-mykhe', 'places/feed-duongsach'].forEach(n => { const im = new Image(); im.src = 'assets/' + n + '.webp'; im.decode && im.decode().catch(() => {}); });
   ['wave', 'tea', 'map', 'cheer'].forEach(n => { const im = new Image(); im.src = 'assets/sen-' + n + '.webp'; im.decode && im.decode().catch(() => {}); });
   resizeCanvas(); addEventListener('resize', () => { resizeCanvas(); needsDraw = true; });
   render();
