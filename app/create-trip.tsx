@@ -42,6 +42,13 @@ const SUPPORTED_DESTINATIONS = new Set([
   'Hà Nội', 'Đà Nẵng', 'TP. Hồ Chí Minh', 'Quảng Nam',
 ]);
 
+// Map destination display name → city code trong DB (city column)
+const DEST_TO_CITY: Record<string, string> = {
+  'Hà Nội':          'HN',
+  'Đà Nẵng':         'DN',
+  'TP. Hồ Chí Minh': 'SG',
+};
+
 const FIXED_GROUP_SIZE: Record<string, number> = { solo: 1, couple: 2 };
 
 const TRAVELING_WITH: { tKey: StringKey; value: string }[] = [
@@ -215,11 +222,16 @@ export default function CreateTripScreen() {
     if (!session) { setError(t('errSessionExpired')); setAiGenerating(false); return; }
 
     // Preflight: kiểm tra điểm đến có dữ liệu không trước khi tạo trip
-    const { count: destCount } = await supabase
+    const cityCode = DEST_TO_CITY[destination];
+    const preflightQ = supabase
       .from('locations')
       .select('id', { count: 'exact', head: true })
-      .eq('is_active', true)
-      .ilike('address', `%${destination}%`);
+      .eq('is_active', true);
+    const { count: destCount } = await (
+      cityCode
+        ? preflightQ.eq('city', cityCode)
+        : preflightQ.ilike('address', `%${destination}%`)
+    );
 
     if (!destCount || destCount === 0) {
       setError(`"${destination}" chưa có dữ liệu địa điểm trên Viloca. Hiện hỗ trợ: Hà Nội, Đà Nẵng, TP. Hồ Chí Minh, Quảng Nam. Vui lòng chọn lại điểm đến.`);

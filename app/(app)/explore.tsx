@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, RefreshControl, Alert,
   Image, TouchableOpacity, Dimensions, Share, ActivityIndicator,
@@ -169,6 +169,7 @@ export default function ExploreScreen() {
   const [refreshing, setRefreshing]   = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore]         = useState(true);
+  const loadingMoreRef                = useRef(false);
 
   async function fetchPosts(from = 0, append = false, isRefresh = false) {
     if (isRefresh) setRefreshing(true);
@@ -197,19 +198,28 @@ export default function ExploreScreen() {
       posts.forEach((p) => { p.profiles = profileMap[p.user_id] ?? null; });
     }
 
-    if (append) setRealPosts((prev) => [...prev, ...posts]); else setRealPosts(posts);
+    if (append) {
+      setRealPosts((prev) => {
+        const existing = new Set(prev.map((p) => p.id));
+        return [...prev, ...posts.filter((p) => !existing.has(p.id))];
+      });
+    } else {
+      setRealPosts(posts);
+    }
     setHasMore(posts.length === PAGE_SIZE);
     setLoading(false);
     setLoadingMore(false);
+    loadingMoreRef.current = false;
     setRefreshing(false);
   }
 
   useFocusEffect(useCallback(() => { fetchPosts(); }, []));
 
   const loadMore = useCallback(() => {
-    if (!hasMore || loadingMore) return;
+    if (!hasMore || loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
     fetchPosts(realPosts.length, true);
-  }, [realPosts.length, hasMore, loadingMore]);
+  }, [realPosts.length, hasMore]);
 
   const displayPosts: Post[] = realPosts;
 

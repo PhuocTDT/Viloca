@@ -131,7 +131,6 @@ export default function HomeScreen() {
   const firstName = user?.user_metadata?.full_name?.split(' ').pop() ?? t('homeFallbackName');
   const mascot = useMascot();
 
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeVibe,     setActiveVibe]     = useState<string | null>(null);
   const [sheetVisible, setSheetVisible]     = useState(false);
   const [sheetTab, setSheetTab]             = useState<FilterTab>('category');
@@ -141,8 +140,8 @@ export default function HomeScreen() {
   const festivalRef  = useRef<ScrollView>(null);
 
   const { festivals, loading: festivalsLoading }  = useFestivals();
-  const { locations, loading: locationsLoading }   = useLocations(20, activeCategory, activeVibe);
-  const { location: featuredLocation }             = useFeaturedLocation(activeCategory);
+  const { locations, loading: locationsLoading }   = useLocations(20, null, activeVibe);
+  const { location: featuredLocation }             = useFeaturedLocation(null);
   const { coords: userCoords, permissionDenied }   = useUserLocation();
 
   // Grid excludes the featured card
@@ -151,16 +150,16 @@ export default function HomeScreen() {
     [locations, featuredLocation]
   );
 
-  // Pick 3 random per category — re-randomise when category changes, stable otherwise
+  // Pick 3 random — re-randomise on mount only
   const [displayLocations, setDisplayLocations] = useState<Location[]>([]);
-  const lastPickedCategoryRef = useRef<string | null | undefined>(undefined);
+  const hasPickedRef = useRef(false);
   useEffect(() => {
     if (gridLocations.length === 0) return;
-    if (lastPickedCategoryRef.current === activeCategory && displayLocations.length > 0) return;
-    lastPickedCategoryRef.current = activeCategory;
+    if (hasPickedRef.current && displayLocations.length > 0) return;
+    hasPickedRef.current = true;
     const shuffled = [...gridLocations].sort(() => Math.random() - 0.5);
     setDisplayLocations(shuffled.slice(0, 3));
-  }, [gridLocations, activeCategory]);
+  }, [gridLocations]);
 
   // Build coords list for distance calculation (featured + 3 grid cards)
   const allCoordsForDistance = useMemo(() => [
@@ -258,7 +257,7 @@ export default function HomeScreen() {
               <Text style={styles.greetingName}>{t('homeGreeting')} {firstName},</Text>
               <Text style={styles.greetingTagline}>{t('homeTodayQ')}</Text>
             </View>
-            <MascotAvatar emotion={mascot.emotion} size={108} />
+            <MascotAvatar emotion={mascot.emotion} size={160} />
           </View>
           <View style={styles.senBubbleTail} />
           <View style={styles.senBubble}>
@@ -280,11 +279,8 @@ export default function HomeScreen() {
         {/* ── Vibe chips (from DB vibes table) ── */}
         <VibeChips selected={activeVibe} onSelect={setActiveVibe} />
 
-        {/* ── Category chips (from DB) ── */}
-        <CategoryChips
-          selected={activeCategory}
-          onSelect={setActiveCategory}
-        />
+        {/* ── Category chips — tap to open search filtered by category ── */}
+        <CategoryChips />
 
         {/* ── Dành riêng cho bạn ── */}
         <HomeSectionHeader
@@ -446,16 +442,16 @@ const styles = StyleSheet.create({
   // Hero card
   greetingCard:    { marginHorizontal: 16, marginTop: 10, marginBottom: 12, borderRadius: 24, padding: 12, paddingBottom: 10, overflow: 'hidden', shadowColor: '#3a6010', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
   heroDecorCircle: { position: 'absolute', bottom: -44, right: -44, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(160,210,100,0.22)' },
-  heroCardBody:    { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 10 },
+  heroCardBody:    { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   heroCardLeft:    { flex: 1 },
   heroBadge:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5, alignSelf: 'flex-start', marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1 },
   heroDot:         { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.nomad.primary },
   heroLabelText:   { fontSize: 12, color: colors.nomad.primary, fontWeight: '500' },
   greetingName:    { fontSize: 24, fontWeight: '800', color: '#1C1C1C', lineHeight: 30 },
   greetingTagline: { fontSize: 24, fontWeight: '800', color: '#3E7B27', lineHeight: 30 },
-  senBubbleTail:   { width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderBottomWidth: 9, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#fff', marginLeft: 14, alignSelf: 'flex-start' },
-  senBubble:       { backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4, elevation: 1 },
-  senBubbleText:   { fontSize: 13, color: '#3D3D3D', lineHeight: 18 },
+  senBubbleTail:   { width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 8, borderBottomWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#fff', marginRight: 72, alignSelf: 'flex-end' },
+  senBubble:       { backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4, elevation: 1 },
+  senBubbleText:   { fontSize: 13, color: '#3D3D3D', lineHeight: 19 },
 
   // Search
   searchBar:         { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 28, height: 56, borderWidth: 1, borderColor: '#E5E5E5', paddingLeft: 16, paddingRight: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },

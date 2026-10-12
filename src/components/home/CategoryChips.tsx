@@ -1,25 +1,62 @@
-import { useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
+import supabase from '@/src/lib/supabase';
 import { useCategories } from '@/src/hooks/useCategories';
 import { colors } from '@/src/theme/colors';
+import type { Category } from '@/src/types';
 
-interface Props {
-  selected: string | null;
-  onSelect: (name: string) => void;
-}
+const SHOW_COUNT = 7;
 
 function ChipSkeleton() {
   return <View style={styles.skeleton} />;
 }
 
-export function CategoryChips({ selected, onSelect }: Props) {
-  const { categories, loading } = useCategories();
+function useActiveCategoryChips(): { chips: Category[]; loading: boolean } {
+  const { categories, loading: catLoading } = useCategories();
+  const [chips, setChips] = useState<Category[]>([]);
+  const [locLoading, setLocLoading] = useState(true);
+  const pickedRef = useRef(false);
 
   useEffect(() => {
-    if (!loading && categories.length > 0 && selected === null) {
-      onSelect(categories[0].name);
+    if (catLoading || categories.length === 0) return;
+    if (pickedRef.current) return;
+
+    async function load() {
+      const { data } = await supabase
+        .from('locations')
+        .select('category')
+        .eq('is_active', true);
+
+      // Build a set of all lowercase category tokens from active locations
+      const activeTokens = new Set<string>();
+      for (const row of (data ?? [])) {
+        if (!row.category) continue;
+        for (const part of String(row.category).split(',')) {
+          activeTokens.add(part.trim().toLowerCase());
+        }
+      }
+
+      // Keep only categories that appear in at least one active location
+      const matched = categories.filter((cat) =>
+        activeTokens.has(cat.name.toLowerCase())
+      );
+
+      // Shuffle and take SHOW_COUNT
+      const shuffled = [...matched].sort(() => Math.random() - 0.5);
+      setChips(shuffled.slice(0, SHOW_COUNT));
+      pickedRef.current = true;
+      setLocLoading(false);
     }
-  }, [loading, categories, selected, onSelect]);
+
+    load();
+  }, [catLoading, categories]);
+
+  return { chips, loading: catLoading || locLoading };
+}
+
+export function CategoryChips() {
+  const { chips, loading } = useActiveCategoryChips();
 
   return (
     <ScrollView
@@ -30,31 +67,26 @@ export function CategoryChips({ selected, onSelect }: Props) {
     >
       {loading
         ? [1, 2, 3].map((k) => <ChipSkeleton key={k} />)
-        : categories.map((cat) => {
-            const active = selected === cat.name;
-            return (
-              <TouchableOpacity
-                key={cat.id}
-                style={[styles.chip, active && styles.chipActive]}
-                activeOpacity={0.8}
-                onPress={() => onSelect(cat.name)}
-              >
-                {cat.emoji ? (
-                  <Text style={styles.chipEmoji}>{cat.emoji}</Text>
-                ) : null}
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+        : chips.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.chip}
+              activeOpacity={0.8}
+              onPress={() => router.push({ pathname: '/search', params: { category: cat.name } })}
+            >
+              {cat.emoji ? (
+                <Text style={styles.chipEmoji}>{cat.emoji}</Text>
+              ) : null}
+              <Text style={styles.chipText}>{cat.name}</Text>
+            </TouchableOpacity>
+          ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll:         { marginBottom: 20 },
-  content:        { paddingHorizontal: 16, gap: 10, paddingVertical: 4 },
+  scroll:    { marginBottom: 20 },
+  content:   { paddingHorizontal: 16, gap: 10, paddingVertical: 4 },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     height: 40, borderRadius: 20,
@@ -62,9 +94,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 1, borderColor: '#E5E5E5',
   },
-  chipActive:     { backgroundColor: colors.nomad.primary, borderColor: colors.nomad.primary },
-  chipEmoji:      { fontSize: 15 },
-  chipText:       { fontSize: 14, color: colors.nomad.onSurface, fontWeight: '500' },
-  chipTextActive: { color: '#fff', fontWeight: '700' },
-  skeleton:       { width: 90, height: 40, borderRadius: 20, backgroundColor: '#E8E8E8', opacity: 0.6 },
+  chipEmoji: { fontSize: 15 },
+  chipText:  { fontSize: 14, color: colors.nomad.onSurface, fontWeight: '500' },
+  skeleton:  { width: 90, height: 40, borderRadius: 20, backgroundColor: '#E8E8E8', opacity: 0.6 },
 });

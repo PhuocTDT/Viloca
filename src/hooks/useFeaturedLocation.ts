@@ -15,8 +15,7 @@ export function useFeaturedLocation(
       .from('locations')
       .select('*')
       .eq('is_featured', true)
-      .eq('is_active', true)
-      .eq('verified', true);
+      .eq('is_active', true);
 
     if (category) {
       query = query.ilike('category', `%${category}%`);

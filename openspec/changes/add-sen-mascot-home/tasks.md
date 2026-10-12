@@ -22,8 +22,8 @@
 
 ## 5. Kiểm tra
 
-- [ ] 5.1 Chạy app, xác nhận Sen hiển thị và floating animation hoạt động trên Home screen
-- [ ] 5.2 Xác nhận greeting text thay đổi đúng theo giờ (sáng/chiều/tối)
-- [ ] 5.3 Xác nhận bubble hiển thị đúng với đuôi trỏ xuống Sen
+- [x] 5.1 Chạy app, xác nhận Sen hiển thị và floating animation hoạt động trên Home screen
+- [x] 5.2 Xác nhận greeting text thay đổi đúng theo giờ (sáng/chiều/tối)
+- [x] 5.3 Xác nhận bubble hiển thị đúng với đuôi trỏ xuống Sen
 
 - [x] 5.4 Xác nhận không có TypeScript errors

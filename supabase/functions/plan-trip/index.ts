@@ -123,55 +123,79 @@ Deno.serve(async (req) => {
 
   const COLS = 'id, name, category, vibes, price_per_person, duration_minutes, rating, hint, district';
 
+  // Map destination name → city code trong DB
+  const DEST_TO_CITY: Record<string, string> = {
+    'Hà Nội':          'HN',
+    'Đà Nẵng':         'DN',
+    'TP. Hồ Chí Minh': 'SG',
+  };
+  const cityCode = DEST_TO_CITY[destination];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const byCity = (q: any) =>
+    cityCode ? q.eq('city', cityCode) : q.ilike('address', `%${destination}%`);
+
   // Primary: destination + budget + vibes
-  const { data: locations, error: locErr } = await supabase
-    .from('locations')
-    .select(COLS)
-    .eq('is_active', true)
-    .ilike('address', `%${destination}%`)
-    .lte('price_per_person', budget_per_person)
-    .overlaps('vibes', vibes);
+  const { data: locations, error: locErr } = await byCity(
+    supabase.from('locations').select(COLS).eq('is_active', true)
+  ).lte('price_per_person', budget_per_person).overlaps('vibes', vibes);
+
+  // Accommodation categories — excluded from AI pool (lưu trú là thuộc tính cả chuyến, không phải slot trong ngày)
+  const ACCOMMODATION_CATS = new Set(['lưu trú', 'homestay', 'khách sạn', 'resort', 'hotel', 'villa', 'camping']);
+  const isAccommodation = (cat: string) => ACCOMMODATION_CATS.has((cat ?? '').toLowerCase());
 
   let finalLocations = locations;
   if (locErr || !locations?.length) {
     // Fallback 1: destination + budget, relax vibes
-    const { data: fb1 } = await supabase
-      .from('locations').select(COLS).eq('is_active', true)
-      .ilike('address', `%${destination}%`).lte('price_per_person', budget_per_person);
+    const { data: fb1 } = await byCity(
+      supabase.from('locations').select(COLS).eq('is_active', true)
+    ).lte('price_per_person', budget_per_person);
     if (fb1?.length) {
       finalLocations = fb1;
     } else {
       // Fallback 2: destination only
-      const { data: fb2 } = await supabase
-        .from('locations').select(COLS).eq('is_active', true)
-        .ilike('address', `%${destination}%`);
+      const { data: fb2 } = await byCity(
+        supabase.from('locations').select(COLS).eq('is_active', true)
+      );
       if (fb2?.length) {
         finalLocations = fb2;
       } else {
-        // Fallback 3: no location filter
-        const { data: fb3, error: fb3Err } = await supabase
-          .from('locations').select(COLS).eq('is_active', true);
-        if (!fb3?.length) {
-          return new Response(
-            JSON.stringify({ error: 'Database has no active locations.', detail: locErr?.message ?? fb3Err?.message }),
-            { status: 404, headers: JSON_HEADERS },
-          );
-        }
-        finalLocations = fb3;
+        // No locations found for this destination — fail clearly, don't silently return wrong data
+        return new Response(
+          JSON.stringify({
+            error: 'no_locations_for_destination',
+            destination,
+            message: `Chưa có địa điểm tại "${destination}". Hiện hỗ trợ: Hà Nội, Đà Nẵng, TP. Hồ Chí Minh, Quảng Nam.`,
+          }),
+          { status: 404, headers: JSON_HEADERS },
+        );
       }
     }
   }
 
-  const locationMeta = finalLocations!.map((l) => ({
-    id: l.id,
-    name: l.name,
-    category: l.category,
-    district: l.district ?? null,
-    vibes: l.vibes,
-    price_per_person: l.price_per_person,
-    duration_minutes: l.duration_minutes,
-    rating: l.rating,
-  }));
+  // Filter out accommodation locations — AI chỉ lên lịch tham quan, ăn uống, trải nghiệm
+  const locationMeta = finalLocations!
+    .filter((l) => !isAccommodation(l.category))
+    .map((l) => ({
+      id: l.id,
+      name: l.name,
+      category: l.category,
+      district: l.district ?? null,
+      vibes: l.vibes,
+      price_per_person: l.price_per_person,
+      duration_minutes: l.duration_minutes,
+      rating: l.rating,
+    }));
+
+  if (locationMeta.length === 0) {
+    return new Response(
+      JSON.stringify({
+        error: 'no_locations_for_destination',
+        destination,
+        message: `Chưa có địa điểm phù hợp tại "${destination}". Hiện hỗ trợ: Hà Nội, Đà Nẵng, TP. Hồ Chí Minh, Quảng Nam.`,
+      }),
+      { status: 404, headers: JSON_HEADERS },
+    );
+  }
 
   // must_include_ids: ensure those locations are in pool
   if (must_include_ids?.length) {
@@ -256,7 +280,7 @@ Với mỗi slot, giải thích ngắn gọn lý do chọn địa điểm này (
   let raw: string;
   try {
     const response = await bedrock.send(new ConverseCommand({
-      modelId: Deno.env.get('BEDROCK_MODEL_ID') ?? 'qwen.qwen3-235b-a22b-2507-v1:0',
+      modelId: Deno.env.get('BEDROCK_MODEL_ID') ?? 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
       messages: [{ role: 'user', content: [{ text: prompt }] }],
       inferenceConfig: { maxTokens: 2048, temperature: 0.3 },
     }));

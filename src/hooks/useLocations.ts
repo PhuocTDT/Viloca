@@ -16,8 +16,6 @@ export function useLocations(
         .from('locations')
         .select('*')
         .eq('is_active', true)
-        .eq('verified', true)
-        .not('photos', 'is', null)
         .limit(limit);
 
       if (categoryFilter) {
