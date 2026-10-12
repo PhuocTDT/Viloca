@@ -40,3 +40,6 @@ assets/stitch_mascot_poses_generation/
 assets/stitch_viloca_ai_trip_planner/
 assets/temp.png
 assets/sam1.png
+
+# DB backups (snapshot truoc migration, khong commit)
+supabase/backups/
