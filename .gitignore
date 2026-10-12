@@ -34,3 +34,9 @@ ios/
 # Accidental copies / tooling
 Viloca/
 OpenJDK*/
+
+# Stitch design dumps (reference only, not used by app)
+assets/stitch_mascot_poses_generation/
+assets/stitch_viloca_ai_trip_planner/
+assets/temp.png
+assets/sam1.png
