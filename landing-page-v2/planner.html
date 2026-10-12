@@ -1,429 +1,1898 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Viloca — Thử tạo lịch trình cùng bé Sen</title>
-<meta name="description" content="Thử cách Viloca gợi ý lịch trình: chọn điểm đến, số ngày và phong cách, xem lịch trình tham khảo được tạo từ dữ liệu mẫu.">
-<link rel="icon" type="image/webp" href="assets/viloca-logo.webp">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
-<style>
-:root{--ink:#2D1A0E;--primary:#C8602E;--green:#2E6F4E;--sand:#F5C9A8;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:#fff;background:#0a0908}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%}
-body{background:#0a0908;overflow-x:hidden}
-a{color:inherit}
-a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--sand);outline-offset:3px}
-.bg{position:fixed;inset:0;z-index:0;background:url(assets/places/bg-select.webp) center/cover;filter:brightness(.42) saturate(1.05);transform:scale(1.05)}
-.bg::after{content:'';position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 40%,transparent 30%,rgba(10,7,5,.85))}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Viloca — Thử tạo lịch trình cùng bé Sen</title>
+  <meta name="description"
+    content="Thử cách Viloca tự lên lịch trình: chọn điểm đến, số ngày, khung giờ và điều bạn muốn khám phá, xem lịch trình tham khảo được tạo từ dữ liệu mẫu.">
+  <link rel="icon" type="image/webp" href="assets/viloca-logo.webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap"
+    rel="stylesheet">
+  <script>if (location.search.indexOf('embed') > -1) document.documentElement.classList.add('embed')</script>
+  <style>
+    :root {
+      --ink: #2D1A0E;
+      --primary: #C8602E;
+      --green: #2E6F4E;
+      --sand: #F5C9A8;
+      font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+      color: #fff;
+      background: #0a0908
+    }
 
-/* header (cùng phong cách trang Giới thiệu) */
-.topbar{position:fixed;z-index:25;left:0;right:0;top:0;height:92px;background:linear-gradient(rgba(10,8,6,.92),rgba(10,8,6,.7) 60%,transparent);pointer-events:none}
-.brand{position:fixed;z-index:30;left:clamp(18px,1.95vw,28px);top:clamp(18px,3.1vh,28px);display:flex;align-items:center;gap:12px;text-decoration:none}
-.brand img{width:48px;height:48px;padding:8px;border-radius:15px;background:linear-gradient(160deg,#FFFDF8,#F3E6D3);box-shadow:0 6px 18px rgba(0,0,0,.4)}
-.brand span{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:600;letter-spacing:.02em;text-shadow:0 1px 3px #000c,0 0 14px #000a}
-.nav{position:fixed;z-index:30;right:clamp(18px,1.95vw,28px);top:clamp(18px,3.1vh,28px);display:flex;align-items:center;height:42px;padding:4px 5px;border:1px solid rgba(255,255,255,.45);background:rgba(20,14,10,.55);border-radius:999px}
-.nav a,.nav button{font:inherit;color:#fff;background:none;border:0;text-decoration:none;padding:8px 19px;border-radius:999px;line-height:1;cursor:pointer}
-.nav .on{background:#fff;color:#000}
-.nav button:hover,.nav a:hover:not(.on){background:rgba(255,255,255,.14)}
+    * {
+      box-sizing: border-box
+    }
 
-main{position:relative;z-index:2;max-width:1220px;margin:0 auto;padding:110px clamp(18px,4vw,48px) 60px}
-.kicker{margin:0 0 .8rem;font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;color:var(--sand)}
-h1{margin:0;font-family:'Playfair Display',serif;font-weight:500;font-size:clamp(2rem,4.4vw,3.6rem);line-height:1.1;text-shadow:0 1px 12px #0009}
-h1 em{color:var(--sand)}
-.lead{margin:.9rem 0 0;max-width:46rem;font-weight:300;line-height:1.7;color:#ffffffdd}
-.grid{display:grid;grid-template-columns:360px 1fr;gap:26px;margin-top:2rem;align-items:start}
+    html,
+    body {
+      margin: 0;
+      min-height: 100%
+    }
 
-/* form */
-.panel{position:sticky;top:104px;background:rgba(255,253,248,.96);color:var(--ink);border-radius:24px;padding:22px;box-shadow:0 24px 60px #0008}
-.panel h2{margin:0 0 14px;font-size:1.05rem}
-.sen-row{display:flex;align-items:flex-end;gap:10px;margin:-4px 0 14px;padding-bottom:12px;border-bottom:1px dashed #e2d3bf}
-.sen-av img{display:block;height:74px;width:auto}
-.sen-say{position:relative;margin:0 0 6px;padding:9px 12px;border-radius:14px 14px 14px 4px;background:#f4ecdd;color:#4a3526;font-size:.8rem;line-height:1.45;flex:1;animation:sen-in .5s cubic-bezier(.22,1,.36,1) both}
-@keyframes sen-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.field{margin-bottom:16px}
-.field>label:not(.chk),.field>span{display:block;margin-bottom:8px;font-size:.78rem;font-weight:700;letter-spacing:.04em;color:#6b5646;text-transform:uppercase}
-.field>label:not(.chk){display:flex;justify-content:space-between;align-items:baseline}
-.field output{font-size:.9rem;font-weight:700;color:var(--primary);text-transform:none;letter-spacing:0}
-.selwrap{position:relative}
-.selwrap::after{content:'';position:absolute;right:16px;top:50%;width:8px;height:8px;border-right:2px solid #7a6a5d;border-bottom:2px solid #7a6a5d;transform:translateY(-70%) rotate(45deg);pointer-events:none}
-select{width:100%;appearance:none;-webkit-appearance:none;font:inherit;font-size:.95rem;padding:.7rem 2.4rem .7rem 1rem;border-radius:14px;border:1px solid #d9cbb9;background:#fff;color:var(--ink);cursor:pointer}
-select:hover{border-color:var(--primary)}
-.range{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;outline-offset:6px;cursor:pointer;
-  background:linear-gradient(to right,var(--primary) var(--fill,50%),#e6d9c8 var(--fill,50%))}
-.range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.25);transition:transform .15s}
-.range::-webkit-slider-thumb:hover{transform:scale(1.15)}
-.range::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.ticks{display:flex;justify-content:space-between;margin-top:7px;font-size:.7rem;color:#8a7a6d}
-.styles{border:0;padding:0;margin:0 0 16px;min-width:0}
-.styles legend{display:flex;justify-content:space-between;align-items:baseline;width:100%;padding:0;margin-bottom:8px;font-size:.78rem;font-weight:700;letter-spacing:.04em;color:#6b5646;text-transform:uppercase}
-.styles output{font-size:.9rem;color:var(--primary);text-transform:none;letter-spacing:0}
-.chk{display:flex;align-items:center;gap:12px;padding:.55rem .2rem;cursor:pointer;font-size:.95rem;user-select:none}
-.chk input{appearance:none;-webkit-appearance:none;flex:none;width:22px;height:22px;margin:0;border:2px solid #cdbba5;border-radius:7px;background:#fff;display:grid;place-content:center;cursor:pointer;transition:background .15s,border-color .15s}
-.chk input::after{content:'';width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) scale(0);margin-top:-2px;transition:transform .15s}
-.chk input:checked{background:var(--primary);border-color:var(--primary)}
-.chk input:checked::after{transform:rotate(45deg) scale(1)}
-.chk input:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
-.chk input:disabled{opacity:.4;cursor:not-allowed}
-.chk:has(input:disabled){opacity:.55;cursor:not-allowed}
-.hint{margin:4px 0 0;font-size:.74rem;color:#8a7a6d}
-.seg{display:flex;gap:8px;flex-wrap:wrap}
-.opt{font:inherit;font-size:.88rem;padding:.5rem .95rem;border-radius:99px;border:1px solid #d9cbb9;background:#fff;color:var(--ink);cursor:pointer;transition:background .2s,color .2s,border-color .2s}
-.opt:hover{border-color:var(--primary)}
-.opt[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
-.go{width:100%;margin-top:6px;padding:.9rem 1rem;font:inherit;font-weight:700;font-size:1rem;color:#fff;background:var(--primary);border:0;border-radius:99px;cursor:pointer;transition:transform .25s,background .25s}
-.go:hover{transform:translateY(-2px);background:#a3481d}
-.go:disabled{opacity:.6;cursor:wait;transform:none}
-.note{margin:12px 0 0;font-size:.74rem;line-height:1.5;color:#7a6a5d}
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: #8a6a50 #0a0908
+    }
 
-/* kết quả */
-.out{min-height:420px;scroll-margin-top:104px}
-.empty{display:grid;place-items:center;text-align:center;min-height:420px;padding:30px;border:1px dashed #ffffff55;border-radius:24px;color:#ffffffcc;background:rgba(10,7,5,.35)}
-.empty b{display:block;font-family:'Playfair Display',serif;font-weight:500;font-size:1.5rem;margin-bottom:.5rem}
-.steps{background:rgba(10,7,5,.62);border:1px solid #ffffff33;border-radius:24px;padding:24px;min-height:420px}
-.steps h3{margin:0 0 14px;font-size:1.05rem}
-.step{display:flex;align-items:center;gap:12px;padding:9px 0;color:#ffffff88;transition:color .3s}
-.step i{width:22px;height:22px;border-radius:50%;border:2px solid #ffffff55;display:grid;place-items:center;font-style:normal;font-size:.7rem;flex:none}
-.step.now{color:#fff}
-.step.now i{border-color:var(--sand);border-top-color:transparent;animation:spin .8s linear infinite}
-.step.done{color:#fff}
-.step.done i{background:var(--green);border-color:var(--green)}
-@keyframes spin{to{transform:rotate(360deg)}}
-.result-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}
-.result-head h2{margin:0;font-family:'Playfair Display',serif;font-weight:500;font-size:1.7rem}
-.badge{display:inline-block;padding:.3rem .8rem;border-radius:99px;background:#0008;border:1px solid #fff4;font-size:.74rem}
-.day{margin-bottom:22px;animation:rise .6s cubic-bezier(.22,1,.36,1) both}
-.day>h3{margin:0 0 10px;font-size:.85rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sand)}
-.stop{display:grid;grid-template-columns:78px 96px 1fr;gap:14px;align-items:stretch;margin-bottom:10px;background:rgba(255,253,248,.96);color:var(--ink);border-radius:18px;overflow:hidden;box-shadow:0 14px 34px #0007;animation:rise .55s cubic-bezier(.22,1,.36,1) both}
-.when{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f6ece0;font-size:.72rem;font-weight:700;color:#8a5a3c;text-transform:uppercase;letter-spacing:.06em;padding:8px}
-.when b{font-size:1.15rem;color:var(--primary);letter-spacing:0}
-.stop img{width:96px;height:100%;min-height:96px;object-fit:cover;display:block;border-radius:0}
-.sbody{padding:12px 14px 12px 0}
-.sloc{font-size:.7rem;font-weight:700;color:var(--primary)}
-.sbody h4{margin:.15rem 0 .3rem;font-size:1rem;line-height:1.3}
-.why{margin:0;font-size:.8rem;line-height:1.5;color:#5b4a3e}
-.why b{color:var(--green)}
-.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
-.tag{padding:.15rem .55rem;border-radius:99px;background:#eef3e6;color:var(--green);font-size:.68rem;font-weight:600}
-.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
-.btn2{font:inherit;font-weight:600;padding:.7rem 1.4rem;border-radius:99px;border:1px solid #fff6;background:#0007;color:#fff;cursor:pointer;text-decoration:none}
-.btn2:hover{background:#000b}
-@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+    body {
+      background: #0a0908;
+      overflow-x: hidden
+    }
 
-/* contact modal */
-.modal{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:rgba(5,3,2,.7);padding:20px}
-.modal.open{display:grid}
-.mbox{position:relative;width:min(440px,100%);background:#fffdf8;color:var(--ink);border-radius:24px;padding:28px;box-shadow:0 30px 80px #000a}
-.mbox h2{margin:0 0 8px;font-family:'Playfair Display',serif;font-weight:500;font-size:1.6rem}
-.mbox p{margin:0 0 12px;line-height:1.6;color:#5b4a3e}
-.mbox .x{position:absolute;right:14px;top:12px;font:inherit;font-size:1.4rem;background:none;border:0;cursor:pointer;color:#7a6a5d}
+    a {
+      color: inherit
+    }
 
-@media(max-width:960px){.panel{position:static}.grid{grid-template-columns:1fr}.nav a,.nav button{padding:8px 13px}.brand span{display:none}}
-@media(max-width:560px){.stop{grid-template-columns:64px 1fr}.stop img{display:none}.nav{left:82px;right:12px;justify-content:space-between}}
+    a:focus-visible,
+    button:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--sand);
+      outline-offset: 3px
+    }
 
-/* ---- form gọn: nằm trọn trong một khung hình ---- */
-.grid{grid-template-columns:330px 1fr}
-.panel{padding:14px 16px 13px;border-radius:20px;top:100px}
-.sen-row{gap:8px;margin:0 0 9px;padding-bottom:8px}
-.sen-av img{height:54px}
-.sen-say{font-size:.74rem;padding:6px 10px;margin:0 0 2px;line-height:1.35}
-.field{margin-bottom:9px}
-.field>label:not(.chk),.field>span{margin-bottom:5px;font-size:.68rem}
-.field output{font-size:.8rem}
-select{padding:.48rem 2rem .48rem .8rem;font-size:.86rem;border-radius:11px}
-.selwrap::after{right:13px;width:7px;height:7px}
-.range{height:5px}
-.range::-webkit-slider-thumb{width:18px;height:18px;border-width:3px}
-.ticks{margin-top:4px;font-size:.62rem}
-.styles{margin:0 0 8px;display:grid;grid-template-columns:1fr 1fr;column-gap:8px}
-.styles legend{font-size:.68rem;margin-bottom:4px}
-.styles output{font-size:.8rem}
-.chk{gap:8px;padding:.28rem .1rem;font-size:.8rem}
-.chk input{width:18px;height:18px;border-radius:6px}
-.chk input::after{width:5px;height:9px;border-width:0 2px 2px 0}
-.go{margin-top:2px;padding:.62rem 1rem;font-size:.9rem}
-.note{margin:8px 0 0;font-size:.64rem;line-height:1.4}
-@media(max-width:960px){.grid{grid-template-columns:1fr}}
+    .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0
+    }
 
-/* ---- giới thiệu nằm ở cột phải để form hiện ngay trong khung hình đầu ---- */
-main{padding-top:100px;padding-bottom:40px}
-.grid{margin-top:0;gap:22px}
-.intro{margin-bottom:16px}
-.intro .kicker{margin-bottom:.4rem}
-.intro h1{font-size:clamp(1.7rem,3vw,2.6rem)}
-.intro .lead{margin-top:.55rem;font-size:.9rem;line-height:1.6;max-width:none}
-main.has-result .intro{display:none}
-.out{min-height:0}
-.empty{min-height:300px}
-@media(max-width:960px){.right{display:contents}.intro{order:-1}}
-@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-</style>
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: url(media/photo/dalat-b.webp) center/cover;
+      filter: brightness(.42) saturate(1.05)
+    }
+
+    .bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(120% 90% at 50% 40%, transparent 30%, rgba(10, 7, 5, .85))
+    }
+
+    /* header (cùng phong cách trang Giới thiệu) */
+    .topbar {
+      position: fixed;
+      z-index: 25;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 92px;
+      background: linear-gradient(rgba(10, 8, 6, .92), rgba(10, 8, 6, .7) 60%, transparent);
+      pointer-events: none
+    }
+
+    .brand {
+      position: fixed;
+      z-index: 30;
+      left: clamp(18px, 1.95vw, 28px);
+      top: clamp(18px, 3.1vh, 28px);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none
+    }
+
+    .brand img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, .55))
+    }
+
+    .brand span {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+      text-shadow: 0 1px 3px #000c, 0 0 14px #000a
+    }
+
+    .nav {
+      position: fixed;
+      z-index: 30;
+      right: clamp(18px, 1.95vw, 28px);
+      top: clamp(18px, 3.1vh, 28px);
+      display: flex;
+      align-items: center;
+      height: 42px;
+      padding: 4px 5px;
+      border: 1px solid rgba(255, 255, 255, .45);
+      background: rgba(20, 14, 10, .55);
+      border-radius: 999px
+    }
+
+    .nav a,
+    .nav button {
+      font: inherit;
+      color: #fff;
+      background: none;
+      border: 0;
+      text-decoration: none;
+      padding: 8px 19px;
+      border-radius: 999px;
+      line-height: 1;
+      cursor: pointer
+    }
+
+    .nav .on {
+      background: #fff;
+      color: #000
+    }
+
+    .nav button:hover,
+    .nav a:hover:not(.on) {
+      background: rgba(255, 255, 255, .14)
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 100px clamp(18px, 4vw, 48px) 40px
+    }
+
+    .kicker {
+      margin: 0 0 .4rem;
+      font-size: .75rem;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      color: var(--sand)
+    }
+
+    h1 {
+      margin: 0;
+      font-family: 'Playfair Display', serif;
+      font-weight: 500;
+      font-size: clamp(1.7rem, 3vw, 2.6rem);
+      line-height: 1.1;
+      text-shadow: 0 1px 12px #0009
+    }
+
+    h1 em {
+      color: var(--sand)
+    }
+
+    .lead {
+      margin: .55rem 0 0;
+      font-size: .9rem;
+      font-weight: 300;
+      line-height: 1.6;
+      color: #ffffffdd
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 22px;
+      align-items: start
+    }
+
+    /* form */
+    .panel {
+      position: sticky;
+      top: 100px;
+      max-height: calc(100vh - 116px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: #cdbba5 transparent;
+      background: rgba(255, 253, 248, .96);
+      color: var(--ink);
+      border-radius: 20px;
+      padding: 14px 16px 13px;
+      box-shadow: 0 24px 60px #0008
+    }
+
+    .sen-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin: 0 0 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed #e2d3bf
+    }
+
+    .sen-av img {
+      display: block;
+      height: 54px;
+      width: auto
+    }
+
+    .sen-say {
+      position: relative;
+      margin: 0 0 2px;
+      padding: 6px 10px;
+      border-radius: 14px 14px 14px 4px;
+      background: #f4ecdd;
+      color: #4a3526;
+      font-size: .74rem;
+      line-height: 1.4;
+      flex: 1;
+      animation: sen-in .5s cubic-bezier(.22, 1, .36, 1) both
+    }
+
+    @keyframes sen-in {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    /* chọn chế độ: tự lên lịch trình (nổi bật) hoặc chỉ gợi ý địa điểm */
+    .mode {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 0;
+      border: 0;
+      min-width: 0
+    }
+
+    .mode-opt {
+      position: relative;
+      display: block;
+      padding: 9px 12px;
+      border-radius: 14px;
+      border: 1.5px solid #d9cbb9;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background .2s, border-color .2s, box-shadow .2s
+    }
+
+    .mode-opt:hover {
+      border-color: var(--primary)
+    }
+
+    .mode-opt input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none
+    }
+
+    .mode-opt b {
+      display: block;
+      font-size: .9rem;
+      line-height: 1.3
+    }
+
+    .mode-opt small {
+      display: block;
+      margin-top: 1px;
+      font-size: .7rem;
+      line-height: 1.35;
+      color: #7a6a5d
+    }
+
+    .mode-opt:has(input:checked) {
+      border-color: var(--primary);
+      background: #fff2e8;
+      box-shadow: 0 0 0 3px #c8602e26
+    }
+
+    .mode-opt.main:has(input:checked) {
+      background: linear-gradient(135deg, #C8602E, #E07A45);
+      color: #fff;
+      box-shadow: 0 8px 22px #c8602e66
+    }
+
+    .mode-opt.main:has(input:checked) small {
+      color: #fff
+    }
+
+    .mode-opt:has(input:focus-visible) {
+      outline: 2px solid var(--primary);
+      outline-offset: 3px
+    }
+
+    .mode-opt .rec {
+      position: absolute;
+      right: 10px;
+      top: -9px;
+      padding: 2px 9px;
+      border-radius: 99px;
+      background: var(--green);
+      color: #fff;
+      font-style: normal;
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .04em
+    }
+
+    .field {
+      margin-bottom: 11px;
+      min-width: 0
+    }
+
+    .field>label:not(.chk),
+    .field>.lbl,
+    .styles legend {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+      padding: 0;
+      margin-bottom: 6px;
+      font-size: .84rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #3d2a1c
+    }
+
+    .field output,
+    .styles output {
+      flex: none;
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap
+    }
+
+    .selwrap {
+      position: relative
+    }
+
+    .selwrap::after {
+      content: '';
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid #7a6a5d;
+      border-bottom: 2px solid #7a6a5d;
+      transform: translateY(-70%) rotate(45deg);
+      pointer-events: none
+    }
+
+    select {
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
+      font: inherit;
+      font-size: .86rem;
+      padding: .48rem 2rem .48rem .8rem;
+      border-radius: 11px;
+      border: 1px solid #d9cbb9;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer
+    }
+
+    select:hover {
+      border-color: var(--primary)
+    }
+
+    .timerow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: center
+    }
+
+    .timerow i {
+      font-style: normal;
+      color: #8a7a6d
+    }
+
+    .range {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 5px;
+      border-radius: 99px;
+      outline-offset: 6px;
+      cursor: pointer;
+      background: linear-gradient(to right, var(--primary) var(--fill, 50%), #e6d9c8 var(--fill, 50%))
+    }
+
+    .range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+      transition: transform .15s
+    }
+
+    .range::-webkit-slider-thumb:hover {
+      transform: scale(1.15)
+    }
+
+    .range::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .25)
+    }
+
+    .styles {
+      border: 0;
+      padding: 0;
+      margin: 0 0 4px;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 8px
+    }
+
+    /* ô tick (phong cách khám phá + điểm nổi bật) */
+    .chk {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: .28rem .1rem;
+      cursor: pointer;
+      font-size: .8rem;
+      line-height: 1.3;
+      user-select: none
+    }
+
+    .chk input,
+    .hot-item input {
+      appearance: none;
+      -webkit-appearance: none;
+      flex: none;
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      border: 2px solid #cdbba5;
+      border-radius: 6px;
+      background: #fff;
+      display: grid;
+      place-content: center;
+      cursor: pointer;
+      transition: background .15s, border-color .15s
+    }
+
+    .chk input::after,
+    .hot-item input::after {
+      content: '';
+      width: 5px;
+      height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) scale(0);
+      margin-top: -2px;
+      transition: transform .15s
+    }
+
+    .chk input:checked,
+    .hot-item input:checked {
+      background: var(--primary);
+      border-color: var(--primary)
+    }
+
+    .chk input:checked::after,
+    .hot-item input:checked::after {
+      transform: rotate(45deg) scale(1)
+    }
+
+    .chk input:focus-visible,
+    .hot-item input:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 3px
+    }
+
+    .chk input:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+
+    .chk:has(input:disabled) {
+      opacity: .55;
+      cursor: not-allowed
+    }
+
+    .chk:has(input[data-none="1"]) span::after {
+      content: 'chưa có';
+      display: block;
+      font-size: .64rem;
+      color: #a08c7c
+    }
+
+    .hint {
+      margin: 0 0 2px;
+      font-size: .72rem;
+      line-height: 1.45;
+      color: #7a6a5d
+    }
+
+    .hint b {
+      color: var(--green)
+    }
+
+    .foot {
+      position: sticky;
+      bottom: -13px;
+      z-index: 2;
+      margin: 0 -16px -13px;
+      padding: 12px 16px 13px;
+      background: linear-gradient(rgba(255, 253, 248, 0), #fffdf8 14px)
+    }
+
+    .go {
+      width: 100%;
+      margin-top: 0;
+      padding: .7rem 1rem;
+      font: inherit;
+      font-weight: 700;
+      font-size: .95rem;
+      color: #fff;
+      background: var(--primary);
+      border: 0;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: transform .25s, background .25s
+    }
+
+    .go:hover {
+      transform: translateY(-2px);
+      background: #a3481d
+    }
+
+    .go:disabled {
+      opacity: .6;
+      cursor: wait;
+      transform: none
+    }
+
+    .note {
+      margin: 6px 0 0;
+      font-size: .64rem;
+      line-height: 1.4;
+      color: #7a6a5d
+    }
+
+    form[data-mode="suggest"] .only-plan {
+      display: none
+    }
+
+    /* kết quả */
+    .intro {
+      margin-bottom: 16px
+    }
+
+    main.has-result .intro {
+      display: none
+    }
+
+    .out {
+      min-height: 0;
+      scroll-margin-top: 104px
+    }
+
+    .out:focus {
+      outline: none
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      min-height: 300px;
+      padding: 30px;
+      border: 1px dashed #ffffff55;
+      border-radius: 24px;
+      color: #ffffffcc;
+      background: rgba(10, 7, 5, .35)
+    }
+
+    .empty b {
+      display: block;
+      font-family: 'Playfair Display', serif;
+      font-weight: 500;
+      font-size: 1.5rem;
+      margin-bottom: .5rem
+    }
+
+    .empty.small {
+      min-height: 0;
+      padding: 22px
+    }
+
+    .empty.small b {
+      font-size: 1.2rem
+    }
+
+    .perks {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin: 18px 0 0;
+      padding: 0;
+      list-style: none
+    }
+
+    .perks li {
+      padding: .35rem .85rem;
+      border-radius: 99px;
+      background: #ffffff1c;
+      border: 1px solid #ffffff33;
+      font-size: .78rem;
+      color: #fff
+    }
+
+    .steps {
+      background: rgba(10, 7, 5, .62);
+      border: 1px solid #ffffff33;
+      border-radius: 24px;
+      padding: 24px;
+      min-height: 300px
+    }
+
+    .steps h3 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      line-height: 1.4
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 0;
+      color: #ffffff88;
+      transition: color .3s
+    }
+
+    .step i {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #ffffff55;
+      display: grid;
+      place-items: center;
+      font-style: normal;
+      font-size: .7rem;
+      flex: none
+    }
+
+    .step.now {
+      color: #fff
+    }
+
+    .step.now i {
+      border-color: var(--sand);
+      border-top-color: transparent;
+      animation: spin .8s linear infinite
+    }
+
+    .step.done {
+      color: #fff
+    }
+
+    .step.done i {
+      background: var(--green);
+      border-color: var(--green)
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .result-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px
+    }
+
+    .result-head h2 {
+      margin: 0;
+      font-family: 'Playfair Display', serif;
+      font-weight: 500;
+      font-size: 1.7rem
+    }
+
+    .badge {
+      display: inline-block;
+      padding: .3rem .8rem;
+      border-radius: 99px;
+      background: #0008;
+      border: 1px solid #fff4;
+      font-size: .74rem
+    }
+
+    .info {
+      margin: 0 0 14px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: #0007;
+      border: 1px solid #ffffff33;
+      font-size: .8rem;
+      line-height: 1.55;
+      color: #ffffffdd
+    }
+
+    .day {
+      margin-bottom: 22px;
+      animation: rise .6s cubic-bezier(.22, 1, .36, 1) both
+    }
+
+    .day>h3 {
+      margin: 0 0 10px;
+      font-size: .85rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--sand)
+    }
+
+    .day>h3 span {
+      margin-left: 8px;
+      letter-spacing: .04em;
+      text-transform: none;
+      font-weight: 400;
+      color: #ffffffaa
+    }
+
+    .stop {
+      display: grid;
+      grid-template-columns: 78px 96px 1fr;
+      gap: 14px;
+      align-items: stretch;
+      margin-bottom: 10px;
+      background: rgba(255, 253, 248, .96);
+      color: var(--ink);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 14px 34px #0007;
+      animation: rise .55s cubic-bezier(.22, 1, .36, 1) both
+    }
+
+    .stop.fresh {
+      outline: 3px solid var(--sand);
+      outline-offset: -3px
+    }
+
+    .when {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      background: #f6ece0;
+      font-size: .68rem;
+      font-weight: 700;
+      color: #8a5a3c;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: 8px;
+      text-align: center
+    }
+
+    .when b {
+      font-size: 1.15rem;
+      color: var(--primary);
+      letter-spacing: 0
+    }
+
+    .when em {
+      font-style: normal;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+      color: #a08068
+    }
+
+    .stop img {
+      width: 96px;
+      height: 100%;
+      min-height: 96px;
+      object-fit: cover;
+      display: block;
+      border-radius: 0
+    }
+
+    .sbody {
+      padding: 12px 14px 12px 0;
+      min-width: 0
+    }
+
+    .sloc {
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--primary)
+    }
+
+    .sbody h4 {
+      margin: .15rem 0 .3rem;
+      font-size: 1rem;
+      line-height: 1.3
+    }
+
+    .why {
+      margin: 0;
+      font-size: .8rem;
+      line-height: 1.5;
+      color: #5b4a3e
+    }
+
+    .why b {
+      color: var(--green)
+    }
+
+    .meta {
+      margin: 8px 0 0;
+      padding: 8px 0 0;
+      list-style: none;
+      border-top: 1px dashed #e2d3bf;
+      display: grid;
+      gap: 3px;
+      font-size: .76rem;
+      line-height: 1.45;
+      color: #5b4a3e
+    }
+
+    .meta li {
+      display: flex;
+      gap: 6px
+    }
+
+    .meta li>span:first-child {
+      flex: none
+    }
+
+    .meta b {
+      color: #3d2a1c
+    }
+
+    .meta a {
+      color: var(--primary);
+      font-weight: 600
+    }
+
+    .tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px
+    }
+
+    .tag {
+      padding: .15rem .55rem;
+      border-radius: 99px;
+      background: #eef3e6;
+      color: var(--green);
+      font-size: .68rem;
+      font-weight: 600
+    }
+
+    .tag.star {
+      background: #fff1d6;
+      color: #9a5b00
+    }
+
+    .rm {
+      margin-left: auto;
+      font: inherit;
+      font-size: .68rem;
+      font-weight: 600;
+      padding: .15rem .6rem;
+      border-radius: 99px;
+      border: 1px solid #d9cbb9;
+      background: #fff;
+      color: #7a6a5d;
+      cursor: pointer
+    }
+
+    .rm:hover {
+      border-color: var(--primary);
+      color: var(--primary)
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 6px
+    }
+
+    .btn2 {
+      font: inherit;
+      font-weight: 600;
+      padding: .7rem 1.4rem;
+      border-radius: 99px;
+      border: 1px solid #fff6;
+      background: #0007;
+      color: #fff;
+      cursor: pointer;
+      text-decoration: none
+    }
+
+    .btn2:hover {
+      background: #000b
+    }
+
+    .btn2.hi {
+      background: var(--primary);
+      border-color: var(--primary)
+    }
+
+    .btn2.hi:hover {
+      background: #a3481d
+    }
+
+    .btn2:disabled {
+      opacity: .5;
+      cursor: not-allowed
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(20px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    /* gợi ý điểm nổi bật: tuỳ chọn thêm vào lịch trình */
+    .hot {
+      margin: 22px 0 14px;
+      padding: 16px;
+      background: rgba(255, 253, 248, .96);
+      color: var(--ink);
+      border-radius: 20px;
+      box-shadow: 0 14px 34px #0007
+    }
+
+    .hot-head {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      margin-bottom: 12px
+    }
+
+    .hot-head img {
+      height: 58px;
+      width: auto;
+      flex: none
+    }
+
+    .hot-head h3 {
+      margin: 0 0 3px;
+      font-size: 1rem;
+      line-height: 1.35
+    }
+
+    .hot-head p {
+      margin: 0;
+      font-size: .8rem;
+      line-height: 1.5;
+      color: #6b5646
+    }
+
+    .hot-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 8px;
+      margin-bottom: 12px
+    }
+
+    .hot-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 14px;
+      border: 1px solid #e2d3bf;
+      background: #fff;
+      cursor: pointer
+    }
+
+    .hot-item:hover {
+      border-color: var(--primary)
+    }
+
+    .hot-item:has(input:checked) {
+      border-color: var(--primary);
+      background: #fff2e8
+    }
+
+    .hot-item img {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex: none
+    }
+
+    .hot-item span {
+      display: block;
+      min-width: 0
+    }
+
+    .hot-item b {
+      display: block;
+      font-size: .84rem;
+      line-height: 1.3
+    }
+
+    .hot-item small {
+      display: block;
+      margin-top: 2px;
+      font-size: .68rem;
+      line-height: 1.35;
+      color: #7a6a5d
+    }
+
+    /* contact modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      place-items: center;
+      background: rgba(5, 3, 2, .7);
+      padding: 20px
+    }
+
+    .modal.open {
+      display: grid
+    }
+
+    .mbox {
+      position: relative;
+      width: min(440px, 100%);
+      background: #fffdf8;
+      color: var(--ink);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 30px 80px #000a
+    }
+
+    .mbox h2 {
+      margin: 0 0 8px;
+      font-family: 'Playfair Display', serif;
+      font-weight: 500;
+      font-size: 1.6rem
+    }
+
+    .mbox p {
+      margin: 0 0 12px;
+      line-height: 1.6;
+      color: #5b4a3e
+    }
+
+    .mbox .x {
+      position: absolute;
+      right: 14px;
+      top: 12px;
+      font: inherit;
+      font-size: 1.4rem;
+      background: none;
+      border: 0;
+      cursor: pointer;
+      color: #7a6a5d
+    }
+
+    /* nhúng trong hộp thoại của trang Giới thiệu: bỏ header riêng */
+    .embed .brand,
+    .embed .nav,
+    .embed .topbar {
+      display: none
+    }
+
+    .embed main {
+      padding-top: 22px
+    }
+
+    .embed .panel {
+      top: 18px;
+      max-height: calc(100vh - 36px)
+    }
+
+    .embed .out {
+      scroll-margin-top: 18px
+    }
+
+    @media(max-width:960px) {
+      .panel {
+        position: static;
+        max-height: none;
+        overflow: visible
+      }
+
+      .foot {
+        position: static;
+        margin: 0;
+        padding: 8px 0 0;
+        background: none
+      }
+
+      .grid {
+        grid-template-columns: 1fr
+      }
+
+      .nav a,
+      .nav button {
+        padding: 8px 13px
+      }
+
+      .brand span {
+        display: none
+      }
+
+      .right {
+        display: contents
+      }
+
+      .intro {
+        order: -1
+      }
+    }
+
+    @media(max-width:560px) {
+      .stop {
+        grid-template-columns: 64px 1fr
+      }
+
+      .stop img {
+        display: none
+      }
+
+      .nav {
+        left: 82px;
+        right: 12px;
+        justify-content: space-between
+      }
+
+      .sbody {
+        padding-left: 2px
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      * {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="bg" aria-hidden="true"></div>
-<div class="topbar" aria-hidden="true"></div>
-<a class="brand" href="experience.html" aria-label="Viloca"><img src="assets/viloca-logo.webp" alt=""><span>Viloca</span></a>
-<nav class="nav" aria-label="Điều hướng chính">
-  <a href="experience.html">Giới thiệu</a><a class="on" href="planner.html" aria-current="page">Trải nghiệm</a><button type="button" id="open-contact">Contact</button>
-</nav>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="topbar" aria-hidden="true"></div>
+  <a class="brand" href="experience.html" aria-label="Viloca"><img src="assets/viloca-logo.webp"
+      alt=""><span>Viloca</span></a>
+  <nav class="nav" aria-label="Điều hướng chính">
+    <a href="experience.html">Giới thiệu</a><a class="on" href="planner.html" aria-current="page">Trải nghiệm</a><button
+      type="button" id="open-contact">Liên hệ</button>
+  </nav>
 
-<main>
+  <main>
 
-  <div class="grid">
-    <form class="panel" id="form" aria-label="Tuỳ chọn lịch trình">
-      <div class="sen-row"><span class="sen-av"><img src="assets/sen-wave.webp" id="sen-img" alt="Bé Sen, linh vật của Viloca"></span><p class="sen-say" id="sen-say"></p></div>
-      <div class="field"><label for="city">Điểm đến</label>
-        <div class="selwrap"><select id="city">
-          <option value="hanoi">Hà Nội</option>
-          <option value="danang">Đà Nẵng &amp; Hội An</option>
-          <option value="hcm">TP. Hồ Chí Minh</option>
-        </select></div></div>
-      <div class="field"><label for="days">Số ngày <output id="days-out" for="days">2 ngày</output></label>
-        <input class="range" type="range" id="days" min="1" max="7" step="1" value="2" aria-valuetext="2 ngày">
-        <div class="ticks" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div></div>
-      <div class="field"><label for="pace">Số điểm mỗi ngày <output id="pace-out" for="pace">3 điểm</output></label>
-        <input class="range" type="range" id="pace" min="1" max="5" step="1" value="3" aria-valuetext="3 điểm">
-        <div class="ticks" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div>
-      <fieldset class="field styles" id="styles"><legend>Phong cách du lịch (tối đa 3) <output id="style-out">2/3</output></legend>
-        <label class="chk"><input type="checkbox" name="style" value="culture" checked><span>Văn hóa &amp; Lịch sử</span></label>
-        <label class="chk"><input type="checkbox" name="style" value="food" checked><span>Ẩm thực &amp; Cà phê</span></label>
-        <label class="chk"><input type="checkbox" name="style" value="nature"><span>Thiên nhiên</span></label>
-        <label class="chk"><input type="checkbox" name="style" value="photo"><span>Chụp hình &amp; Check-in</span></label>
-      </fieldset>
-      <button class="go" type="submit" id="go">Tạo lịch trình</button>
-      <p class="note">Kết quả chỉ mang tính tham khảo. Giờ mở cửa, giá vé và thời gian di chuyển thực tế có thể thay đổi.</p>
-    </form>
+    <div class="grid">
+      <form class="panel" id="form" data-mode="plan" aria-label="Tuỳ chọn lịch trình">
+        <div class="sen-row"><span class="sen-av"><img src="assets/sen-wave.webp" id="sen-img"
+              alt="Bé Sen, linh vật của Viloca"></span>
+          <p class="sen-say" id="sen-say"></p>
+        </div>
 
-    <div class="right">
-      <div class="intro">
-      <p class="kicker">Thử tạo lịch trình</p>
-      <h1>Bạn chọn điều mình thích,<br><em>Viloca gợi ý lịch trình</em></h1>
-      <p class="lead">Chọn điểm đến, số ngày và phong cách du lịch, Viloca sẽ sắp xếp các địa điểm theo từng buổi và cho biết vì sao gợi ý mỗi nơi. Đây là bản thử dùng dữ liệu mẫu có sẵn, chưa gọi dịch vụ AI thật.</p>
+        <fieldset class="mode">
+          <legend class="sr">Bạn muốn Sen giúp gì?</legend>
+          <label class="mode-opt main"><input type="radio" name="mode" value="plan" checked><b>Tự lên lịch
+              trình</b><small>Sen xếp sẵn từng ngày, từng giờ cho bạn</small><i class="rec">Nổi bật</i></label>
+          <label class="mode-opt"><input type="radio" name="mode" value="suggest"><b>Chỉ gợi ý địa điểm</b><small>Xem
+              vài nơi hợp gu, bạn tự sắp xếp nhé</small></label>
+        </fieldset>
+
+        <div class="field"><label for="city">Bạn muốn đi đâu nè?</label>
+          <div class="selwrap"><select id="city">
+              <option value="hanoi">Hà Nội</option>
+              <option value="danang">Đà Nẵng &amp; Hội An</option>
+              <option value="hcm">TP. Hồ Chí Minh</option>
+            </select></div>
+        </div>
+        <div class="field only-plan"><label for="days">Bạn đi bao nhiêu ngày? <output id="days-out" for="days">2
+              ngày</output></label>
+          <input class="range" type="range" id="days" min="1" max="7" step="1" value="2" aria-valuetext="2 ngày">
+        </div>
+        <div class="field only-plan"><label for="pace">Mỗi ngày bạn muốn đến bao nhiêu điểm? <output id="pace-out"
+              for="pace">3 điểm</output></label>
+          <input class="range" type="range" id="pace" min="1" max="5" step="1" value="3" aria-valuetext="3 điểm">
+        </div>
+        <div class="field only-plan" role="group" aria-labelledby="time-l"><span class="lbl" id="time-l">Mỗi ngày bạn đi
+            từ mấy giờ đến mấy giờ? <output id="time-out">08:00 – 21:00</output></span>
+          <div class="timerow">
+            <div class="selwrap"><select id="t-from" aria-label="Giờ bắt đầu"></select></div><i aria-hidden="true">→</i>
+            <div class="selwrap"><select id="t-to" aria-label="Giờ kết thúc"></select></div>
+          </div>
+        </div>
+        <fieldset class="field styles" id="styles">
+          <legend>Bạn muốn khám phá điều gì ở nơi mình sắp đến? <output id="style-out">2/3</output></legend>
+          <label class="chk"><input type="checkbox" name="style" value="culture" checked><span>Văn hóa &amp; Lịch
+              sử</span></label>
+          <label class="chk"><input type="checkbox" name="style" value="food" checked><span>Ẩm thực &amp; Cà
+              phê</span></label>
+          <label class="chk"><input type="checkbox" name="style" value="nature"><span>Thiên nhiên</span></label>
+          <label class="chk"><input type="checkbox" name="style" value="photo"><span>Chụp hình &amp;
+              Check&#8209;in</span></label>
+          <label class="chk"><input type="checkbox" name="style" value="spirit"><span>Tâm linh &amp; Tôn
+              giáo</span></label>
+          <label class="chk"><input type="checkbox" name="style" value="craft"><span>Làng nghề &amp; Thủ
+              công</span></label>
+          <label class="chk"><input type="checkbox" name="style" value="market"><span>Chợ &amp; Mua sắm</span></label>
+          <label class="chk"><input type="checkbox" name="style" value="night"><span>Dạo đêm &amp; Giải
+              trí</span></label>
+        </fieldset>
+        <p class="hint" id="hint" aria-live="polite"></p>
+
+      </form>
+
+      <div class="right">
+        <div class="intro">
+          <p class="kicker">Tính năng nổi bật · Tự lên lịch trình</p>
+          <h1>Bạn chọn điều mình thích,<br><em>Sen xếp lịch trình cho bạn</em></h1>
+          <p class="lead">Cho Sen biết bạn muốn đi đâu, bao lâu và thích gì, Sen xếp lịch từng ngày theo giờ mở cửa.
+            Hoặc chọn “Chỉ gợi ý địa điểm” để tự sắp xếp.</p>
+        </div>
+        <section class="out" id="out" tabindex="-1" aria-live="polite">
+          <div class="empty">
+            <div><b>Lịch trình của bạn sẽ hiện ở đây</b>Chọn thông tin bên trái rồi bấm nút nhé.
+              <ul class="perks">
+                <li>🕘 Xếp theo giờ mở cửa</li>
+                <li>🎟 Có giá vé tham khảo</li>
+                <li>🗺 Có liên kết Google Maps</li>
+                <li>⭐ Thêm điểm nổi bật nếu bạn thích</li>
+              </ul>
+            </div>
+          </div>
+        </section>
       </div>
-    <section class="out" id="out" aria-live="polite">
-      <div class="empty"><div><b>Lịch trình của bạn sẽ hiện ở đây</b>Chọn thông tin bên trái rồi bấm “Tạo lịch trình”.</div></div>
-    </section>
+    </div>
+  </main>
+
+  <div class="modal" id="contact" role="dialog" aria-modal="true" aria-labelledby="ct-title">
+    <div class="mbox">
+      <button class="x" type="button" id="close-contact" aria-label="Đóng">×</button>
+      <h2 id="ct-title">Liên hệ Viloca</h2>
+      <p>Kênh liên hệ chính thức (email, mạng xã hội) sẽ được cập nhật tại đây khi Viloca công bố.</p>
+      <!-- TODO: thay bằng email / liên kết liên hệ chính thức khi có; không dùng thông tin giả. -->
+      <p style="margin:0;font-size:.85rem;color:#8a7a6d">Trong lúc chờ, bạn có thể tiếp tục trải nghiệm và xem phần Giới
+        thiệu.</p>
     </div>
   </div>
-</main>
 
-<div class="modal" id="contact" role="dialog" aria-modal="true" aria-labelledby="ct-title">
-  <div class="mbox">
-    <button class="x" type="button" id="close-contact" aria-label="Đóng">×</button>
-    <h2 id="ct-title">Liên hệ Viloca</h2>
-    <p>Kênh liên hệ chính thức (email, mạng xã hội) sẽ được cập nhật tại đây khi Viloca công bố.</p>
-    <!-- TODO: thay bằng email / liên kết liên hệ chính thức khi có; không dùng thông tin giả. -->
-    <p style="margin:0;font-size:.85rem;color:#8a7a6d">Trong lúc chờ, bạn có thể tiếp tục trải nghiệm và xem phần Giới thiệu.</p>
-  </div>
-</div>
+  <script>
+      (() => {
+        'use strict';
+        const $ = s => document.querySelector(s);
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-<script>
-(() => {
-  'use strict';
-  const $ = s => document.querySelector(s);
+        // ---- dữ liệu mẫu ----
+        // t = nhóm sở thích; why = lý do gợi ý theo từng nhóm (mỗi nhóm trong t đều phải có lời giải thích)
+        // h = giờ mở cửa hiển thị; w = khung giờ ghé thăm dùng để xếp lịch ("HH:MM-HH:MM", nhiều khung cách nhau bằng dấu phẩy; bỏ trống = cả ngày)
+        // p = giá tham khảo; d = thời gian ghé (phút, mặc định theo nhóm); hot = điểm nổi bật có thể thêm tuỳ chọn
+        // Giờ và giá: nguồn là các bảng địa điểm của dự án (Đà Nẵng, TP.HCM); với Hà Nội và một số điểm Hội An là số liệu tham khảo, cần xác nhận lại trước khi phát hành.
+        const DATA = {
+          hanoi: {
+            name: 'Hà Nội', map: 'Hà Nội', places: [
+              {
+                n: 'Văn Miếu – Quốc Tử Giám', loc: 'Đống Đa', img: 'his-vanmieu', t: ['culture', 'spirit'], h: '08:00 – 17:00', w: '08:00-17:00', p: '~70.000đ/người lớn', d: 90, hot: 1,
+                why: { culture: 'di tích gắn với truyền thống khoa cử, hợp để mở đầu ngày khi còn yên tĩnh', spirit: 'nơi nhiều sĩ tử đến cầu may trước mỗi kỳ thi' }
+              },
+              {
+                n: 'Hoàng Thành Thăng Long', loc: 'Ba Đình', img: 'his-thanglong', t: ['culture'], h: '08:00 – 17:00 (nghỉ thứ Hai)', w: '08:00-17:00', p: '~30.000đ/người lớn', d: 90,
+                why: { culture: 'dấu tích nhiều triều đại, nhiều tầng lịch sử để khám phá' }
+              },
+              {
+                n: 'Bảo tàng Gốm Bát Tràng', loc: 'Gia Lâm', img: 'hn-battrang', t: ['culture', 'photo', 'craft'], h: '08:00 – 17:00', w: '08:00-17:00', p: 'Vào làng gốm miễn phí; vé bảo tàng và lớp làm gốm tính riêng', d: 120,
+                why: { culture: 'tìm hiểu nghề gốm truyền thống của vùng', photo: 'kiến trúc độc đáo, nhiều góc chụp đẹp', craft: 'xem và tự tay thử làm gốm ở làng nghề lâu đời' }
+              },
+              {
+                n: 'Cà Phê Giảng', loc: 'Hoàn Kiếm', img: 'eat-giang', t: ['food'], h: '07:00 – 22:30', w: '07:00-22:30', p: '~45.000 – 60.000đ/ly', d: 60, hot: 1,
+                why: { food: 'thử cà phê trứng, món đặc trưng của người Hà Thành' }
+              },
+              {
+                n: 'Cà Phê Đường Tàu', loc: 'Hoàn Kiếm', img: 'eat-duongtau', t: ['food', 'photo'], h: '07:00 – 22:00', w: '07:00-22:00', p: '~40.000 – 70.000đ/ly', d: 60,
+                why: { food: 'nhâm nhi cà phê bên phố có đường tàu chạy qua', photo: 'khung cảnh phố cổ đặc trưng để chụp ảnh' }
+              },
+              {
+                n: 'Hồ Hoàn Kiếm', loc: 'Hoàn Kiếm', img: 'pic-hoankiem', t: ['photo', 'nature', 'spirit', 'night'], h: 'Mở tự do cả ngày (cuối tuần có phố đi bộ buổi tối)', p: 'Miễn phí (vé Đền Ngọc Sơn tính riêng)', d: 75, hot: 1,
+                why: { photo: 'điểm dạo bộ và chụp ảnh quen thuộc giữa thủ đô', nature: 'mảng xanh và mặt hồ giữa trung tâm', spirit: 'có Đền Ngọc Sơn nằm giữa hồ', night: 'cuối tuần quanh hồ thành phố đi bộ, buổi tối rất nhộn nhịp' }
+              },
+              {
+                n: 'Cầu Long Biên', loc: 'Sông Hồng', img: 'his-longbien', t: ['culture', 'photo'], h: 'Mở tự do · đẹp nhất lúc hoàng hôn (16:00 – 19:30)', w: '16:00-19:30', p: 'Miễn phí', d: 60,
+                why: { culture: 'cây cầu sắt hơn 100 năm tuổi, chứng nhân lịch sử', photo: 'hoàng hôn trên cầu cho ảnh rất đẹp' }
+              },
+              {
+                n: 'Múa Rối Nước Thăng Long', loc: 'Hoàn Kiếm', img: 'fun-muaroi', t: ['culture', 'night'], h: 'Các suất diễn ~15:00, 16:10, 17:20, 18:30, 20:00', w: '15:00-21:30', p: 'Từ ~100.000đ/vé', d: 60, hot: 1,
+                why: { culture: 'nghệ thuật múa rối nước truyền thống, hợp buổi tối', night: 'suất diễn buổi chiều tối, một cách thư giãn sau ngày dài' }
+              },
+              {
+                n: 'Làng Chuồn Chuồn Tre Thạch Xá', loc: 'Thạch Thất', img: 'hn-chuonchuon', t: ['culture', 'nature', 'craft'], h: '08:00 – 17:00', w: '08:00-17:00', p: 'Miễn phí tham quan; sản phẩm và trải nghiệm tính riêng', d: 90,
+                why: { culture: 'làng nghề thủ công độc đáo', nature: 'không khí làng quê ngoại thành', craft: 'xem nghệ nhân đan chuồn chuồn tre bằng tay' }
+              },
+              {
+                n: 'Ô Quan Chưởng', loc: 'Hoàn Kiếm', img: 'hn-oquanchuong', t: ['culture', 'photo'], h: 'Mở tự do cả ngày', p: 'Miễn phí', d: 45,
+                why: { culture: 'cửa ô cuối cùng của thành cổ Thăng Long', photo: 'cổng cổ rêu phong, góc ảnh hoài niệm' }
+              }]
+          },
+          danang: {
+            name: 'Đà Nẵng & Hội An', map: 'Đà Nẵng', places: [
+              {
+                n: 'Bảo tàng Điêu khắc Chăm', loc: 'Đà Nẵng', img: 'dn-cham', t: ['culture'], h: '07:00 – 17:00', w: '07:00-17:00', p: '~60.000đ/người lớn', d: 90,
+                why: { culture: 'tìm hiểu văn hóa Chăm Pa qua những tác phẩm điêu khắc' }
+              },
+              {
+                n: 'Nhà cổ Tấn Ký', loc: 'Hội An', img: 'dn-tanky', t: ['culture', 'photo'], h: '08:00 – 21:00', w: '08:00-21:00', p: 'Vé phố cổ Hội An ~120.000đ (dùng chung cho nhiều điểm)', d: 60,
+                why: { culture: 'ngôi nhà cổ giữ nguyên nếp sống người Hội An xưa', photo: 'kiến trúc gỗ cổ, ánh sáng đẹp buổi sáng' }
+              },
+              {
+                n: 'Hội quán Phúc Kiến', loc: 'Hội An', img: 'dn-phuckien', t: ['culture', 'photo', 'spirit'], h: '08:00 – 17:00', w: '08:00-17:00', p: 'Vé phố cổ Hội An ~120.000đ (dùng chung cho nhiều điểm)', d: 60,
+                why: { culture: 'dấu ấn cộng đồng người Hoa trong phố cổ', photo: 'cổng và sân đẹp để chụp ảnh', spirit: 'hội quán có điện thờ bà Thiên Hậu, không gian trầm lặng' }
+              },
+              {
+                n: 'Làng mộc Kim Bồng', loc: 'Hội An', img: 'dn-kimbong', t: ['culture', 'craft'], h: '07:00 – 17:00', w: '07:00-17:00', p: 'Miễn phí đi dạo; trải nghiệm làm đồ gỗ tính riêng', d: 90,
+                why: { culture: 'làng nghề chạm khắc gỗ truyền thống', craft: 'xem nghệ nhân chạm khắc gỗ ngay tại xưởng' }
+              },
+              {
+                n: 'Làng rau Trà Quế', loc: 'Hội An', img: 'dn-traque', t: ['nature', 'food', 'culture'], h: '06:30 – 17:30', w: '06:30-17:30', p: 'Phí vào làng nhỏ; đạp xe, lớp nấu ăn tính riêng', d: 120,
+                why: { nature: 'đạp xe qua những luống rau xanh mát', food: 'thưởng thức món ăn từ rau tươi bản địa', culture: 'trải nghiệm nếp sinh hoạt của người làm nông' }
+              },
+              {
+                n: 'Rừng dừa Bảy Mẫu', loc: 'Cẩm Thanh', img: 'fun-rungdua', t: ['nature', 'photo'], h: '07:00 – 17:00', w: '07:00-17:00', p: 'Thuyền thúng ~150.000 – 250.000đ/người', d: 120,
+                why: { nature: 'ngồi thuyền thúng len lỏi rạch dừa nước', photo: 'mặt nước và tán dừa cho khung hình yên bình' }
+              },
+              {
+                n: 'Bếp cuốn Đà Nẵng', loc: 'Đà Nẵng', img: 'dn-bepcuon', t: ['food'], h: '10:00 – 21:00', w: '10:00-21:00', p: '~100.000 – 200.000đ/người', d: 75,
+                why: { food: 'thử món cuốn địa phương trong không gian ấm cúng' }
+              },
+              {
+                n: 'Giồng Cafe', loc: 'Đà Nẵng', img: 'dn-giong', t: ['food', 'photo'], h: '07:00 – 22:00', w: '07:00-22:00', p: '~40.000 – 70.000đ/ly', d: 60,
+                why: { food: 'không gian cà phê thư giãn', photo: 'không gian đẹp để check-in' }
+              },
+              {
+                n: 'Ký ức Hội An', loc: 'Hội An', img: 'fun-kyuc', t: ['culture', 'photo', 'night'], h: 'Suất diễn buổi tối (~20:00), nên đặt vé trước', w: '19:30-22:30', p: 'Từ ~600.000đ/vé', d: 90,
+                why: { culture: 'show thực cảnh tái hiện lịch sử thương cảng', photo: 'sân khấu ngoài trời rực rỡ ánh sáng', night: 'show diễn buổi tối, một đêm đáng nhớ ở Hội An' }
+              },
+              {
+                n: 'Đêm phố cổ & thả đèn hoa đăng', loc: 'Hội An', img: 'dn-demhoian', t: ['photo', 'culture', 'night'], h: '17:00 – 22:00', w: '17:00-22:30', p: 'Dạo phố miễn phí; thuyền và đèn hoa đăng ~50.000 – 150.000đ', d: 90, hot: 1,
+                why: { photo: 'phố cổ lung linh ánh đèn lồng về đêm', culture: 'nét sinh hoạt đặc trưng bên sông Hoài', night: 'phố cổ lên đèn lồng, thả hoa đăng trên sông Hoài' }
+              },
+              {
+                n: 'Cầu Rồng', loc: 'Hải Châu', img: 'dn-01', t: ['photo', 'night'], h: 'Mở tự do · biểu diễn 20:30 – 21:30 các tối cuối tuần', w: '18:00-22:30', p: 'Miễn phí', d: 60, hot: 1,
+                why: { photo: 'cầu hình rồng dài 666m, một số tối cuối tuần có biểu diễn phun lửa và phun nước', night: 'tối cuối tuần có màn phun lửa, phun nước rất đông vui' }
+              },
+              {
+                n: 'Cầu Sông Hàn', loc: 'Hải Châu', img: 'dn-02', t: ['culture', 'photo', 'night'], h: 'Mở tự do · cầu quay 22:45 – 24:00 tối thứ Bảy, Chủ nhật', w: '18:00-24:00', p: 'Miễn phí', d: 45,
+                why: { culture: 'cây cầu quay đầu tiên do người Đà Nẵng cùng xây dựng', photo: 'lung linh ánh đèn về đêm bên sông Hàn', night: 'cầu sáng đèn về đêm, hợp dạo bộ ngắm sông' }
+              },
+              {
+                n: 'Cầu Vàng – Bà Nà Hills', loc: 'Hòa Vang', img: 'dn-03', t: ['photo', 'nature'], h: '07:30 – 17:00', w: '07:30-17:00', p: '~900.000 – 950.000đ/người lớn (đã gồm cáp treo)', d: 240, hot: 1,
+                why: { photo: 'cây cầu dài 150m được nâng bởi đôi bàn tay đá giữa mây ngàn', nature: 'không khí mát mẻ trên núi ở độ cao hơn 1.400m' }
+              },
+              {
+                n: 'Cầu Tình Yêu & Cá Chép Hóa Rồng', loc: 'Sơn Trà', img: 'dn-04', t: ['photo', 'night'], h: 'Mở tự do · đẹp nhất 18:00 – 22:00', w: '18:00-22:30', p: 'Miễn phí (ổ khóa ~50.000 – 150.000đ)', d: 45,
+                why: { photo: 'hàng cột đèn trái tim rực đỏ và tượng cá chép hóa rồng bên sông', night: 'hàng cột đèn trái tim thắp sáng bên sông về đêm' }
+              },
+              {
+                n: 'Cầu Thuận Phước', loc: 'Hải Châu', img: 'dn-05', t: ['photo'], h: 'Mở tự do · đẹp nhất 16:30 – 18:30', w: '16:00-19:30', p: 'Miễn phí', d: 45,
+                why: { photo: 'cầu treo dây võng dài nhất Việt Nam bắc qua cửa sông Hàn' }
+              },
+              {
+                n: 'Bán đảo Sơn Trà', loc: 'Sơn Trà', img: 'dn-07', t: ['nature'], h: 'Mở tự do · đẹp nhất 05:30 – 10:00 hoặc 15:00 – 18:00', w: '05:30-10:00,15:00-18:00', p: 'Miễn phí', d: 120,
+                why: { nature: 'lá phổi xanh của thành phố, nơi cư trú của loài voọc chà vá chân nâu' }
+              },
+              {
+                n: 'Ghềnh Bàng', loc: 'Sơn Trà', img: 'dn-10', t: ['nature', 'photo'], h: 'Mở tự do · đẹp nhất tháng 3 – 9 (mùa biển êm)', w: '06:00-17:30', p: 'Miễn phí', d: 75,
+                why: { nature: 'bờ biển đá hoang sơ, nước trong thấy đáy', photo: 'những phiến đá nhấp nhô làm nền cho ảnh biển' }
+              },
+              {
+                n: 'Hải đăng Tiên Sa', loc: 'Sơn Trà', img: 'dn-11', t: ['culture', 'photo'], h: '06:30 – 17:30', w: '06:30-17:30', p: '~20.000đ/người', d: 60,
+                why: { culture: 'ngọn hải đăng cổ do người Pháp xây từ năm 1902', photo: 'tông vàng cổ điển nổi bật giữa rừng và biển' }
+              },
+              {
+                n: 'Bãi Bụt & Bãi Rạng', loc: 'Sơn Trà', img: 'dn-13', t: ['nature', 'food'], h: '08:00 – 17:00 (đẹp nhất tháng 3 – 8)', w: '08:00-17:00', p: 'Miễn phí', d: 90,
+                why: { nature: 'vịnh kín gió nước xanh ngọc, bãi cát thoai thoải', food: 'chòi lá nghỉ chân cùng hải sản tươi bắt tại chỗ' }
+              },
+              {
+                n: 'Mũi Nghê', loc: 'Sơn Trà', img: 'dn-14', t: ['nature', 'photo'], h: 'Mở tự do · đẹp nhất 04:30 – 06:30 (săn bình minh)', w: '04:30-09:00', p: 'Miễn phí', d: 60,
+                why: { nature: 'điểm đón những tia nắng bình minh đầu tiên của thành phố', photo: 'khối đá ra biển tạo khung hình hoang sơ' }
+              },
+              {
+                n: 'Bãi biển Mỹ Khê', loc: 'Sơn Trà', img: 'dn-15', t: ['nature', 'photo'], h: 'Mở tự do · đẹp nhất 05:00 – 07:00 và 16:00 – 18:30', w: '05:00-08:00,16:00-19:00', p: 'Miễn phí', d: 90, hot: 1,
+                why: { nature: 'bãi cát trắng mịn trải dài, sóng biển hiền hòa', photo: 'ngắm bình minh và dạo biển buổi sáng' }
+              },
+              {
+                n: 'Bãi biển Non Nước', loc: 'Ngũ Hành Sơn', img: 'dn-16', t: ['nature'], h: 'Mở tự do · đẹp nhất tháng 4 – 9', w: '05:00-18:30', p: 'Miễn phí', d: 90,
+                why: { nature: 'bãi biển dài thoai thoải dưới chân Ngũ Hành Sơn' }
+              },
+              {
+                n: 'Công viên Biển Đông', loc: 'Sơn Trà', img: 'dn-17', t: ['photo', 'nature'], h: 'Mở tự do · đẹp nhất 06:30 – 07:30 và 16:30 – 17:30', w: '06:00-08:30,16:00-19:00', p: 'Miễn phí', d: 60,
+                why: { photo: 'quảng trường biển sôi động, nơi tổ chức nhiều sự kiện', nature: 'hóng gió biển buổi chiều' }
+              },
+              {
+                n: 'Danh thắng Ngũ Hành Sơn', loc: 'Ngũ Hành Sơn', img: 'dn-19', t: ['culture', 'nature', 'spirit'], h: '07:00 – 17:30', w: '07:00-17:30', p: 'Thủy Sơn ~40.000đ; Động Âm Phủ ~20.000đ; thang máy ~15.000đ/lượt', d: 120, hot: 1,
+                why: { culture: 'quần thể núi đá vôi cùng các ngôi cổ tự và hang động', nature: 'leo núi, khám phá hang động và ngắm toàn cảnh', spirit: 'nhiều chùa và hang động linh thiêng ẩn trong núi đá vôi' }
+              },
+              {
+                n: 'Thành Điện Hải', loc: 'Hải Châu', img: 'dn-20', t: ['culture'], h: '08:00 – 17:00 (đóng cửa thứ Hai)', w: '08:00-17:00', p: '~20.000đ/người', d: 75,
+                why: { culture: 'pháo đài cổ xây từ thời Gia Long, lưu giữ lịch sử của Đà Nẵng' }
+              },
+              {
+                n: 'Nhà thờ Chính Tòa', loc: 'Hải Châu', img: 'dn-22', t: ['culture', 'photo', 'spirit'], h: '07:00 – 18:00', w: '07:00-18:00', p: 'Miễn phí', d: 45,
+                why: { culture: 'nhà thờ Gothic xây năm 1923 với tháp chuông cao 70m', photo: 'vòm cửa nhọn và mặt tiền dễ lên ảnh', spirit: 'nhà thờ Công giáo nổi tiếng với chú gà trên đỉnh tháp chuông' }
+              },
+              {
+                n: 'Đèo Hải Vân', loc: 'Liên Chiểu', img: 'dn-23', t: ['nature', 'photo'], h: 'Mở tự do · đẹp nhất 06:00 – 08:30 và 16:00 – 17:30', w: '06:00-09:00,15:30-18:00', p: 'Miễn phí', d: 120,
+                why: { nature: 'cung đèo dài 21km ôm trọn biển Đông', photo: 'núi biển hùng vĩ cùng cửa ải Hải Vân Quan thời Nguyễn' }
+              },
+              {
+                n: 'Hồ Hòa Trung', loc: 'Hòa Vang', img: 'dn-24', t: ['nature', 'photo'], h: 'Mở tự do · đẹp nhất 15:00 – 18:00', w: '14:30-18:30', p: 'Miễn phí', d: 90,
+                why: { nature: 'hồ nước ôm giữa những ngọn đồi thoai thoải', photo: 'mùa nước cạn hiện lên như thảo nguyên xanh' }
+              },
+              {
+                n: 'Giếng Trời', loc: 'Hòa Vang', img: 'dn-25', t: ['nature'], h: 'Mở tự do · nên đi mùa khô (tháng 6 – 9)', w: '07:00-17:00', p: 'Miễn phí', d: 120,
+                why: { nature: 'thác nước đổ từ độ cao hơn 25m xuống hồ xanh ngọc giữa rừng' }
+              },
+              {
+                n: 'Suối Mơ', loc: 'Hòa Vang', img: 'dn-27', t: ['nature'], h: '08:00 – 16:30 (nên đi mùa hè)', w: '08:00-16:30', p: '~70.000đ/người', d: 120,
+                why: { nature: 'con suối mát lạnh, thác nhỏ và hồ tắm rợp bóng cây' }
+              },
+              {
+                n: 'Chợ Cồn', loc: 'Hải Châu', img: 'dn-28', t: ['food', 'market'], h: 'Chợ mở từ sáng · ăn vặt đẹp giờ 15:00 – 18:30', w: '06:00-19:00', p: 'Miễn phí vào chợ; ăn uống và mua sắm tính riêng', d: 75, hot: 1,
+                why: { food: 'thiên đường ăn vặt với đình ẩm thực trong nhà và phố ẩm thực ngoài trời', market: 'khu chợ lớn của người Đà Nẵng, nhiều đặc sản và đồ lưu niệm' }
+              },
+              {
+                n: 'Chợ đêm Helio', loc: 'Hải Châu', img: 'dn-29', t: ['food', 'photo', 'night', 'market'], h: '17:30 – 22:30', w: '17:30-22:30', p: 'Miễn phí vào cửa', d: 90,
+                why: { food: 'chợ đêm ẩm thực có nhạc acoustic mỗi tối', photo: 'ánh sáng nghệ thuật lung linh', night: 'sôi động đến khuya, nhiều quán xá để ngồi lại', market: 'khu ăn uống và mua sắm nhỏ gọn cho buổi tối' }
+              },
+              {
+                n: 'Công viên Vườn tượng APEC', loc: 'Hải Châu', img: 'dn-30', t: ['photo', 'culture'], h: '17:00 – 21:30', w: '17:00-21:30', p: 'Miễn phí', d: 60,
+                why: { photo: 'mái vòm cánh diều bằng thép và vườn tượng ven sông', culture: 'không gian nghệ thuật ngoài trời' }
+              },
+              {
+                n: 'Cung Văn hóa Thiếu nhi', loc: 'Hải Châu', img: 'dn-31', t: ['photo'], h: '08:00 – 18:00', w: '08:00-18:00', p: 'Miễn phí', d: 45,
+                why: { photo: 'kiến trúc lấy cảm hứng từ Tangram với mảng màu rực rỡ' }
+              },
+            ]
+          },
+          hcm: {
+            name: 'TP. Hồ Chí Minh', map: 'Thành phố Hồ Chí Minh', places: [
+              {
+                n: 'Dinh Độc Lập', loc: 'Quận 1', img: 'hcm-01', t: ['culture'], h: '08:00 – 15:30 hằng ngày', w: '08:00-15:30', p: '~65.000đ/người lớn', d: 90, hot: 1,
+                why: { culture: 'công trình kiến trúc độc đáo, gắn với ngày 30/4/1975' }
+              },
+              {
+                n: 'Nhà thờ Đức Bà Sài Gòn', loc: 'Quận 1', img: 'hcm-02', t: ['culture', 'photo', 'spirit'], h: '07:00 – 10:00 và 15:00 – 18:00', w: '07:00-10:00,15:00-18:00', p: 'Miễn phí (xem khuôn viên bên ngoài)', d: 45, hot: 1,
+                why: { culture: 'vương cung thánh đường khởi công năm 1877', photo: 'gạch đỏ và tháp chuông nổi bật giữa trung tâm', spirit: 'thánh đường Công giáo trang nghiêm giữa phố thị' }
+              },
+              {
+                n: 'Bưu điện Trung tâm Sài Gòn', loc: 'Quận 1', img: 'hcm-03', t: ['culture', 'photo'], h: '07:30 – 18:00 hằng ngày', w: '07:30-18:00', p: 'Miễn phí', d: 45,
+                why: { culture: 'công trình kiến trúc Pháp xây từ 1886 đến 1891', photo: 'vòm trần sắt uốn cong và nền gạch hoa cổ' }
+              },
+              {
+                n: 'Nhà hát Thành phố', loc: 'Quận 1', img: 'hcm-04', t: ['culture', 'photo', 'night'], h: '08:00 – 22:00 (xem bên ngoài)', w: '08:00-22:00', p: 'Miễn phí bên ngoài; vé xem show ~700.000 – 1.600.000đ', d: 45,
+                why: { culture: 'nhà hát kiểu Gothic khánh thành năm 1900', photo: 'mặt tiền chạm phù điêu tinh xảo, đẹp khi lên đèn', night: 'buổi tối lên đèn rất đẹp, có thể xem show nếu bạn thích' }
+              },
+              {
+                n: 'Chợ Bến Thành', loc: 'Quận 1', img: 'hcm-06', t: ['food', 'culture', 'market'], h: 'Chợ ngày 06:00 – 18:00 · phố đêm 18:00 – 23:00', w: '06:00-23:00', p: 'Miễn phí vào chợ; ăn uống và mua sắm tính riêng', d: 90, hot: 1,
+                why: { food: 'gần 1.500 gian hàng với nhiều món ăn Nam Bộ', culture: 'khu chợ lịch sử từ năm 1914 với tháp đồng hồ bốn mặt', market: 'mua quà lưu niệm, đặc sản và đồ thủ công trong một khu chợ' }
+              },
+              {
+                n: 'Bảo tàng Chứng tích Chiến tranh', loc: 'Quận 3', img: 'hcm-07', t: ['culture'], h: '07:30 – 17:30 hằng ngày', w: '07:30-17:30', p: '~40.000đ/người lớn', d: 90,
+                why: { culture: 'trưng bày hơn 20.000 hiện vật và tư liệu về chiến tranh' }
+              },
+              {
+                n: 'Bảo tàng Lịch sử TP. Hồ Chí Minh', loc: 'Quận 1', img: 'hcm-09', t: ['culture'], h: '08:00 – 11:30 và 13:00 – 17:00 (nghỉ thứ Hai)', w: '08:00-11:30,13:00-17:00', p: '~30.000đ/người lớn', d: 90,
+                why: { culture: 'kiến trúc Đông Dương cách tân, lưu giữ hàng chục nghìn cổ vật' }
+              },
+              {
+                n: 'Landmark 81', loc: 'Bình Thạnh', img: 'hcm-12', t: ['photo'], h: '09:30 – 22:00 (đẹp nhất 17:00 – 18:30)', w: '09:30-22:00', p: 'Đài quan sát ~300.000 – 500.000đ; trung tâm thương mại vào tự do', d: 90, hot: 1,
+                why: { photo: 'tòa tháp cao nhất Việt Nam, có đài quan sát ở tầng 79 đến 81' }
+              },
+              {
+                n: 'Phố đi bộ Nguyễn Huệ', loc: 'Quận 1', img: 'hcm-15', t: ['photo', 'culture', 'night'], h: 'Mở tự do · nhộn nhịp nhất 18:00 – 23:00', w: '17:00-23:30', p: 'Miễn phí', d: 60, hot: 1,
+                why: { photo: 'quảng trường đi bộ dài 670m nối ra bờ sông Sài Gòn', culture: 'nơi diễn ra nhiều lễ hội văn hóa lớn', night: 'tối đến nhộn nhịp, nhiều hoạt động ngoài trời' }
+              },
+              {
+                n: 'Chung cư Cà phê 42 Nguyễn Huệ', loc: 'Quận 1', img: 'hcm-16', t: ['food', 'photo'], h: '08:00 – 22:30 hằng ngày', w: '08:00-22:30', p: 'Miễn phí vào cửa; đồ uống tính riêng (thang máy ~5.000đ/lượt)', d: 60,
+                why: { food: 'tổ hợp quán cà phê nghệ thuật trong khối chung cư từ thập niên 1960', photo: 'nhiều góc check-in độc đáo' }
+              },
+              {
+                n: 'Đường Sách', loc: 'Quận 1', img: 'hcm-17', t: ['culture', 'food'], h: '08:00 – 21:30 hằng ngày', w: '08:00-21:30', p: 'Miễn phí', d: 60,
+                why: { culture: 'phố sách rợp bóng me với các gian hàng nhà xuất bản', food: 'ngồi cà phê sách ngoài trời' }
+              },
+              {
+                n: 'Phố đi bộ Bùi Viện', loc: 'Quận 1', img: 'hcm-18', t: ['food', 'night'], h: '19:00 – 02:00 sáng hôm sau', w: '19:00-24:00', p: 'Miễn phí vào phố', d: 90,
+                why: { food: 'phố đi bộ sôi động về đêm với quán ăn, quán bar và âm nhạc', night: 'khu phố đi bộ náo nhiệt nhất Sài Gòn về đêm' }
+              },
+              {
+                n: 'Bến Bạch Đằng', loc: 'Quận 1', img: 'hcm-19', t: ['nature', 'photo'], h: 'Công viên mở tự do · buýt sông 07:00 – 19:30', w: '06:00-21:00', p: 'Miễn phí; buýt sông ~15.000đ/lượt', d: 60,
+                why: { nature: 'công viên ven sông, nơi xuất phát tuyến buýt sông Sài Gòn', photo: 'ngắm hoàng hôn bên sông' }
+              },
+              {
+                n: 'Cầu Ba Son', loc: 'Quận 1', img: 'hcm-20', t: ['photo', 'night'], h: 'Mở tự do · đẹp nhất 17:30 – 22:00', w: '17:00-22:30', p: 'Miễn phí', d: 45,
+                why: { photo: 'cầu dây văng bất đối xứng dài 1.465m, sáng đèn về đêm', night: 'dạo bộ hóng gió bên sông buổi tối' }
+              },
+              {
+                n: 'Chợ hoa đêm Hồ Thị Kỷ', loc: 'Quận 10', img: 'hcm-21', t: ['food', 'photo', 'night', 'market'], h: 'Phố ẩm thực 15:00 – 23:00 · chợ hoa 00:00 – 04:00', w: '15:00-23:00', p: 'Miễn phí', d: 75,
+                why: { food: 'phố ẩm thực với hàng trăm món ăn cạnh chợ hoa', photo: 'chợ hoa tươi thâu đêm đầy màu sắc', night: 'lên đèn rộn ràng khi đêm xuống', market: 'chợ hoa tươi lớn, mua hoa về trang trí' }
+              },
+              {
+                n: 'Chợ Tân Định', loc: 'Quận 1', img: 'hcm-22', t: ['food', 'culture', 'market'], h: 'Chợ 06:00 – 17:00 · ăn đêm trước cổng 17:00 – 01:00', w: '06:00-24:00', p: 'Miễn phí', d: 75,
+                why: { food: 'khu ẩm thực trong ngôi chợ cổ', culture: 'chợ xây năm 1926 với mặt tiền ba tháp chuông', market: 'chợ cổ bán vải vóc, đồ ăn và đồ lưu niệm' }
+              },
+              {
+                n: 'Phố lồng đèn Lương Nhữ Học', loc: 'Quận 5', img: 'hcm-23', t: ['culture', 'photo', 'craft'], h: '17:00 – 22:00 (rực rỡ nhất dịp Trung Thu)', w: '17:00-22:00', p: 'Miễn phí', d: 60,
+                why: { culture: 'con phố thủ công truyền thống rực rỡ dịp Trung Thu và Tết', photo: 'hàng vạn chiếc lồng đèn rất hợp chụp ảnh', craft: 'ghé các cửa hàng lồng đèn thủ công truyền thống' }
+              },
+              {
+                n: 'Thảo Cầm Viên Sài Gòn', loc: 'Quận 1', img: 'hcm-24', t: ['nature'], h: '07:00 – 17:30 hằng ngày', w: '07:00-17:30', p: '~60.000đ/người lớn', d: 150,
+                why: { nature: 'vườn thú lâu đời từ năm 1864, một lá phổi xanh giữa thành phố' }
+              },
+              {
+                n: 'Cầu Ánh Sao', loc: 'Quận 7', img: 'hcm-26', t: ['photo', 'night'], h: 'Mở tự do · phun nước và đèn LED 18:00 – 22:00 (thứ Năm – Chủ nhật)', w: '17:30-22:30', p: 'Miễn phí', d: 60,
+                why: { photo: 'cầu bộ hành cong như mặt trăng, về đêm có đèn LED và nước phun', night: 'đèn LED và nước phun thắp sáng vào buổi tối' }
+              },
+              {
+                n: 'Địa đạo Củ Chi', loc: 'Củ Chi', img: 'hcm-27', t: ['culture', 'nature'], h: '07:00 – 17:00 hằng ngày', w: '07:00-17:00', p: '~35.000đ (khách Việt) · ~125.000đ (khách quốc tế)', d: 180,
+                why: { culture: 'hệ thống địa đạo dài hơn 250km, đào hoàn toàn bằng tay', nature: 'khu rừng xanh mát ngoại thành' }
+              },
+              {
+                n: 'Rừng ngập mặn Cần Giờ', loc: 'Cần Giờ', img: 'hcm-28', t: ['nature'], h: '07:30 – 16:30', w: '07:30-16:30', p: 'Đảo Khỉ ~35.000 – 40.000đ; cano Rừng Sác ~100.000đ/người', d: 240,
+                why: { nature: 'khu dự trữ sinh quyển thế giới với rừng đước bạt ngàn và Đảo Khỉ' }
+              },
+              {
+                n: 'Chùa Bửu Long', loc: 'Thủ Đức', img: 'hcm-29', t: ['culture', 'photo', 'spirit'], h: '08:00 – 11:00 và 14:00 – 18:00', w: '08:00-11:00,14:00-18:00', p: 'Miễn phí', d: 75,
+                why: { culture: 'ngôi chùa có kiến trúc Phật giáo nổi bật', photo: 'bảo tháp trắng cao 70m làm điểm nhấn', spirit: 'ngôi chùa yên tĩnh, hợp để tìm chút bình an' }
+              },
+              {
+                n: 'Chùa Bà Thiên Hậu', loc: 'Quận 5', img: 'hcm-32', t: ['culture', 'photo', 'spirit'], h: '06:30 – 16:30 hằng ngày', w: '06:30-16:30', p: 'Miễn phí', d: 45,
+                why: { culture: 'chùa cổ hơn 260 năm tuổi của người Hoa', photo: 'hàng trăm vòng nhang treo lơ lửng trong điện', spirit: 'chùa cổ thờ bà Thiên Hậu, khói nhang nghi ngút' }
+              },
+              {
+                n: 'Chợ Bình Tây', loc: 'Quận 6', img: 'hcm-34', t: ['food', 'culture', 'market'], h: '06:00 – 18:00 hằng ngày', w: '06:00-18:00', p: 'Miễn phí vào chợ', d: 60,
+                why: { food: 'nhiều món ăn Chợ Lớn quanh khu chợ', culture: 'chợ xây năm 1928 với mái ngói chồng lớp kiểu vảy cá', market: 'chợ sỉ lớn của Chợ Lớn, bán đủ loại hàng hóa' }
+              },
+              {
+                n: 'Cầu Mống', loc: 'Quận 1', img: 'hcm-35', t: ['photo', 'culture'], h: 'Mở tự do · đẹp nhất 16:30 – 21:00', w: '16:00-21:30', p: 'Miễn phí', d: 45,
+                why: { photo: 'cây cầu sắt xanh ngọc bích, góc ảnh cổ kính', culture: 'cây cầu xây từ năm 1893' }
+              },
+              {
+                n: 'Đền Mariamman', loc: 'Quận 1', img: 'hcm-39', t: ['culture', 'photo', 'spirit'], h: '07:00 – 19:00 hằng ngày', w: '07:00-19:00', p: 'Miễn phí', d: 45,
+                why: { culture: 'đền Ấn Độ giáo của cộng đồng người Tamil', photo: 'tháp cổng đắp nổi nhiều tượng thần', spirit: 'ngôi đền Ấn Độ giáo nơi cộng đồng người Tamil cầu nguyện' }
+              },
+              {
+                n: 'Phố ẩm thực Hà Tôn Quyền', loc: 'Quận 11', img: 'hcm-45', t: ['food', 'night'], h: '16:00 – 23:00', w: '16:00-23:00', p: '~50.000 – 90.000đ/tô sủi cảo', d: 60,
+                why: { food: 'thủ phủ sủi cảo của người Hoa với nước lèo ninh tôm mực', night: 'phố ăn đêm lên đèn từ chiều tối' }
+              },
+            ]
+          }
+        };
+        const STYLE_NAME = { culture: 'Văn hóa & Lịch sử', food: 'Ẩm thực & Cà phê', nature: 'Thiên nhiên', photo: 'Chụp hình & Check-in', spirit: 'Tâm linh & Tôn giáo', craft: 'Làng nghề & Thủ công', market: 'Chợ & Mua sắm', night: 'Dạo đêm & Giải trí' };
 
-  // ---- dữ liệu mẫu ----
-  // t = nhóm sở thích (culture/food/nature/photo); slot = buổi phù hợp (m sáng, a chiều, e tối); why = lý do gợi ý theo nhóm
-  const DATA = {
-    hanoi: { name: 'Hà Nội', places: [
-      { n: 'Văn Miếu – Quốc Tử Giám', loc: 'Đống Đa', img: 'his-vanmieu', t: ['culture'], slot: 'm', why: { culture: 'di tích gắn với truyền thống khoa cử, hợp để mở đầu ngày khi còn yên tĩnh' } },
-      { n: 'Hoàng Thành Thăng Long', loc: 'Ba Đình', img: 'his-thanglong', t: ['culture'], slot: 'm', why: { culture: 'dấu tích nhiều triều đại, nhiều tầng lịch sử để khám phá' } },
-      { n: 'Bảo tàng Gốm Bát Tràng', loc: 'Gia Lâm', img: 'hn-battrang', t: ['culture', 'photo'], slot: 'a', why: { culture: 'tìm hiểu nghề gốm truyền thống của vùng', photo: 'kiến trúc độc đáo, nhiều góc chụp đẹp' } },
-      { n: 'Cà Phê Giảng', loc: 'Hoàn Kiếm', img: 'eat-giang', t: ['food'], slot: 'a', why: { food: 'thử cà phê trứng, món đặc trưng của người Hà Thành' } },
-      { n: 'Cà Phê Đường Tàu', loc: 'Hoàn Kiếm', img: 'eat-duongtau', t: ['food', 'photo'], slot: 'a', why: { food: 'nhâm nhi cà phê bên phố có đường tàu chạy qua', photo: 'khung cảnh phố cổ đặc trưng để chụp ảnh' } },
-      { n: 'Hồ Hoàn Kiếm', loc: 'Hoàn Kiếm', img: 'pic-hoankiem', t: ['photo', 'nature'], slot: 'm', why: { photo: 'điểm dạo bộ và chụp ảnh quen thuộc giữa thủ đô', nature: 'mảng xanh và mặt hồ giữa trung tâm' } },
-      { n: 'Cầu Long Biên', loc: 'Sông Hồng', img: 'his-longbien', t: ['culture', 'photo'], slot: 'e', why: { culture: 'cây cầu sắt hơn 100 năm tuổi, chứng nhân lịch sử', photo: 'hoàng hôn trên cầu cho ảnh rất đẹp' } },
-      { n: 'Múa Rối Nước Thăng Long', loc: 'Hoàn Kiếm', img: 'fun-muaroi', t: ['culture'], slot: 'e', why: { culture: 'nghệ thuật múa rối nước truyền thống, hợp buổi tối' } },
-      { n: 'Làng Chuồn Chuồn Tre Thạch Xá', loc: 'Thạch Thất', img: 'hn-chuonchuon', t: ['culture', 'nature'], slot: 'a', why: { culture: 'làng nghề thủ công độc đáo', nature: 'không khí làng quê ngoại thành' } },
-      { n: 'Ô Quan Chưởng', loc: 'Hoàn Kiếm', img: 'hn-oquanchuong', t: ['culture', 'photo'], slot: 'm', why: { culture: 'cửa ô cuối cùng của thành cổ Thăng Long', photo: 'cổng cổ rêu phong, góc ảnh hoài niệm' } }] },
-    danang: { name: 'Đà Nẵng & Hội An', places: [
-      { n: 'Bảo tàng Điêu khắc Chăm', loc: 'Đà Nẵng', img: 'dn-cham', t: ['culture'], slot: 'm', why: { culture: 'tìm hiểu văn hóa Chăm Pa qua những tác phẩm điêu khắc' } },
-      { n: 'Nhà cổ Tấn Ký', loc: 'Hội An', img: 'dn-tanky', t: ['culture', 'photo'], slot: 'm', why: { culture: 'ngôi nhà cổ giữ nguyên nếp sống người Hội An xưa', photo: 'kiến trúc gỗ cổ, ánh sáng đẹp buổi sáng' } },
-      { n: 'Hội quán Phúc Kiến', loc: 'Hội An', img: 'dn-phuckien', t: ['culture', 'photo'], slot: 'a', why: { culture: 'dấu ấn cộng đồng người Hoa trong phố cổ', photo: 'cổng và sân đẹp để chụp ảnh' } },
-      { n: 'Làng mộc Kim Bồng', loc: 'Hội An', img: 'dn-kimbong', t: ['culture'], slot: 'a', why: { culture: 'làng nghề chạm khắc gỗ truyền thống' } },
-      { n: 'Làng rau Trà Quế', loc: 'Hội An', img: 'dn-traque', t: ['nature', 'food', 'culture'], slot: 'm', why: { nature: 'đạp xe qua những luống rau xanh mát', food: 'thưởng thức món ăn từ rau tươi bản địa', culture: 'trải nghiệm nếp sinh hoạt của người làm nông' } },
-      { n: 'Rừng dừa Bảy Mẫu', loc: 'Cẩm Thanh', img: 'fun-rungdua', t: ['nature', 'photo'], slot: 'a', why: { nature: 'ngồi thuyền thúng len lỏi rạch dừa nước', photo: 'mặt nước và tán dừa cho khung hình yên bình' } },
-      { n: 'Bếp cuốn Đà Nẵng', loc: 'Đà Nẵng', img: 'dn-bepcuon', t: ['food'], slot: 'a', why: { food: 'thử món cuốn địa phương trong không gian ấm cúng' } },
-      { n: 'Giồng Cafe', loc: 'Đà Nẵng', img: 'dn-giong', t: ['food', 'photo'], slot: 'a', why: { food: 'không gian cà phê thư giãn', photo: 'không gian đẹp để check-in' } },
-      { n: 'Ký ức Hội An', loc: 'Hội An', img: 'fun-kyuc', t: ['culture', 'photo'], slot: 'e', why: { culture: 'show thực cảnh tái hiện lịch sử thương cảng', photo: 'sân khấu ngoài trời rực rỡ ánh sáng' } },
-      { n: 'Đêm phố cổ & thả đèn hoa đăng', loc: 'Hội An', img: 'dn-demhoian', t: ['photo', 'culture'], slot: 'e', why: { photo: 'phố cổ lung linh ánh đèn lồng về đêm', culture: 'nét sinh hoạt đặc trưng bên sông Hoài' } },
-      { n: 'Cầu Rồng', loc: 'Hải Châu', img: 'dn-01', t: ['photo'], slot: 'e', why: { photo: 'cầu hình rồng dài 666m, một số tối cuối tuần có biểu diễn phun lửa và phun nước' } },
-      { n: 'Cầu Sông Hàn', loc: 'Hải Châu', img: 'dn-02', t: ['culture', 'photo'], slot: 'e', why: { culture: 'cây cầu quay đầu tiên do người Đà Nẵng cùng xây dựng', photo: 'lung linh ánh đèn về đêm bên sông Hàn' } },
-      { n: 'Cầu Vàng – Bà Nà Hills', loc: 'Hòa Vang', img: 'dn-03', t: ['photo', 'nature'], slot: 'm', why: { photo: 'cây cầu dài 150m được nâng bởi đôi bàn tay đá giữa mây ngàn', nature: 'không khí mát mẻ trên núi ở độ cao hơn 1.400m' } },
-      { n: 'Cầu Tình Yêu & Cá Chép Hóa Rồng', loc: 'Sơn Trà', img: 'dn-04', t: ['photo'], slot: 'e', why: { photo: 'hàng cột đèn trái tim rực đỏ và tượng cá chép hóa rồng bên sông' } },
-      { n: 'Cầu Thuận Phước', loc: 'Hải Châu', img: 'dn-05', t: ['photo'], slot: 'e', why: { photo: 'cầu treo dây võng dài nhất Việt Nam bắc qua cửa sông Hàn' } },
-      { n: 'Bán đảo Sơn Trà', loc: 'Sơn Trà', img: 'dn-07', t: ['nature'], slot: 'm', why: { nature: 'lá phổi xanh của thành phố, nơi cư trú của loài voọc chà vá chân nâu' } },
-      { n: 'Ghềnh Bàng', loc: 'Sơn Trà', img: 'dn-10', t: ['nature', 'photo'], slot: 'a', why: { nature: 'bờ biển đá hoang sơ, nước trong thấy đáy', photo: 'những phiến đá nhấp nhô làm nền cho ảnh biển' } },
-      { n: 'Hải đăng Tiên Sa', loc: 'Sơn Trà', img: 'dn-11', t: ['culture', 'photo'], slot: 'm', why: { culture: 'ngọn hải đăng cổ do người Pháp xây từ năm 1902', photo: 'tông vàng cổ điển nổi bật giữa rừng và biển' } },
-      { n: 'Bãi Bụt & Bãi Rạng', loc: 'Sơn Trà', img: 'dn-13', t: ['nature', 'food'], slot: 'a', why: { nature: 'vịnh kín gió nước xanh ngọc, bãi cát thoai thoải', food: 'chòi lá nghỉ chân cùng hải sản tươi bắt tại chỗ' } },
-      { n: 'Mũi Nghê', loc: 'Sơn Trà', img: 'dn-14', t: ['nature', 'photo'], slot: 'm', why: { nature: 'điểm đón những tia nắng bình minh đầu tiên của thành phố', photo: 'khối đá ra biển tạo khung hình hoang sơ' } },
-      { n: 'Bãi biển Mỹ Khê', loc: 'Sơn Trà', img: 'dn-15', t: ['nature', 'photo'], slot: 'm', why: { nature: 'bãi cát trắng mịn trải dài, sóng biển hiền hòa', photo: 'ngắm bình minh và dạo biển buổi sáng' } },
-      { n: 'Bãi biển Non Nước', loc: 'Ngũ Hành Sơn', img: 'dn-16', t: ['nature'], slot: 'a', why: { nature: 'bãi biển dài thoai thoải dưới chân Ngũ Hành Sơn' } },
-      { n: 'Công viên Biển Đông', loc: 'Sơn Trà', img: 'dn-17', t: ['photo', 'nature'], slot: 'e', why: { photo: 'quảng trường biển sôi động, nơi tổ chức nhiều sự kiện', nature: 'hóng gió biển buổi chiều' } },
-      { n: 'Danh thắng Ngũ Hành Sơn', loc: 'Ngũ Hành Sơn', img: 'dn-19', t: ['culture', 'nature'], slot: 'm', why: { culture: 'quần thể núi đá vôi cùng các ngôi cổ tự và hang động', nature: 'leo núi, khám phá hang động và ngắm toàn cảnh' } },
-      { n: 'Thành Điện Hải', loc: 'Hải Châu', img: 'dn-20', t: ['culture'], slot: 'a', why: { culture: 'pháo đài cổ xây từ thời Gia Long, lưu giữ lịch sử của Đà Nẵng' } },
-      { n: 'Nhà thờ Chính Tòa', loc: 'Hải Châu', img: 'dn-22', t: ['culture', 'photo'], slot: 'm', why: { culture: 'nhà thờ Gothic xây năm 1923 với tháp chuông cao 70m', photo: 'vòm cửa nhọn và mặt tiền dễ lên ảnh' } },
-      { n: 'Đèo Hải Vân', loc: 'Liên Chiểu', img: 'dn-23', t: ['nature', 'photo'], slot: 'a', why: { nature: 'cung đèo dài 21km ôm trọn biển Đông', photo: 'núi biển hùng vĩ cùng cửa ải Hải Vân Quan thời Nguyễn' } },
-      { n: 'Hồ Hòa Trung', loc: 'Hòa Vang', img: 'dn-24', t: ['nature', 'photo'], slot: 'm', why: { nature: 'hồ nước ôm giữa những ngọn đồi thoai thoải', photo: 'mùa nước cạn hiện lên như thảo nguyên xanh' } },
-      { n: 'Giếng Trời', loc: 'Hòa Vang', img: 'dn-25', t: ['nature'], slot: 'm', why: { nature: 'thác nước đổ từ độ cao hơn 25m xuống hồ xanh ngọc giữa rừng' } },
-      { n: 'Suối Mơ', loc: 'Hòa Vang', img: 'dn-27', t: ['nature'], slot: 'a', why: { nature: 'con suối mát lạnh, thác nhỏ và hồ tắm rợp bóng cây' } },
-      { n: 'Chợ Cồn', loc: 'Hải Châu', img: 'dn-28', t: ['food'], slot: 'm', why: { food: 'thiên đường ăn vặt với đình ẩm thực trong nhà và phố ẩm thực ngoài trời' } },
-      { n: 'Chợ đêm Helio', loc: 'Hải Châu', img: 'dn-29', t: ['food', 'photo'], slot: 'e', why: { food: 'chợ đêm ẩm thực có nhạc acoustic mỗi tối', photo: 'ánh sáng nghệ thuật lung linh' } },
-      { n: 'Công viên Vườn tượng APEC', loc: 'Hải Châu', img: 'dn-30', t: ['photo', 'culture'], slot: 'a', why: { photo: 'mái vòm cánh diều bằng thép và vườn tượng ven sông', culture: 'không gian nghệ thuật ngoài trời' } },
-      { n: 'Cung Văn hóa Thiếu nhi', loc: 'Hải Châu', img: 'dn-31', t: ['photo'], slot: 'a', why: { photo: 'kiến trúc lấy cảm hứng từ Tangram với mảng màu rực rỡ' } },
-    ] },
-    hcm: { name: 'TP. Hồ Chí Minh', places: [
-      { n: 'Dinh Độc Lập', loc: 'Quận 1', img: 'hcm-01', t: ['culture'], slot: 'm', why: { culture: 'công trình kiến trúc độc đáo, gắn với ngày 30/4/1975' } },
-      { n: 'Nhà thờ Đức Bà Sài Gòn', loc: 'Quận 1', img: 'hcm-02', t: ['culture', 'photo'], slot: 'm', why: { culture: 'vương cung thánh đường khởi công năm 1877', photo: 'gạch đỏ và tháp chuông nổi bật giữa trung tâm' } },
-      { n: 'Bưu điện Trung tâm Sài Gòn', loc: 'Quận 1', img: 'hcm-03', t: ['culture', 'photo'], slot: 'm', why: { culture: 'công trình kiến trúc Pháp xây từ 1886 đến 1891', photo: 'vòm trần sắt uốn cong và nền gạch hoa cổ' } },
-      { n: 'Nhà hát Thành phố', loc: 'Quận 1', img: 'hcm-04', t: ['culture', 'photo'], slot: 'e', why: { culture: 'nhà hát kiểu Gothic khánh thành năm 1900', photo: 'mặt tiền chạm phù điêu tinh xảo, đẹp khi lên đèn' } },
-      { n: 'Chợ Bến Thành', loc: 'Quận 1', img: 'hcm-06', t: ['food', 'culture'], slot: 'a', why: { food: 'gần 1.500 gian hàng với nhiều món ăn Nam Bộ', culture: 'khu chợ lịch sử từ năm 1914 với tháp đồng hồ bốn mặt' } },
-      { n: 'Bảo tàng Chứng tích Chiến tranh', loc: 'Quận 3', img: 'hcm-07', t: ['culture'], slot: 'a', why: { culture: 'trưng bày hơn 20.000 hiện vật và tư liệu về chiến tranh' } },
-      { n: 'Bảo tàng Lịch sử TP. Hồ Chí Minh', loc: 'Quận 1', img: 'hcm-09', t: ['culture'], slot: 'm', why: { culture: 'kiến trúc Đông Dương cách tân, lưu giữ hàng chục nghìn cổ vật' } },
-      { n: 'Landmark 81', loc: 'Bình Thạnh', img: 'hcm-12', t: ['photo'], slot: 'e', why: { photo: 'tòa tháp cao nhất Việt Nam, có đài quan sát ở tầng 79 đến 81' } },
-      { n: 'Phố đi bộ Nguyễn Huệ', loc: 'Quận 1', img: 'hcm-15', t: ['photo', 'culture'], slot: 'e', why: { photo: 'quảng trường đi bộ dài 670m nối ra bờ sông Sài Gòn', culture: 'nơi diễn ra nhiều lễ hội văn hóa lớn' } },
-      { n: 'Chung cư Cà phê 42 Nguyễn Huệ', loc: 'Quận 1', img: 'hcm-16', t: ['food', 'photo'], slot: 'a', why: { food: 'tổ hợp quán cà phê nghệ thuật trong khối chung cư từ thập niên 1960', photo: 'nhiều góc check-in độc đáo' } },
-      { n: 'Đường Sách', loc: 'Quận 1', img: 'hcm-17', t: ['culture', 'food'], slot: 'a', why: { culture: 'phố sách rợp bóng me với các gian hàng nhà xuất bản', food: 'ngồi cà phê sách ngoài trời' } },
-      { n: 'Phố đi bộ Bùi Viện', loc: 'Quận 1', img: 'hcm-18', t: ['food'], slot: 'e', why: { food: 'phố đi bộ sôi động về đêm với quán ăn, quán bar và âm nhạc' } },
-      { n: 'Bến Bạch Đằng', loc: 'Quận 1', img: 'hcm-19', t: ['nature', 'photo'], slot: 'a', why: { nature: 'công viên ven sông, nơi xuất phát tuyến buýt sông Sài Gòn', photo: 'ngắm hoàng hôn bên sông' } },
-      { n: 'Cầu Ba Son', loc: 'Quận 1', img: 'hcm-20', t: ['photo'], slot: 'e', why: { photo: 'cầu dây văng bất đối xứng dài 1.465m, sáng đèn về đêm' } },
-      { n: 'Chợ hoa đêm Hồ Thị Kỷ', loc: 'Quận 10', img: 'hcm-21', t: ['food', 'photo'], slot: 'e', why: { food: 'phố ẩm thực với hàng trăm món ăn cạnh chợ hoa', photo: 'chợ hoa tươi thâu đêm đầy màu sắc' } },
-      { n: 'Chợ Tân Định', loc: 'Quận 1', img: 'hcm-22', t: ['food', 'culture'], slot: 'm', why: { food: 'khu ẩm thực trong ngôi chợ cổ', culture: 'chợ xây năm 1926 với mặt tiền ba tháp chuông' } },
-      { n: 'Phố lồng đèn Lương Nhữ Học', loc: 'Quận 5', img: 'hcm-23', t: ['culture', 'photo'], slot: 'a', why: { culture: 'con phố thủ công truyền thống rực rỡ dịp Trung Thu và Tết', photo: 'hàng vạn chiếc lồng đèn rất hợp chụp ảnh' } },
-      { n: 'Thảo Cầm Viên Sài Gòn', loc: 'Quận 1', img: 'hcm-24', t: ['nature'], slot: 'm', why: { nature: 'vườn thú lâu đời từ năm 1864, một lá phổi xanh giữa thành phố' } },
-      { n: 'Cầu Ánh Sao', loc: 'Quận 7', img: 'hcm-26', t: ['photo'], slot: 'e', why: { photo: 'cầu bộ hành cong như mặt trăng, về đêm có đèn LED và nước phun' } },
-      { n: 'Địa đạo Củ Chi', loc: 'Củ Chi', img: 'hcm-27', t: ['culture', 'nature'], slot: 'm', why: { culture: 'hệ thống địa đạo dài hơn 250km, đào hoàn toàn bằng tay', nature: 'khu rừng xanh mát ngoại thành' } },
-      { n: 'Rừng ngập mặn Cần Giờ', loc: 'Cần Giờ', img: 'hcm-28', t: ['nature'], slot: 'm', why: { nature: 'khu dự trữ sinh quyển thế giới với rừng đước bạt ngàn và Đảo Khỉ' } },
-      { n: 'Chùa Bửu Long', loc: 'Thủ Đức', img: 'hcm-29', t: ['culture', 'photo'], slot: 'm', why: { culture: 'ngôi chùa có kiến trúc Phật giáo nổi bật', photo: 'bảo tháp trắng cao 70m làm điểm nhấn' } },
-      { n: 'Chùa Bà Thiên Hậu', loc: 'Quận 5', img: 'hcm-32', t: ['culture', 'photo'], slot: 'a', why: { culture: 'chùa cổ hơn 260 năm tuổi của người Hoa', photo: 'hàng trăm vòng nhang treo lơ lửng trong điện' } },
-      { n: 'Chợ Bình Tây', loc: 'Quận 6', img: 'hcm-34', t: ['food', 'culture'], slot: 'a', why: { food: 'nhiều món ăn Chợ Lớn quanh khu chợ', culture: 'chợ xây năm 1928 với mái ngói chồng lớp kiểu vảy cá' } },
-      { n: 'Cầu Mống', loc: 'Quận 1', img: 'hcm-35', t: ['photo', 'culture'], slot: 'e', why: { photo: 'cây cầu sắt xanh ngọc bích, góc ảnh cổ kính', culture: 'cây cầu xây từ năm 1893' } },
-      { n: 'Đền Mariamman', loc: 'Quận 1', img: 'hcm-39', t: ['culture', 'photo'], slot: 'm', why: { culture: 'đền Ấn Độ giáo của cộng đồng người Tamil', photo: 'tháp cổng đắp nổi nhiều tượng thần' } },
-      { n: 'Phố ẩm thực Hà Tôn Quyền', loc: 'Quận 11', img: 'hcm-45', t: ['food'], slot: 'e', why: { food: 'thủ phủ sủi cảo của người Hoa với nước lèo ninh tôm mực' } },
-    ] }
-  };
-  const TIMES = { 1: [['Cả ngày', '09:00']], 2: [['Sáng', '09:00'], ['Chiều', '15:00']], 3: [['Sáng', '08:30'], ['Chiều', '14:00'], ['Tối', '18:30']], 4: [['Sáng', '08:00'], ['Trưa', '11:30'], ['Chiều', '15:00'], ['Tối', '19:00']], 5: [['Sáng', '07:30'], ['Sáng', '10:00'], ['Trưa', '12:30'], ['Chiều', '15:30'], ['Tối', '19:00']] };
-  const STYLE_NAME = { culture: 'Văn hóa & Lịch sử', food: 'Ẩm thực & Cà phê', nature: 'Thiên nhiên', photo: 'Chụp hình & Check-in' };
+        // ---- giờ giấc ----
+        const STEP = 15, GAP = 30;                       // bước xếp lịch 15 phút; chừa 30 phút di chuyển giữa các điểm
+        const DUR = { food: 60, photo: 60, market: 60, spirit: 60, craft: 75, night: 90, culture: 90, nature: 90 };
+        const hm = s => { const [h, m] = s.split(':'); return +h * 60 + +m; };
+        const fmt = m => m >= 1440 ? '24:00' : String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+        const part = t => t < 420 ? 'Sáng sớm' : t < 660 ? 'Sáng' : t < 780 ? 'Trưa' : t < 1080 ? 'Chiều' : 'Tối';
+        Object.values(DATA).forEach(c => c.places.forEach(p => {
+          p.win = p.w ? p.w.split(',').map(r => r.split('-').map(hm)) : [[0, 1440]];
+          p.dur = p.d || DUR[p.t[0]] || 75;
+        }));
+        const fits = (p, t, S, E) => t >= S && t + p.dur <= E && p.win.some(([a, b]) => t >= a && t + p.dur <= b);
+        function nextStart(p, from, S, E) {              // giờ sớm nhất (từ `from`) mà điểm này mở cửa đủ lâu và nằm trong khung giờ của bạn
+          for (let t = Math.ceil(from / STEP) * STEP; t + p.dur <= E; t += STEP) if (fits(p, t, S, E)) return t;
+          return null;
+        }
+        const mapUrl = (p, city) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(`${p.n}, ${p.loc}, ${city.map}`);
 
-  // ---- lời dẫn của bé Sen (đổi theo từng bước) ----
-  const SEN = {
-    idle: ['sen-wave', 'Chào bạn, mình là Sen! Chọn điểm đến, số ngày và phong cách rồi bấm “Tạo lịch trình” nhé.'],
-    run: ['sen-tea', 'Đợi mình xíu nhé, mình đang chọn và sắp xếp các điểm cho bạn…'],
-    done: ['sen-cheer', 'Xong rồi! Bạn thấy hợp thì đi, chưa hợp thì đổi lựa chọn rồi tạo lại nhé.'],
-    trim: ['sen-map', 'Dữ liệu mẫu ở đây còn ít, nên mình rút gọn số ngày giúp bạn. Bạn thử điểm đến khác cũng được nhé!'],
-    max: ['sen-map', 'Bạn chỉ chọn được tối đa 3 phong cách thôi. Muốn đổi thì bỏ tick một mục trước nhé!']
-  };
-  function sen(k) {
-    const [img, line] = SEN[k], say = $('#sen-say');
-    $('#sen-img').src = 'assets/' + img + '.webp'; say.textContent = line;
-    say.style.animation = 'none'; void say.offsetWidth; say.style.animation = '';
-  }
-  sen('idle');
+        // ---- lời dẫn của bé Sen (đổi theo từng bước) ----
+        const SEN = {
+          idle: ['sen-wave', 'Chào bạn, mình là Sen! Bạn muốn mình xếp sẵn lịch trình, hay chỉ cần vài gợi ý địa điểm thôi nè?'],
+          plan: ['sen-wave', 'Mình sẽ xếp sẵn từng ngày, từng giờ cho bạn. Chọn xong bấm nút nhé!'],
+          suggest: ['sen-map', 'Mình gợi ý vài nơi hợp gu bạn, bạn tự sắp xếp theo ý mình nhé!'],
+          run: ['sen-tea', 'Mình đang chọn từng điểm thật kỹ cho bạn nè…'],
+          done: ['sen-cheer', 'Xong rồi nè! Bạn thấy hợp thì đi, chưa hợp thì đổi lựa chọn rồi tạo lại nhé.'],
+          sugdone: ['sen-cheer', 'Mình gợi ý xong rồi nè! Muốn mình xếp luôn thành lịch trình theo giờ mở cửa thì bấm nút bên dưới nha.'],
+          max: ['sen-map', 'Bạn chỉ chọn được tối đa 3 mục thôi. Muốn đổi thì bỏ tick một mục trước nhé!'],
+          toplan: ['sen-wave', 'Chọn số ngày và khung giờ rồi bấm “Nhờ Sen lên lịch trình” nhé!']
+        };
+        function senSay(img, line) {
+          const say = $('#sen-say');
+          $('#sen-img').src = 'assets/' + img + '.webp'; say.textContent = line;
+          say.style.animation = 'none'; void say.offsetWidth; say.style.animation = '';
+        }
+        const sen = k => senSay(...SEN[k]);
+        sen('idle');
 
-  // ---- form ----
-  const state = { city: 'hanoi', days: 2, per: 3, style: new Set(['culture', 'food']) };
-  $('#city').addEventListener('change', e => { state.city = e.target.value; });
-  function bindRange(id, outId, fmt, key) {
-    const el = $('#' + id), out = $('#' + outId);
-    const upd = () => { const v = +el.value, f = (v - el.min) / (el.max - el.min) * 100; el.style.setProperty('--fill', f + '%'); out.textContent = fmt(v); el.setAttribute('aria-valuetext', fmt(v)); state[key] = v; };
-    el.addEventListener('input', upd); upd();
-  }
-  bindRange('days', 'days-out', v => v + ' ngày', 'days');
-  bindRange('pace', 'pace-out', v => v + ' điểm', 'per');
-  // phong cách: ô tick, tối đa 3, luôn giữ ít nhất 1
-  const boxes = [...document.querySelectorAll('#styles input')];
-  function syncStyles(e) {
-    const on = boxes.filter(x => x.checked);
-    if (on.length === 0 && e) e.target.checked = true;               // không cho bỏ hết
-    const now = boxes.filter(x => x.checked);
-    boxes.forEach(x => { x.disabled = now.length >= 3 && !x.checked; });   // đủ 3 thì khóa các ô còn lại
-    if (now.length >= 3 && e) sen('max');
-    state.style = new Set(now.map(x => x.value));
-    $('#style-out').textContent = now.length + '/3';
-  }
-  boxes.forEach(x => x.addEventListener('change', syncStyles)); syncStyles();
+        // ---- form ----
+        const state = { mode: 'plan', city: 'hanoi', days: 2, per: 3, from: 480, to: 1260, style: new Set(['culture', 'food']), extras: new Set() };
+        const form = $('#form'), go = $('#go');
+        const GO_LABEL = { plan: 'Nhờ Sen lên lịch trình', suggest: 'Gợi ý địa điểm cho mình' };
+        document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', () => {
+          state.mode = r.value; form.dataset.mode = r.value; go.textContent = GO_LABEL[r.value]; sen(r.value); updateHint();
+        }));
+        function bindRange(id, outId, fmtv, key) {
+          const el = $('#' + id), out = $('#' + outId);
+          const upd = () => { const v = +el.value, f = (v - el.min) / (el.max - el.min) * 100; el.style.setProperty('--fill', f + '%'); out.textContent = fmtv(v); el.setAttribute('aria-valuetext', fmtv(v)); state[key] = v; updateHint(); };
+          el.addEventListener('input', upd); upd();
+        }
+        bindRange('days', 'days-out', v => v + ' ngày', 'days');
+        bindRange('pace', 'pace-out', v => v + ' điểm', 'per');
 
-  // ---- bộ tạo lịch trình (xác định, dựa trên dữ liệu mẫu) ----
-  function generate() {
-    const city = DATA[state.city], per = state.per, likes = [...state.style];
-    let days = state.days;
-    const score = pl => pl.t.filter(t => likes.includes(t)).length;
-    const pool = city.places.map(p => ({ ...p, s: score(p) })).sort((a, b) => b.s - a.s);
-    const chosen = [], used = new Set();
-    const need = Math.min(days * per, pool.length);
-    // ưu tiên địa điểm khớp sở thích nhất, rồi bổ sung cho đủ số điểm
-    for (const p of pool) { if (chosen.length >= need) break; if (p.s > 0) { chosen.push(p); used.add(p.n); } }
-    for (const p of pool) { if (chosen.length >= need) break; if (!used.has(p.n)) { chosen.push(p); used.add(p.n); } }
-    days = Math.max(1, Math.min(days, Math.ceil(chosen.length / per)));   // dữ liệu mẫu không đủ điểm cho số ngày này thì rút gọn, tránh ngày thưa/trống
-    // chia theo ngày, mỗi ngày sắp theo buổi sáng -> chiều -> tối
-    const order = { m: 0, a: 1, e: 2 };
-    const byDay = Array.from({ length: days }, () => []);
-    chosen.sort((a, b) => order[a.slot] - order[b.slot]);
-    chosen.forEach((p, i) => byDay[i % days].push(p));
-    byDay.forEach(d => d.sort((a, b) => order[a.slot] - order[b.slot]));
-    return { city, days: byDay, likes, trimmed: state.days > byDay.length };
-  }
-  const reason = (p, likes) => {
-    const hit = likes.filter(t => p.why[t]);
-    return hit.length ? `Vì bạn thích <b>${hit.map(t => STYLE_NAME[t]).join(' + ')}</b>: ${p.why[hit[0]]}.` : `Bổ sung cho lịch trình: ${Object.values(p.why)[0]}.`;
-  };
+        // khung giờ trong ngày: bắt đầu 05:00–21:00, kết thúc 08:00–24:00, luôn cách nhau ít nhất 3 tiếng
+        const tFrom = $('#t-from'), tTo = $('#t-to'), MIN_SPAN = 180;
+        const opts = (a, b) => { let h = ''; for (let m = a; m <= b; m += 60) h += `<option value="${m}">${fmt(m)}</option>`; return h; };
+        tFrom.innerHTML = opts(300, 1260); tTo.innerHTML = opts(480, 1440);
+        tFrom.value = state.from; tTo.value = state.to;
+        function syncTime(e) {
+          let a = +tFrom.value, b = +tTo.value;
+          if (b - a < MIN_SPAN) { if (e && e.target === tTo) a = Math.max(300, b - MIN_SPAN); else b = Math.min(1440, a + MIN_SPAN); }
+          state.from = a; state.to = b; tFrom.value = a; tTo.value = b;
+          $('#time-out').textContent = fmt(a) + ' – ' + fmt(b);
+        }
+        tFrom.addEventListener('change', syncTime); tTo.addEventListener('change', syncTime); syncTime();
 
-  function render(res) {
-    const html = res.days.map((list, di) => `
-      <div class="day" style="animation-delay:${di * 120}ms"><h3>Ngày ${di + 1}</h3>
-        ${list.map((p, i) => { const tm = (TIMES[list.length] || TIMES[5])[i] || ['', '']; return `
-        <article class="stop" style="animation-delay:${di * 120 + i * 110}ms">
-          <div class="when"><b>${tm[1]}</b>${tm[0]}</div>
-          <img src="assets/places/${p.img}.webp" alt="${p.n}" loading="lazy">
-          <div class="sbody"><div class="sloc">📍 ${p.loc}</div><h4>${p.n}</h4><p class="why">${reason(p, res.likes)}</p>
-            <div class="tags">${p.t.map(t => `<span class="tag">${STYLE_NAME[t]}</span>`).join('')}</div></div>
-        </article>`; }).join('')}
+        $('#city').addEventListener('change', e => { state.city = e.target.value; refreshCityStyles(); });
+
+        // phong cách: ô tick, tối đa 3, luôn giữ ít nhất 1; mục nào thành phố này chưa có điểm thì khóa lại
+        const boxes = [...document.querySelectorAll('#styles input')];
+        const countFor = (cityKey, st) => DATA[cityKey].places.filter(p => p.t.includes(st)).length;
+        function syncStyles(e) {
+          if (e && boxes.every(x => !x.checked)) e.target.checked = true;               // không cho bỏ hết
+          const now = boxes.filter(x => x.checked);
+          boxes.forEach(x => { x.disabled = !!x.dataset.none || (now.length >= 3 && !x.checked); });   // đủ 3 thì khóa các ô còn lại
+          if (now.length >= 3 && e && e.target.checked) sen('max');
+          state.style = new Set(now.map(x => x.value));
+          $('#style-out').textContent = now.length + '/3';
+          updateHint();
+        }
+        function refreshCityStyles() {
+          boxes.forEach(x => { const none = countFor(state.city, x.value) === 0; x.dataset.none = none ? '1' : ''; if (none) x.checked = false; });
+          if (boxes.every(x => !x.checked)) { const f = boxes.find(x => !x.dataset.none); if (f) f.checked = true; }
+          syncStyles();
+        }
+        function updateHint() {
+          const city = DATA[state.city];
+          const n = city.places.filter(p => p.t.some(t => state.style.has(t))).length;
+          const need = state.days * state.per;
+          $('#hint').innerHTML = `Chọn tối đa 3 mục nhé. Ở ${city.name}, mình có <b>${n} điểm</b> hợp với lựa chọn này.` +
+            (state.mode === 'plan' && n < need ? ` Bạn muốn ${need} điểm nên lịch có thể hơi thưa, đừng lo, lát nữa bạn vẫn thêm được vài điểm nổi bật.` : '');
+        }
+        boxes.forEach(x => x.addEventListener('change', syncStyles)); refreshCityStyles();
+
+        // ---- bộ tạo lịch trình (xác định, dựa trên dữ liệu mẫu) ----
+        // Chỉ chọn điểm thật sự hợp với phong cách đã chọn và mở cửa trong khung giờ của bạn; điểm nổi bật chỉ vào lịch khi bạn tự thêm.
+        const scoreOf = (p, likes) => p.t.filter(t => likes.includes(t)).length;
+        function generate(cfg, extraNames) {
+          const city = DATA[cfg.city], S = cfg.from, E = cfg.to, likes = cfg.style;
+          let remain = city.places.map(p => ({ p, s: scoreOf(p, likes) })).filter(c => c.s > 0 && nextStart(c.p, S, S, E) !== null).sort((a, b) => b.s - a.s);
+          const days = [];
+          for (let d = 0; d < cfg.days && remain.length; d++) {
+            const stops = []; let cursor = S;
+            while (stops.length < cfg.per) {
+              const all = remain.map(c => ({ c, t: nextStart(c.p, cursor, S, E) })).filter(o => o.t !== null).map(o => ({ ...o, wait: o.t - cursor }));
+              let pool = all.filter(o => o.wait <= 90), byWait = false;               // ưu tiên điểm mở cửa ngay (chờ ≤ 90 phút), điểm hợp gu nhất trước
+              if (!pool.length) { pool = stops.length ? all.filter(o => o.wait <= 300) : all; byWait = true; }   // không có thì chờ lâu hơn (nghỉ ngơi giữa ngày)
+              if (!pool.length) break;
+              const overlap = o => stops.filter(q => q.p.t.some(t => likes.includes(t) && o.c.p.t.includes(t))).length;   // trùng nhóm với các điểm đã có trong ngày
+              pool.sort(byWait ? (a, b) => a.wait - b.wait || b.c.s - a.c.s : (a, b) => b.c.s - a.c.s || overlap(a) - overlap(b) || a.wait - b.wait);
+              const pick = pool[0];
+              stops.push({ p: pick.c.p, s: pick.t, e: pick.t + pick.c.p.dur });
+              cursor = pick.t + pick.c.p.dur + GAP;
+              remain = remain.filter(c => c !== pick.c);
+            }
+            if (!stops.length) break;
+            days.push(stops);
+          }
+          const got = days.reduce((n, d) => n + d.length, 0);
+          // điểm nổi bật do người dùng chọn thêm: xếp vào ngày còn trống phù hợp giờ mở cửa
+          const skipped = [];
+          extraNames.forEach(name => {
+            const p = city.places.find(x => x.n === name);
+            if (!p || days.some(d => d.some(x => x.p === p))) return;
+            const slotIn = stops => { for (let t = S; t + p.dur <= E; t += STEP) if (fits(p, t, S, E) && stops.every(q => t >= q.e + GAP || t + p.dur + GAP <= q.s)) return t; return null; };
+            const cands = days.map((stops, i) => ({ i, stops, t: slotIn(stops) }));
+            if (days.length < cfg.days) cands.push({ i: days.length, stops: [], t: slotIn([]) });
+            const best = cands.filter(c => c.t !== null).sort((a, b) => a.stops.length - b.stops.length || a.i - b.i)[0];
+            if (!best) { skipped.push(p.n); return; }
+            if (best.i === days.length) days.push(best.stops);
+            best.stops.push({ p, s: best.t, e: best.t + p.dur, extra: true });
+            best.stops.sort((a, b) => a.s - b.s);
+          });
+          return { city, days, likes, got, wanted: cfg.days * cfg.per, skipped, cfg };
+        }
+        function suggest(cfg) {
+          const city = DATA[cfg.city], likes = cfg.style;
+          const list = city.places.map(p => ({ p, s: scoreOf(p, likes) })).filter(c => c.s > 0)
+            .sort((a, b) => b.s - a.s || (b.p.hot ? 1 : 0) - (a.p.hot ? 1 : 0)).slice(0, 9);
+          return { city, list, likes, cfg };
+        }
+
+        // ---- hiển thị ----
+        const reason = (p, likes, extra) => {
+          const hit = likes.filter(t => p.t.includes(t));
+          if (hit.length) return `Vì bạn thích <b>${hit.map(t => STYLE_NAME[t]).join(' + ')}</b>: ${p.why[hit[0]]}.`;
+          return `${extra ? 'Bạn chọn thêm vì đây là <b>điểm nổi bật</b>' : '<b>Điểm nổi bật</b>'}: ${Object.values(p.why)[0]}.`;
+        };
+        const metaHTML = (p, city) => `<ul class="meta">
+      <li><span aria-hidden="true">🕘</span><span><b>Giờ mở cửa:</b> ${esc(p.h)}</span></li>
+      <li><span aria-hidden="true">🎟</span><span><b>Giá tham khảo:</b> ${esc(p.p)}</span></li>
+      <li><span aria-hidden="true">🗺</span><a href="${mapUrl(p, city)}" target="_blank" rel="noopener noreferrer">Xem trên Google Maps</a></li></ul>`;
+        function cardHTML(p, city, likes, o) {
+          const hit = likes.filter(t => p.t.includes(t));
+          const tags = hit.map(t => `<span class="tag">${STYLE_NAME[t]}</span>`).join('') +
+            (p.hot ? '<span class="tag star">⭐ Điểm nổi bật</span>' : '') +
+            (o.extra ? `<button type="button" class="rm" data-rm="${esc(p.n)}">Bỏ khỏi lịch trình</button>` : '');
+          const left = o.s !== undefined
+            ? `<b>${fmt(o.s)}</b>${part(o.s)}<em>đến ${fmt(o.e)}</em>`
+            : `<b>#${o.i}</b>Gợi ý`;
+          return `<article class="stop${o.fresh ? ' fresh' : ''}" ${o.fresh ? 'data-fresh ' : ''}style="animation-delay:${o.delay}ms">
+          <div class="when">${left}</div>
+          <img src="assets/places/${p.img}.webp" alt="${esc(p.n)}" loading="lazy">
+          <div class="sbody"><div class="sloc">📍 ${esc(p.loc)}</div><h4>${esc(p.n)}</h4><p class="why">${reason(p, likes, o.extra)}</p>
+            ${metaHTML(p, city)}<div class="tags">${tags}</div></div>
+        </article>`;
+        }
+        const setOut = html => { $('#out').innerHTML = html; document.querySelector('main').classList.add('has-result'); };
+        const againHTML = '<div class="actions"><button class="btn2" type="button" id="again">Tạo lại với lựa chọn khác</button></div>';
+
+        function renderPlan(res, fresh) {
+          const { city, cfg } = res, used = new Set(res.days.flat().map(x => x.p.n)), total = res.days.reduce((n, d) => n + d.length, 0);
+          let info = '';
+          if (!total) info = `<div class="empty small"><div><b>Chưa có nơi nào hợp giờ này</b>Chưa có địa điểm nào vừa hợp với điều bạn chọn vừa mở cửa trong khung ${fmt(cfg.from)} – ${fmt(cfg.to)}. Bạn thử kéo dài giờ, chọn thêm mục khác hoặc thêm điểm nổi bật bên dưới nhé.</div></div>`;
+          else {
+            if (res.got < res.wanted) info += `Mình tìm được <b>${res.got} điểm</b> hợp với lựa chọn của bạn trong khung ${fmt(cfg.from)} – ${fmt(cfg.to)} (bạn muốn ${res.wanted} điểm), nên lịch trình gọn hơn một chút. Bạn có thể mở rộng khung giờ, chọn thêm mục khác hoặc thêm điểm nổi bật bên dưới. `;
+            info += 'Mình chừa khoảng 30 phút giữa các điểm để bạn di chuyển và nghỉ chân, thời gian thực tế có thể khác.';
+            info = `<p class="info">${info}</p>`;
+          }
+          if (res.skipped.length) info += `<p class="info">Mình chưa tìm được khoảng trống hợp giờ mở cửa cho: <b>${res.skipped.map(esc).join(', ')}</b>. Bạn thử kéo dài khung giờ hoặc tăng số ngày nhé.</p>`;
+          const days = res.days.map((list, di) => `
+      <div class="day" style="animation-delay:${di * 120}ms"><h3>Ngày ${di + 1}<span>${fmt(list[0].s)} – ${fmt(list[list.length - 1].e)}</span></h3>
+        ${list.map((x, i) => cardHTML(x.p, city, res.likes, { s: x.s, e: x.e, extra: x.extra, fresh: fresh.includes(x.p.n), delay: di * 120 + i * 110 })).join('')}
       </div>`).join('');
-    $('#out').innerHTML = `<div class="result-head"><h2>${res.city.name} · ${res.days.length} ngày</h2><span class="badge">Lịch trình tham khảo · dữ liệu mẫu</span></div>${res.trimmed ? `<p class="note" style="color:#ffffffcc;margin:0 0 14px">Dữ liệu mẫu của ${res.city.name} hiện chỉ đủ cho ${res.days.length} ngày với lựa chọn này nên mình rút gọn lịch giúp bạn.</p>` : ''}${html}
-      <div class="actions"><button class="btn2" type="button" id="again">Tạo lại với lựa chọn khác</button></div>`;
-    document.querySelector('main').classList.add('has-result');
-    $('#again').addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
-  }
+          const hot = city.places.filter(p => p.hot && !used.has(p.n));
+          const hotHTML = hot.length ? `
+      <section class="hot" aria-labelledby="hot-t">
+        <div class="hot-head"><img src="assets/sen-map.webp" alt=""><div><h3 id="hot-t">Bé Sen mách nhỏ: vài điểm nổi bật ở ${city.name}</h3>
+          <p>Không bắt buộc đâu nha! Thấy nơi nào hay thì tick, mình sẽ xếp thêm vào lịch trình sao cho hợp giờ mở cửa.</p></div></div>
+        <div class="hot-list">${hot.map(p => `<label class="hot-item"><input type="checkbox" name="hot" value="${esc(p.n)}"><img src="assets/places/${p.img}.webp" alt="" loading="lazy"><span><b>${esc(p.n)}</b><small>🕘 ${esc(p.h)}<br>🎟 ${esc(p.p)}</small></span></label>`).join('')}</div>
+        <button type="button" class="btn2 hi" id="add-hot" disabled>Thêm vào lịch trình</button>
+      </section>` : '';
+          setOut(`<div class="result-head"><h2>${city.name}${total ? ' · ' + res.days.length + ' ngày' : ''}</h2><span class="badge">Lịch trình tham khảo · dữ liệu mẫu</span></div>${info}${days}${hotHTML}${againHTML}`);
+        }
+        function renderSuggest(res) {
+          const { city } = res;
+          setOut(`<div class="result-head"><h2>Gợi ý ở ${city.name}</h2><span class="badge">Gợi ý tham khảo · dữ liệu mẫu</span></div>
+      <p class="info">Đây là những nơi hợp nhất với điều bạn chọn, xếp từ hợp nhiều đến hợp ít. Bạn tự sắp xếp thứ tự đi nhé, hoặc để Sen xếp giúp bên dưới.</p>
+      ${res.list.map((c, i) => cardHTML(c.p, city, res.likes, { i: i + 1, delay: i * 90 })).join('')}
+      <div class="actions"><button class="btn2 hi" type="button" id="to-plan">✨ Để Sen xếp thành lịch trình</button><button class="btn2" type="button" id="again">Gợi ý lại với lựa chọn khác</button></div>`);
+        }
 
-  // ---- mô phỏng quá trình "AI" theo từng bước ----
-  const STEPS = ['Đọc lựa chọn của bạn', 'Tìm địa điểm hợp với sở thích', 'Sắp xếp theo từng ngày và buổi', 'Viết lý do gợi ý cho từng nơi'];
-  const wait = ms => new Promise(r => setTimeout(r, ms));
-  function pickSeconds(n = 4, lo = 1, hi = 7) {
-    for (;;) {
-      const d = Array.from({ length: n }, () => lo + Math.floor(Math.random() * (hi - lo + 1)));
-      const count = {}; d.forEach(x => count[x] = (count[x] || 0) + 1);
-      if (Object.values(count).every(c => c < 3)) return d;
-    }
-  }
-  let running = false;
-  $('#form').addEventListener('submit', async e => {
-    e.preventDefault(); if (running) return; running = true; sen('run');
-    const go = $('#go'); go.disabled = true; go.textContent = 'Đang tạo…';
-    const box = $('#out');
-    box.innerHTML = `<div class="steps"><h3>Sen và Viloca đang sắp xếp lịch trình…</h3>${STEPS.map((t, i) => `<div class="step" data-i="${i}"><i>✓</i>${t}</div>`).join('')}</div>`;
-    const els = [...box.querySelectorAll('.step')];
-    // mỗi bước chạy một số giây ngẫu nhiên từ 1 đến 7; không giá trị nào xuất hiện từ 3 lần trở lên trong 4 bước
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const secs = pickSeconds();
-    for (let i = 0; i < els.length; i++) {
-      els[i].classList.add('now');
-      await wait(still ? 50 : secs[i] * 1000);
-      els[i].classList.replace('now', 'done');
-    }
-    const res = generate(); render(res); sen(res.trimmed ? 'trim' : 'done');
-    go.disabled = false; go.textContent = 'Tạo lại lịch trình'; running = false;
-    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+        // ---- mô phỏng quá trình "AI" theo từng bước ----
+        const STEPS = {
+          plan: ['Bé Sen đọc kỹ điều bạn muốn', 'Tìm những nơi hợp với sở thích của bạn', 'Chọn nơi đang mở cửa trong khung giờ của bạn', 'Xếp theo từng ngày và viết lý do gợi ý'],
+          suggest: ['Bé Sen đọc kỹ điều bạn muốn', 'Chọn những nơi hợp với bạn nhất']
+        };
+        const TITLE = { plan: 'Bé Sen đang chuẩn bị lịch trình cho bạn đâyy. Đợi xíu nha!', suggest: 'Bé Sen đang tìm vài nơi hợp với bạn đâyy. Đợi xíu nha!' };
+        const wait = ms => new Promise(r => setTimeout(r, ms));
+        function pickSeconds(n, lo, hi) {                // mỗi bước một số giây ngẫu nhiên; không giá trị nào xuất hiện từ 3 lần trở lên
+          for (; ;) {
+            const d = Array.from({ length: n }, () => lo + Math.floor(Math.random() * (hi - lo + 1)));
+            const count = {}; d.forEach(x => count[x] = (count[x] || 0) + 1);
+            if (Object.values(count).every(c => c < 3)) return d;
+          }
+        }
+        const snapshot = () => ({ mode: state.mode, city: state.city, days: state.days, per: state.per, from: state.from, to: state.to, style: [...state.style] });
+        let running = false, lastCfg = null;
+        form.addEventListener('submit', async e => {
+          e.preventDefault(); if (running) return; running = true; sen('run');
+          const cfg = snapshot(); lastCfg = cfg; state.extras.clear();
+          go.disabled = true; go.textContent = 'Sen đang làm…';
+          const steps = STEPS[cfg.mode];
+          const box = $('#out');
+          box.innerHTML = `<div class="steps"><h3>${TITLE[cfg.mode]}</h3>${steps.map((t, i) => `<div class="step" data-i="${i}"><i>✓</i>${t}</div>`).join('')}</div>`;
+          const els = [...box.querySelectorAll('.step')];
+          const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+          const secs = cfg.mode === 'plan' ? pickSeconds(steps.length, 1, 7) : pickSeconds(steps.length, 1, 3);
+          for (let i = 0; i < els.length; i++) {
+            els[i].classList.add('now');
+            await wait(still ? 50 : secs[i] * 1000);
+            els[i].classList.replace('now', 'done');
+          }
+          if (cfg.mode === 'plan') {
+            const res = generate(cfg, []); renderPlan(res, []);
+            res.got < res.wanted ? senSay('sen-map', res.got ? `Mình chỉ tìm được ${res.got} điểm hợp với lựa chọn của bạn trong khung giờ này nên lịch hơi thưa. Bạn thử mở rộng giờ, chọn thêm mục khác hoặc thêm điểm nổi bật bên dưới nhé!` : 'Chưa có nơi nào vừa hợp gu vừa mở cửa trong khung giờ này. Bạn thử kéo dài giờ hoặc chọn thêm mục khác nhé!') : sen('done');
+          } else { renderSuggest(suggest(cfg)); sen('sugdone'); }
+          go.disabled = false; go.textContent = GO_LABEL[cfg.mode]; running = false;
+          box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
 
-  // ---- contact ----
-  const modal = $('#contact');
-  $('#open-contact').addEventListener('click', () => { modal.classList.add('open'); $('#close-contact').focus(); });
-  const close = () => modal.classList.remove('open');
-  $('#close-contact').addEventListener('click', close);
-  modal.addEventListener('click', e => { if (e.target === modal) close(); });
-  addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
-})();
-</script>
+        // ---- thao tác trong khu vực kết quả ----
+        const out = $('#out');
+        function replan(fresh) {
+          const res = generate(lastCfg, [...state.extras]); renderPlan(res, fresh);
+          out.focus({ preventScroll: true });
+          const first = out.querySelector('[data-fresh]'); if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return res;
+        }
+        out.addEventListener('change', e => {
+          if (e.target.name === 'hot') $('#add-hot').disabled = !out.querySelector('input[name="hot"]:checked');
+        });
+        out.addEventListener('click', e => {
+          const t = e.target.closest('button'); if (!t) return;
+          if (t.id === 'again') window.scrollTo({ top: 0, behavior: 'smooth' });
+          else if (t.id === 'to-plan') {
+            const r = document.querySelector('input[name="mode"][value="plan"]'); r.checked = true; r.dispatchEvent(new Event('change'));
+            window.scrollTo({ top: 0, behavior: 'smooth' }); sen('toplan'); go.focus({ preventScroll: true });
+          } else if (t.id === 'add-hot') {
+            const names = [...out.querySelectorAll('input[name="hot"]:checked')].map(x => x.value);
+            names.forEach(n => state.extras.add(n));
+            const res = replan(names);
+            res.skipped.length ? senSay('sen-map', 'Có nơi mình chưa tìm được khoảng trống hợp giờ mở cửa. Bạn thử kéo dài khung giờ nhé!') : senSay('sen-cheer', 'Mình thêm vào lịch trình rồi nè! Chỗ nào không ưng thì bấm “Bỏ khỏi lịch trình” nha.');
+          } else if (t.dataset.rm) {
+            state.extras.delete(t.dataset.rm); replan([]); senSay('sen-wave', 'Mình bỏ ra khỏi lịch trình rồi nhé!');
+          }
+        });
+
+        // ---- contact ----
+        const modal = $('#contact');
+        $('#open-contact').addEventListener('click', () => { modal.classList.add('open'); $('#close-contact').focus(); });
+        const close = () => modal.classList.remove('open');
+        $('#close-contact').addEventListener('click', close);
+        modal.addEventListener('click', e => { if (e.target === modal) close(); });
+        addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (modal.classList.contains('open')) close(); else if (document.documentElement.classList.contains('embed')) parent.postMessage('viloca:close-planner', '*'); });
+      })();
+  </script>
 </body>
+
 </html>
