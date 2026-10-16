@@ -10,6 +10,7 @@ import supabase from '@/src/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
+import { useT } from '@/src/lib/i18n';
 
 const MAX_IMAGES = 5;
 
@@ -17,6 +18,7 @@ type ImageAsset = { uri: string; mimeType: string; ext: string; base64: string }
 
 export default function CreatePostScreen() {
   const user = useAuthStore((s) => s.user);
+  const t = useT();
   const { trip_id } = useLocalSearchParams<{ trip_id?: string }>();
   const [content, setContent]     = useState('');
   const [images, setImages]       = useState<ImageAsset[]>([]);
@@ -70,7 +72,7 @@ export default function CreatePostScreen() {
   async function handleSubmit() {
     if (!user) return;
     if (!content.trim() && images.length === 0) {
-      Alert.alert('Bài viết trống', 'Vui lòng nhập nội dung hoặc chọn ảnh.');
+      Alert.alert(t('postErrEmpty'), t('postErrEmptyBody'));
       return;
     }
     setUploading(true);
@@ -92,7 +94,7 @@ export default function CreatePostScreen() {
       const uploadedUrls = results.filter((u): u is string => u !== null);
 
       if (images.length > 0 && uploadedUrls.length === 0) {
-        Alert.alert('Lỗi upload ảnh', 'Không thể tải ảnh lên. Vui lòng thử lại.');
+        Alert.alert(t('postErrUpload'), t('postErrUploadBody'));
         return;
       }
 
@@ -104,7 +106,7 @@ export default function CreatePostScreen() {
       });
 
       if (error) {
-        Alert.alert('Lỗi', 'Không thể đăng bài. Vui lòng thử lại.');
+        Alert.alert(t('errGeneral'), t('postErrPostBody'));
       } else {
         posted = true;
       }
@@ -122,7 +124,7 @@ export default function CreatePostScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
           <Ionicons name="close" size={24} color={colors.nomad.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bài viết mới</Text>
+        <Text style={styles.headerTitle}>{t('createPostTitle')}</Text>
         <TouchableOpacity
           style={[styles.submitBtn, uploading && { opacity: 0.6 }]}
           onPress={handleSubmit}
@@ -130,7 +132,7 @@ export default function CreatePostScreen() {
         >
           {uploading
             ? <ActivityIndicator size="small" color={colors.nomad.onPrimary} />
-            : <Text style={styles.submitText}>Đăng</Text>
+            : <Text style={styles.submitText}>{t('createPostSubmitBtn')}</Text>
           }
         </TouchableOpacity>
       </View>
@@ -139,13 +141,13 @@ export default function CreatePostScreen() {
         {trip_id && (
           <View style={styles.tripBanner}>
             <Ionicons name="map-outline" size={16} color={colors.nomad.primary} />
-            <Text style={styles.tripBannerText}>Bài viết sẽ được gắn với chuyến đi của bạn</Text>
+            <Text style={styles.tripBannerText}>{t('createPostTripBanner')}</Text>
           </View>
         )}
         <TextInput
           style={styles.input}
           multiline
-          placeholder="Bạn vừa đi đâu về? Chia sẻ trải nghiệm..."
+          placeholder={t('createPostPlaceholder')}
           placeholderTextColor={colors.nomad.onSurfaceVariant}
           value={content}
           onChangeText={setContent}
@@ -172,7 +174,7 @@ export default function CreatePostScreen() {
           <TouchableOpacity style={styles.addImageBtn} onPress={pickImages}>
             <Ionicons name="image-outline" size={22} color={colors.nomad.primary} />
             <Text style={styles.addImageText}>
-              {images.length === 0 ? 'Thêm ảnh' : `Thêm ảnh (${images.length}/${MAX_IMAGES})`}
+              {images.length === 0 ? t('createPostAddPhoto') : `${t('createPostAddPhoto')} (${images.length}/${MAX_IMAGES})`}
             </Text>
           </TouchableOpacity>
         )}
@@ -196,6 +198,6 @@ const styles = StyleSheet.create({
   removeBtn:    { position: 'absolute', top: 4, right: 4 },
   addImageBtn:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.nomad.primary, borderRadius: radius.lg, borderStyle: 'dashed', alignSelf: 'flex-start' },
   addImageText: { fontSize: 14, color: colors.nomad.primary, fontWeight: '600' },
-  tripBanner:     { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#e8f0d8', borderRadius: radius.md, padding: spacing.sm, borderWidth: 1, borderColor: colors.nomad.primary + '40' },
+  tripBanner:     { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.nomad.secondaryContainer, borderRadius: radius.md, padding: spacing.sm, borderWidth: 1, borderColor: colors.nomad.primary + '40' },
   tripBannerText: { fontSize: 13, color: colors.nomad.primary, fontWeight: '500', flex: 1 },
 });

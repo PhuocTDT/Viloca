@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/theme/colors';
+import { useT } from '@/src/lib/i18n';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -28,6 +29,7 @@ function PillIcon({ name, focused, size }: { name: IoniconName; focused: boolean
 }
 
 export default function AppLayout() {
+  const t = useT();
   return (
     <Tabs
       screenOptions={{
@@ -52,7 +54,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Trang chủ',
+          title: t('tabHome'),
           tabBarIcon: ({ focused, size }) => (
             <PillIcon name={focused ? 'home' : 'home-outline'} focused={focused} size={size} />
           ),
@@ -61,7 +63,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Khám phá',
+          title: t('tabExplore'),
           tabBarIcon: ({ focused, size }) => (
             <PillIcon name={focused ? 'compass' : 'compass-outline'} focused={focused} size={size} />
           ),
@@ -70,7 +72,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="workspace"
         options={{
-          title: 'Chuyến đi',
+          title: t('tabTrips'),
           tabBarIcon: ({ focused, size }) => (
             <PillIcon name={focused ? 'map' : 'map-outline'} focused={focused} size={size} />
           ),
@@ -79,13 +81,15 @@ export default function AppLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Hồ sơ',
+          title: t('tabProfile'),
           tabBarIcon: ({ focused, size }) => (
             <PillIcon name={focused ? 'person' : 'person-outline'} focused={focused} size={size} />
           ),
         }}
       />
       <Tabs.Screen name="profile/edit" options={{ href: null }} />
+      <Tabs.Screen name="profile/posts" options={{ href: null }} />
+      <Tabs.Screen name="profile/trips" options={{ href: null }} />
     </Tabs>
   );
 }

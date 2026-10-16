@@ -1,59 +1,52 @@
-import { useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList, Image } from 'react-native';
-import { router } from 'expo-router';
+import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/src/hooks/useAuth';
-import { useBookmarks } from '@/src/hooks/useBookmarks';
-import { mockExperiences } from '@/src/data/mock/experiences';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
-import type { BookmarkStatus } from '@/src/types';
+import { useT, type StringKey } from '@/src/lib/i18n';
 
-const MENU_ITEMS = [
-  { icon: 'map-outline',           label: 'Chuyến đi của tôi',  value: null, route: '/(app)/workspace' },
-  { icon: 'heart-outline',         label: 'Địa điểm yêu thích', value: null, route: null },
-  { icon: 'star-outline',          label: 'Đánh giá của tôi',   value: null, route: null },
-  { icon: 'notifications-outline', label: 'Thông báo',           value: null, route: null },
-  { icon: 'shield-outline',        label: 'Quyền riêng tư',     value: null, route: null },
-  { icon: 'help-circle-outline',   label: 'Trợ giúp',           value: null, route: null },
-];
-
-const STATUS_TABS: { key: BookmarkStatus; label: string }[] = [
-  { key: 'want',    label: 'Muốn đi' },
-  { key: 'planned', label: 'Đã kế hoạch' },
-  { key: 'done',    label: 'Đã đi' },
+const MENU_ITEMS: { icon: string; tKey: StringKey; route: string | null }[] = [
+  { icon: 'grid-outline',          tKey: 'menuPosts',         route: '/(app)/profile/posts' },
+  { icon: 'map-outline',           tKey: 'menuTrips',         route: '/(app)/profile/trips' },
+  { icon: 'heart-outline',         tKey: 'menuFavorites',     route: null },
+  { icon: 'star-outline',          tKey: 'menuReviews',       route: null },
+  { icon: 'notifications-outline', tKey: 'menuNotifications', route: null },
+  { icon: 'shield-outline',        tKey: 'menuPrivacy',       route: null },
+  { icon: 'help-circle-outline',   tKey: 'menuHelp',          route: null },
 ];
 
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const { signOut, loading } = useAuth();
-  const { bookmarks } = useBookmarks();
+  const t = useT();
   const [tripCount, setTripCount]   = useState(0);
   const [placeCount, setPlaceCount] = useState(0);
-  const [savedTab, setSavedTab]     = useState<BookmarkStatus>('want');
-
-  const savedItems = useMemo(() => {
-    return mockExperiences.filter((e) => bookmarks[e.id] === savedTab);
-  }, [bookmarks, savedTab]);
-
-  const countByStatus = useMemo(() => ({
-    want:    Object.values(bookmarks).filter((s) => s === 'want').length,
-    planned: Object.values(bookmarks).filter((s) => s === 'planned').length,
-    done:    Object.values(bookmarks).filter((s) => s === 'done').length,
-  }), [bookmarks]);
+  const [userPlan, setUserPlan]     = useState<'free' | 'pro'>('free');
+  const [aiCredits, setAiCredits]   = useState(0);
+  const [avatarUrl, setAvatarUrl]   = useState<string | null>(null);
 
   const name  = user?.user_metadata?.full_name ?? 'Traveler';
   const email = user?.email ?? '';
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     async function loadStats() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const uid = session.user.id;
+      // Plan + credits
+      const { data: profile } = await supabase
+        .from('profiles').select('plan, ai_credits_remaining, avatar_url').eq('id', uid).single();
+      if (profile) {
+        setUserPlan(profile.plan ?? 'free');
+        setAiCredits(profile.ai_credits_remaining ?? 0);
+        setAvatarUrl(profile.avatar_url ?? null);
+      }
       // Count trips
       const { count: tCount } = await supabase
         .from('trips').select('id', { count: 'exact', head: true }).eq('user_id', uid);
@@ -68,7 +61,7 @@ export default function ProfileScreen() {
       }
     }
     loadStats();
-  }, [user]);
+  }, []));
 
   async function handleSignOut() {
     await signOut();
@@ -80,7 +73,7 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Hero */}
         <View style={styles.hero}>
-          <Avatar name={name} size={80} />
+          <Avatar uri={avatarUrl} name={name} size={80} />
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.email}>{email}</Text>
           <TouchableOpacity
@@ -88,16 +81,16 @@ export default function ProfileScreen() {
             onPress={() => router.push('/(app)/profile/edit')}
           >
             <Ionicons name="pencil-outline" size={14} color={colors.nomad.primary} />
-            <Text style={styles.editText}>Chỉnh sửa hồ sơ</Text>
+            <Text style={styles.editText}>{t('profileEditBtn')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
           {[
-            { label: 'Chuyến đi', value: String(tripCount) },
-            { label: 'Địa điểm',  value: String(placeCount) },
-            { label: 'Đánh giá',  value: '0' },
+            { label: t('statTrips'),   value: String(tripCount)  },
+            { label: t('statPlaces'),  value: String(placeCount) },
+            { label: t('statReviews'), value: '0' },
           ].map((s) => (
             <View key={s.label} style={styles.statItem}>
               <Text style={styles.statValue}>{s.value}</Text>
@@ -106,55 +99,22 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Đã lưu */}
-        <View style={styles.savedSection}>
-          <Text style={styles.savedTitle}>Đã lưu</Text>
-
-          {/* Status tab pills */}
-          <View style={styles.savedTabs}>
-            {STATUS_TABS.map(({ key, label }) => (
-              <TouchableOpacity
-                key={key}
-                style={[styles.savedTabBtn, savedTab === key && styles.savedTabBtnActive]}
-                onPress={() => setSavedTab(key)}
-              >
-                <Text style={[styles.savedTabText, savedTab === key && styles.savedTabTextActive]}>
-                  {label} ({countByStatus[key]})
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Experience cards */}
-          {savedItems.length === 0 ? (
-            <View style={styles.savedEmpty}>
-              <Ionicons name="heart-outline" size={32} color={colors.nomad.outlineVariant} />
-              <Text style={styles.savedEmptyText}>Chưa có địa điểm nào</Text>
+        {/* Plan card */}
+        <View style={styles.planCard}>
+          <View style={styles.planLeft}>
+            <View style={[styles.planBadge, userPlan === 'pro' && styles.planBadgePro]}>
+              <Text style={[styles.planBadgeText, userPlan === 'pro' && styles.planBadgeTextPro]}>
+                {userPlan === 'pro' ? '✦ Pro' : 'Free'}
+              </Text>
             </View>
-          ) : (
-            <FlatList
-              horizontal
-              data={savedItems}
-              keyExtractor={(item) => item.id}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 12, paddingRight: 4 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.savedCard}
-                  activeOpacity={0.88}
-                  onPress={() => router.push(`/experience/${item.id}` as any)}
-                >
-                  <Image source={{ uri: item.coverImage }} style={styles.savedCardImg} />
-                  <View style={styles.savedCardInfo}>
-                    <Text style={styles.savedCardTitle} numberOfLines={2}>{item.title}</Text>
-                    <Text style={styles.savedCardLoc} numberOfLines={1}>📍 {item.location}</Text>
-                    <Text style={styles.savedCardPrice}>
-                      {item.price.toLocaleString('vi-VN')}đ
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
+            {userPlan === 'free' && (
+              <Text style={styles.planCredits}>{aiCredits} {t('aiCreditsLeft')}</Text>
+            )}
+          </View>
+          {userPlan === 'free' && (
+            <TouchableOpacity style={styles.planUpgradeBtn}>
+              <Text style={styles.planUpgradeText}>{t('planUpgradeBtn')}</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -162,7 +122,7 @@ export default function ProfileScreen() {
         <View style={styles.menuSection}>
           {MENU_ITEMS.map((item, i) => (
             <TouchableOpacity
-              key={item.label}
+              key={item.tKey}
               style={[styles.menuRow, i > 0 && styles.menuBorder]}
               onPress={item.route ? () => router.push(item.route as any) : undefined}
             >
@@ -170,12 +130,9 @@ export default function ProfileScreen() {
                 <View style={styles.menuIcon}>
                   <Ionicons name={item.icon as any} size={18} color={colors.nomad.primary} />
                 </View>
-                <Text style={styles.menuLabel}>{item.label}</Text>
+                <Text style={styles.menuLabel}>{t(item.tKey)}</Text>
               </View>
-              <View style={styles.menuRight}>
-                {item.value && <Text style={styles.menuValue}>{item.value}</Text>}
-                <Ionicons name="chevron-forward" size={16} color={colors.nomad.outlineVariant} />
-              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.nomad.outlineVariant} />
             </TouchableOpacity>
           ))}
         </View>
@@ -184,7 +141,7 @@ export default function ProfileScreen() {
         <View style={styles.signOutSection}>
           <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} disabled={loading}>
             <Ionicons name="log-out-outline" size={18} color={colors.error} />
-            <Text style={styles.signOutText}>Đăng xuất</Text>
+            <Text style={styles.signOutText}>{t('profileSignOut')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -202,30 +159,22 @@ const styles = StyleSheet.create({
   statItem:      { flex: 1, alignItems: 'center' },
   statValue:     { fontSize: 20, fontWeight: '700', color: colors.nomad.onSurface },
   statLabel:     { fontSize: 11, color: colors.nomad.onSurfaceVariant, marginTop: 2 },
-  savedSection:      { marginTop: spacing.lg, paddingHorizontal: spacing.lg },
-  savedTitle:        { fontSize: 15, fontWeight: '700', color: colors.nomad.onSurface, marginBottom: spacing.md },
-  savedTabs:         { flexDirection: 'row', gap: 8, marginBottom: spacing.md },
-  savedTabBtn:       { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, backgroundColor: colors.nomad.surfaceContainerLow, borderWidth: 1, borderColor: colors.nomad.outlineVariant },
-  savedTabBtnActive: { backgroundColor: colors.nomad.primary, borderColor: colors.nomad.primary },
-  savedTabText:      { fontSize: 12, fontWeight: '500', color: colors.nomad.onSurfaceVariant },
-  savedTabTextActive:{ color: colors.nomad.onPrimary, fontWeight: '600' },
-  savedEmpty:        { alignItems: 'center', paddingVertical: 28, gap: 8 },
-  savedEmptyText:    { fontSize: 13, color: colors.nomad.onSurfaceVariant },
-  savedCard:         { width: 160, backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.outlineVariant, overflow: 'hidden' },
-  savedCardImg:      { width: '100%', height: 100, resizeMode: 'cover' },
-  savedCardInfo:     { padding: spacing.sm, gap: 3 },
-  savedCardTitle:    { fontSize: 12, fontWeight: '600', color: colors.nomad.onSurface, lineHeight: 16 },
-  savedCardLoc:      { fontSize: 11, color: colors.nomad.onSurfaceVariant },
-  savedCardPrice:    { fontSize: 12, fontWeight: '600', color: colors.nomad.primary, marginTop: 2 },
+  planCard:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.outlineVariant, paddingHorizontal: spacing.md, paddingVertical: 12 },
+  planLeft:          { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  planBadge:         { backgroundColor: colors.nomad.surfaceContainer, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 4 },
+  planBadgePro:      { backgroundColor: colors.nomad.primary },
+  planBadgeText:     { fontSize: 12, fontWeight: '700', color: colors.nomad.onSurfaceVariant },
+  planBadgeTextPro:  { color: colors.nomad.onPrimary },
+  planCredits:       { fontSize: 12, color: colors.nomad.onSurfaceVariant },
+  planUpgradeBtn:    { backgroundColor: colors.nomad.secondaryContainer, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 6 },
+  planUpgradeText:   { fontSize: 12, fontWeight: '700', color: colors.nomad.primary },
   menuSection:   { marginTop: spacing.lg, marginHorizontal: spacing.lg, backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.outlineVariant },
   menuRow:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: spacing.md },
   menuBorder:    { borderTopWidth: 1, borderTopColor: colors.nomad.outlineVariant },
   menuLeft:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
   menuIcon:      { width: 32, height: 32, borderRadius: 8, backgroundColor: colors.nomad.secondaryContainer, alignItems: 'center', justifyContent: 'center' },
   menuLabel:     { fontSize: 14, color: colors.nomad.onSurface },
-  menuRight:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  menuValue:     { fontSize: 12, color: colors.nomad.onSurfaceVariant },
   signOutSection:{ margin: spacing.lg },
-  signOutBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#FEF2F2', paddingVertical: 14, borderRadius: radius.lg },
+  signOutBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.error + '14', paddingVertical: 14, borderRadius: radius.lg },
   signOutText:   { fontSize: 15, fontWeight: '600', color: colors.error },
 });

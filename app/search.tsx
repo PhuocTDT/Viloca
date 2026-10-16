@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, FlatList,
+  View, Text, StyleSheet, TextInput, FlatList, ScrollView,
   TouchableOpacity, ActivityIndicator, ImageBackground,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -9,8 +9,10 @@ import { setPendingTripLocation } from '@/store/tripPick';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocationSearch, CITY_OPTIONS } from '@/src/hooks/useLocationSearch';
+import { useCategories } from '@/src/hooks/useCategories';
 import { FilterSheet, FilterTab } from '@/src/components/home/FilterSheet';
 import { colors } from '@/src/theme/colors';
+import { useT } from '@/src/lib/i18n';
 import type { Location } from '@/src/types';
 
 const INITIAL_COUNT = 5;
@@ -18,9 +20,10 @@ const LOAD_MORE     = 7;
 
 // ─── Result card ─────────────────────────────────────────────────────────────
 function LocationResultCard({ location, onPick }: { location: Location; onPick?: (loc: Location) => void }) {
+  const t = useT();
   const firstPhoto = location.photos?.split(',')[0]?.trim();
-  const subtitle = [location.district, location.city === 'SG' ? 'TP. HCM' : location.city === 'HN' ? 'Hà Nội' : 'Đà Nẵng'].filter(Boolean).join(', ');
-  const firstCategory = location.category?.split(',')[0]?.trim();
+  const cityLabel = location.city === 'SG' ? t('cityHCM') : location.city === 'HN' ? t('cityHN') : t('cityDN');
+  const subtitle = [location.district, cityLabel].filter(Boolean).join(', ');
 
   return (
     <TouchableOpacity
@@ -50,13 +53,6 @@ function LocationResultCard({ location, onPick }: { location: Location; onPick?:
           <Ionicons name="location-outline" size={11} color={colors.nomad.onSurfaceVariant} />
           <Text style={styles.cardSubtitle} numberOfLines={1}>{subtitle}</Text>
         </View>
-        {firstCategory ? (
-          <View style={styles.cardTags}>
-            <View style={styles.categoryPill}>
-              <Text style={styles.categoryPillText}>{firstCategory}</Text>
-            </View>
-          </View>
-        ) : null}
       </View>
 
       {onPick ? (
@@ -73,13 +69,17 @@ function LocationResultCard({ location, onPick }: { location: Location; onPick?:
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const t = useT();
   const inputRef = useRef<TextInput>(null);
-  const { query, setQuery, cityCode, setCityCode, results, loading } = useLocationSearch();
+  const { mode, day, trip_id, category: categoryParam } = useLocalSearchParams<{ mode?: string; day?: string; trip_id?: string; category?: string }>();
+  const isPickMode = mode === 'pick';
+
+  const { query, setQuery, cityCode, setCityCode, categoryKeyword, setCategoryKeyword, results, loading } =
+    useLocationSearch(categoryParam ?? null);
+  const { categories } = useCategories();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [sheetTab, setSheetTab]         = useState<FilterTab>('category');
   const [displayCount, setDisplayCount] = useState(INITIAL_COUNT);
-  const { mode, day, trip_id } = useLocalSearchParams<{ mode?: string; day?: string; trip_id?: string }>();
-  const isPickMode = mode === 'pick';
 
   function handlePick(loc: Location) {
     setPendingTripLocation(loc);
@@ -91,10 +91,10 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Reset pagination on every new search
+  // Reset pagination on every new search/filter
   useEffect(() => {
     setDisplayCount(INITIAL_COUNT);
-  }, [query, cityCode]);
+  }, [query, cityCode, categoryKeyword]);
 
   const displayed = results.slice(0, displayCount);
   const hasMore   = displayCount < results.length;
@@ -112,7 +112,7 @@ export default function SearchScreen() {
           <TextInput
             ref={inputRef}
             style={styles.input}
-            placeholder={isPickMode ? `Tìm địa điểm cho Ngày ${day ?? ''}...` : 'Tìm địa điểm...'}
+            placeholder={isPickMode ? `${t('searchPickPlaceholderPfx')}${day ?? ''}...` : t('searchPlaceholder')}
             placeholderTextColor={colors.nomad.outline}
             value={query}
             onChangeText={setQuery}
@@ -138,7 +138,7 @@ export default function SearchScreen() {
       {isPickMode && (
         <View style={styles.pickBanner}>
           <Ionicons name="add-circle-outline" size={14} color={colors.nomad.primary} />
-          <Text style={styles.pickBannerText}>Chọn địa điểm để thêm vào Ngày {day}</Text>
+          <Text style={styles.pickBannerText}>{t('searchPickBannerPfx')}{day}</Text>
         </View>
       )}
 
@@ -159,12 +159,37 @@ export default function SearchScreen() {
               onPress={() => setCityCode(active ? null : opt.code)}
             >
               <Text style={[styles.cityChipText, active && styles.cityChipTextActive]}>
-                {opt.label}
+                {t(opt.tKey)}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
+
+      {/* ── Category chips ───────────────────────────────────────── */}
+      {categories.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.catScroll}
+          contentContainerStyle={styles.catContent}
+        >
+          {categories.map((cat) => {
+            const active = categoryKeyword === cat.name;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.catChip, active && styles.catChipActive]}
+                activeOpacity={0.8}
+                onPress={() => setCategoryKeyword(active ? null : cat.name)}
+              >
+                {cat.emoji ? <Text style={styles.catEmoji}>{cat.emoji}</Text> : null}
+                <Text style={[styles.catChipText, active && styles.catChipTextActive]}>{cat.name}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
 
       {/* ── Results ──────────────────────────────────────────────── */}
       {loading ? (
@@ -172,11 +197,12 @@ export default function SearchScreen() {
       ) : results.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="location-outline" size={48} color={colors.nomad.outlineVariant} />
-          <Text style={styles.emptyTitle}>Không tìm thấy</Text>
-          <Text style={styles.emptyHint}>Thử từ khóa khác hoặc chọn thành phố khác</Text>
+          <Text style={styles.emptyTitle}>{t('searchEmptyTitle')}</Text>
+          <Text style={styles.emptyHint}>{t('searchEmptyHint')}</Text>
         </View>
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={displayed}
           keyExtractor={(l) => l.id}
           contentContainerStyle={styles.list}
@@ -222,6 +248,15 @@ const styles = StyleSheet.create({
   cityChipText:       { fontSize: 13, fontWeight: '500', color: colors.nomad.onSurfaceVariant },
   cityChipTextActive: { color: '#fff', fontWeight: '600' },
 
+  // Category chips
+  catScroll:        { marginBottom: 10, flexShrink: 0 },
+  catContent:       { paddingHorizontal: 16, gap: 8, paddingVertical: 2 },
+  catChip:          { flexDirection: 'row', alignItems: 'center', gap: 5, height: 34, borderRadius: 99, paddingHorizontal: 12, backgroundColor: colors.nomad.surfaceContainer, borderWidth: 1, borderColor: 'transparent' },
+  catChipActive:    { backgroundColor: colors.nomad.primaryContainer, borderColor: colors.nomad.primary },
+  catEmoji:         { fontSize: 13 },
+  catChipText:      { fontSize: 13, color: colors.nomad.onSurfaceVariant, fontWeight: '500' },
+  catChipTextActive:{ color: colors.nomad.primary, fontWeight: '700' },
+
   // Loader
   loader: { marginTop: 48 },
 
@@ -246,15 +281,8 @@ const styles = StyleSheet.create({
   cardName:     { fontSize: 15, fontWeight: '600', color: colors.nomad.onSurface, lineHeight: 21 },
   cardMeta:     { flexDirection: 'row', alignItems: 'center', gap: 3 },
   cardSubtitle: { fontSize: 12, color: colors.nomad.onSurfaceVariant },
-  cardTags:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  categoryPill: {
-    backgroundColor: colors.nomad.secondaryContainer,
-    borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2,
-  },
-  categoryPillText: { fontSize: 11, fontWeight: '600', color: colors.nomad.onSurface },
-
   // Pick mode
-  pickBanner:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#e8f0d8', paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.nomad.outlineVariant },
+  pickBanner:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.nomad.secondaryContainer, paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.nomad.outlineVariant },
   pickBannerText: { fontSize: 13, color: colors.nomad.primary, fontWeight: '600' },
   pickBtn:        { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.nomad.primary, alignItems: 'center', justifyContent: 'center' },
 

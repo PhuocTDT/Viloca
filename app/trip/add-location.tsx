@@ -11,6 +11,7 @@ import { consumePendingTripLocation } from '@/store/tripPick';
 import supabase from '@/src/lib/supabase';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
+import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Location, TimeSlot } from '@/src/types';
 
 const TIMES = [
@@ -19,16 +20,17 @@ const TIMES = [
   '18:00','19:00','20:00','21:00',
 ];
 
-type SlimItem = { day_number: number; visit_time: string | null; location_id: string | null; sort_order: number };
+type SlimItem = { id: string; day_number: number; visit_time: string | null; location_id: string | null; sort_order: number };
 
-function cityLabel(code: string | null) {
-  if (code === 'SG') return 'TP. HCM';
-  if (code === 'HN') return 'Hà Nội';
-  if (code === 'DN') return 'Đà Nẵng';
+function cityLabel(code: string | null, t: (k: StringKey) => string) {
+  if (code === 'SG') return t('cityHCM');
+  if (code === 'HN') return t('cityHN');
+  if (code === 'DN') return t('cityDN');
   return code ?? '';
 }
 
 export default function AddLocationScreen() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { trip_id, day: dayParam } = useLocalSearchParams<{ trip_id: string; day: string }>();
 
@@ -48,7 +50,7 @@ export default function AddLocationScreen() {
     if (!trip_id) return;
     Promise.all([
       supabase.from('trips').select('start_date, end_date').eq('id', trip_id).single(),
-      supabase.from('trip_items').select('day_number, visit_time, location_id, sort_order').eq('trip_id', trip_id),
+      supabase.from('trip_items').select('id, day_number, visit_time, location_id, sort_order').eq('trip_id', trip_id),
     ]).then(([t, i]) => {
       const items = (i.data ?? []) as SlimItem[];
       setTripItems(items);
@@ -73,7 +75,7 @@ export default function AddLocationScreen() {
     const timeSlot: TimeSlot = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
     const maxOrder = tripItems.filter(i => i.day_number === selectedDay).length;
 
-    const { error: err } = await supabase.from('trip_items').insert({
+    const { data: inserted, error: err } = await supabase.from('trip_items').insert({
       trip_id,
       location_id: location.id,
       day_number:  selectedDay,
@@ -81,9 +83,19 @@ export default function AddLocationScreen() {
       visit_time:  selectedTime,
       note:        null,
       sort_order:  maxOrder,
-    });
+    }).select('id').single();
     setAdding(false);
-    if (err) { setError('Không thể thêm: ' + err.message); return; }
+    if (err || !inserted) { setError(t('addLocErrCannotAdd') + (err?.message ?? 'unknown')); return; }
+
+    // Re-sort toàn bộ items trong ngày theo visit_time để đảm bảo thứ tự đúng
+    const allDay = [
+      ...tripItems.filter(i => i.day_number === selectedDay),
+      { id: inserted.id, visit_time: selectedTime, day_number: selectedDay, location_id: location.id, sort_order: maxOrder },
+    ].sort((a, b) => (a.visit_time ?? '00:00').localeCompare(b.visit_time ?? '00:00'));
+    await Promise.all(allDay.map((item, idx) =>
+      supabase.from('trip_items').update({ sort_order: idx }).eq('id', item.id)
+    ));
+
     router.dismiss(2); // quay về trip page (bỏ qua search)
   }
 
@@ -94,7 +106,7 @@ export default function AddLocationScreen() {
       i => i.location_id === location.id && i.day_number === selectedDay
     );
     if (sameDay) {
-      setError(`"${location.name}" đã có trong lịch trình Ngày ${selectedDay}.`);
+      setError(`"${location.name}${t('addLocInDayMid')}${selectedDay}.`);
       return;
     }
 
@@ -103,7 +115,7 @@ export default function AddLocationScreen() {
     );
     if (otherDay) {
       setWarnModal({
-        message: `"${location.name}" đã có trong lịch trình Ngày ${otherDay.day_number}.\n\nVẫn muốn thêm vào Ngày ${selectedDay}?`,
+        message: `"${location.name}${t('addLocInDayMid')}${otherDay.day_number}.${t('addLocWarnSufPfx')}${selectedDay}?`,
         onConfirm: doAdd,
       });
       return;
@@ -121,7 +133,7 @@ export default function AddLocationScreen() {
   }
 
   const photo    = location.photos?.split(',')[0]?.trim() ?? location.cover_image;
-  const subtitle = [location.district, cityLabel(location.city)].filter(Boolean).join(', ');
+  const subtitle = [location.district, cityLabel(location.city, t)].filter(Boolean).join(', ');
   const cat      = location.category?.split(',')[0]?.trim();
 
   const openStr  = location.opening_hours?.slice(0, 5) ?? null;
@@ -137,7 +149,7 @@ export default function AddLocationScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={colors.nomad.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thêm vào lịch trình</Text>
+        <Text style={styles.headerTitle}>{t('addLocTitle')}</Text>
         <View style={{ width: 38 }} />
       </View>
 
@@ -177,7 +189,7 @@ export default function AddLocationScreen() {
         </ImageBackground>
 
         {/* Day selector */}
-        <Text style={styles.sectionLabel}>Chọn ngày</Text>
+        <Text style={styles.sectionLabel}>{t('addLocSelectDay')}</Text>
         <View style={styles.chipWrap}>
           {Array.from({ length: maxDays }, (_, i) => i + 1).map((d) => (
             <TouchableOpacity
@@ -186,7 +198,7 @@ export default function AddLocationScreen() {
               onPress={() => { setSelectedDay(d); setSelectedTime(''); setError(''); }}
             >
               <Text style={[styles.dayChipText, selectedDay === d && styles.dayChipTextActive]}>
-                Ngày {d}
+                {t('tripDayLabel')} {d}
               </Text>
             </TouchableOpacity>
           ))}
@@ -195,7 +207,7 @@ export default function AddLocationScreen() {
         {/* Time scroll */}
         <View style={styles.sectionLabelRow}>
           <Text style={styles.sectionLabel}>
-            Giờ tham quan{'  '}<Text style={{ color: colors.error }}>*</Text>
+            {t('addLocVisitTime')}{'  '}<Text style={{ color: colors.error }}>*</Text>
           </Text>
           {(openStr || closeStr) && (
             <Text style={styles.hoursHint}>
@@ -241,7 +253,7 @@ export default function AddLocationScreen() {
           {adding
             ? <ActivityIndicator size="small" color="#fff" />
             : <Ionicons name="add-circle-outline" size={20} color="#fff" />}
-          <Text style={styles.confirmBtnText}>Thêm vào Ngày {selectedDay}</Text>
+          <Text style={styles.confirmBtnText}>{t('addLocConfirmBtnPfx')}{selectedDay}</Text>
         </TouchableOpacity>
       </View>
 
@@ -252,17 +264,17 @@ export default function AddLocationScreen() {
             <View style={styles.warnIconWrap}>
               <Ionicons name="warning" size={32} color="#F59E0B" />
             </View>
-            <Text style={styles.warnTitle}>Địa điểm trùng lặp</Text>
+            <Text style={styles.warnTitle}>{t('addLocDupTitle')}</Text>
             <Text style={styles.warnMessage}>{warnModal?.message}</Text>
             <View style={styles.warnActions}>
               <TouchableOpacity style={styles.warnCancelBtn} onPress={() => setWarnModal(null)}>
-                <Text style={styles.warnCancelText}>Huỷ</Text>
+                <Text style={styles.warnCancelText}>{t('cancelBtn')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.warnConfirmBtn}
                 onPress={() => { setWarnModal(null); warnModal?.onConfirm(); }}
               >
-                <Text style={styles.warnConfirmText}>Vẫn thêm</Text>
+                <Text style={styles.warnConfirmText}>{t('addLocDupConfirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -306,12 +318,12 @@ const styles = StyleSheet.create({
 
   timeChip:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, borderWidth: 1.5, borderColor: N.outlineVariant, backgroundColor: N.surfaceContainerLow },
   timeChipActive:    { backgroundColor: N.primary, borderColor: N.primary },
-  timeChipTaken:     { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5', opacity: 0.6 },
+  timeChipTaken:     { backgroundColor: colors.error + '14', borderColor: colors.error + '60', opacity: 0.6 },
   timeChipText:      { fontSize: 13, fontWeight: '500', color: N.onSurfaceVariant },
   timeChipTextActive:{ color: '#fff', fontWeight: '700' },
   timeChipTakenText: { color: colors.error },
 
-  errorBox:  { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FEF2F2', borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: '#FCA5A5' },
+  errorBox:  { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.error + '14', borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: colors.error + '60' },
   errorText: { flex: 1, color: colors.error, fontSize: 13 },
 
   footer:     { paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: N.outlineVariant, backgroundColor: N.background },
@@ -319,13 +331,13 @@ const styles = StyleSheet.create({
   confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   warnOverlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  warnBox:        { backgroundColor: '#fff', borderRadius: 20, padding: 24, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 12 },
-  warnIconWrap:   { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  warnBox:        { backgroundColor: N.surfaceContainerLow, borderRadius: 20, padding: 24, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 12 },
+  warnIconWrap:   { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.warning + '28', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   warnTitle:      { fontSize: 17, fontWeight: '800', color: N.onSurface, marginBottom: 8, textAlign: 'center' },
   warnMessage:    { fontSize: 14, color: N.onSurfaceVariant, lineHeight: 21, textAlign: 'center', marginBottom: 20 },
   warnActions:    { flexDirection: 'row', gap: 10, width: '100%' },
   warnCancelBtn:  { flex: 1, paddingVertical: 13, borderRadius: radius.lg, borderWidth: 1, borderColor: N.outlineVariant, alignItems: 'center' },
   warnCancelText: { fontSize: 14, fontWeight: '600', color: N.onSurfaceVariant },
-  warnConfirmBtn: { flex: 1, paddingVertical: 13, borderRadius: radius.lg, backgroundColor: '#F59E0B', alignItems: 'center' },
+  warnConfirmBtn: { flex: 1, paddingVertical: 13, borderRadius: radius.lg, backgroundColor: colors.warning, alignItems: 'center' },
   warnConfirmText:{ fontSize: 14, fontWeight: '700', color: '#fff' },
 });

@@ -7,9 +7,10 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { supabase } from '@/lib/supabase';
+import supabase from '@/src/lib/supabase';
 import { useFavorite } from '@/src/hooks/useFavorite';
 import { colors } from '@/src/theme/colors';
+import { useT } from '@/src/lib/i18n';
 import type { Location } from '@/src/types';
 
 const PRICE_LABEL: Record<number, { symbol: string; label: string }> = {
@@ -51,19 +52,29 @@ export default function LocationDetailScreen() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   const { isFavorite, toggle } = useFavorite(id);
+  const t = useT();
 
   useEffect(() => {
-    supabase
-      .from('locations')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data }) => {
-        setLocation(data as Location);
-        setLoading(false);
-      });
+    async function load() {
+      // Pro users: full data from locations table (RLS-gated)
+      const { data: fullData } = await supabase
+        .from('locations').select('*').eq('id', id).single();
+      if (fullData) {
+        setLocation(fullData as Location);
+        setIsPro(true);
+      } else {
+        // Free user fallback: locations_preview (limited fields)
+        const { data: preview } = await supabase
+          .from('locations_preview').select('*').eq('id', id).single();
+        setLocation(preview as unknown as Location);
+        setIsPro(false);
+      }
+      setLoading(false);
+    }
+    load();
   }, [id]);
 
   if (loading) {
@@ -77,18 +88,20 @@ export default function LocationDetailScreen() {
   if (!location) {
     return (
       <View style={styles.center}>
-        <Text style={styles.notFound}>Không tìm thấy địa điểm</Text>
+        <Text style={styles.notFound}>{t('locNotFound')}</Text>
       </View>
     );
   }
 
-  const firstPhoto = location.photos?.split(',')[0]?.trim();
+  const firstPhoto = isPro
+    ? (location.photos?.split(',')[0]?.trim() || location.cover_image)
+    : location.cover_image;
   const styleTags = location.style_tag
     ? location.style_tag.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
   const subtitle = [location.district, location.city === 'SG' ? 'TP. Hồ Chí Minh' : location.city === 'HN' ? 'Hà Nội' : location.city === 'DN' ? 'Đà Nẵng' : location.city].filter(Boolean).join(', ');
 
-  const hasLongDesc = location.long_description && location.long_description.length > 0;
+  const hasLongDesc = location.description && location.description.length > 0;
   const hasMapsUrl = !!location.google_maps_url;
 
   return (
@@ -137,14 +150,21 @@ export default function LocationDetailScreen() {
           {location.verified && (
             <View style={styles.verifiedBadge}>
               <Ionicons name="checkmark-circle" size={13} color={colors.nomad.primary} />
-              <Text style={styles.verifiedText}>Đã xác minh</Text>
+              <Text style={styles.verifiedText}>{t('locVerified')}</Text>
             </View>
           )}
         </View>
 
         {/* Name + heart */}
         <View style={styles.nameRow}>
-          <Text style={styles.name} numberOfLines={3}>{location.name}</Text>
+          {isPro ? (
+            <Text style={styles.name} numberOfLines={3}>{location.name}</Text>
+          ) : (
+            <View style={styles.lockedNameWrap}>
+              <Ionicons name="lock-closed" size={15} color={colors.nomad.outline} />
+              <Text style={styles.lockedNameText}>{t('locProNameLock')}</Text>
+            </View>
+          )}
           <TouchableOpacity onPress={toggle} style={styles.heartBtn} activeOpacity={0.7}>
             <Ionicons
               name={isFavorite ? 'heart' : 'heart-outline'}
@@ -155,10 +175,15 @@ export default function LocationDetailScreen() {
         </View>
 
         {/* Subtitle */}
-        {subtitle ? (
+        {(isPro && subtitle) ? (
           <View style={styles.subtitleRow}>
             <Ionicons name="location-outline" size={14} color={colors.nomad.onSurfaceVariant} />
             <Text style={styles.subtitle}>{subtitle}</Text>
+          </View>
+        ) : (!isPro && location.hint) ? (
+          <View style={styles.subtitleRow}>
+            <Ionicons name="sparkles-outline" size={14} color={colors.nomad.onSurfaceVariant} />
+            <Text style={styles.subtitle}>{location.hint}</Text>
           </View>
         ) : null}
 
@@ -200,11 +225,11 @@ export default function LocationDetailScreen() {
               style={styles.longDesc}
               numberOfLines={descExpanded ? undefined : LONG_DESC_LINES}
             >
-              {location.long_description}
+              {location.description}
             </Text>
             <TouchableOpacity onPress={() => setDescExpanded((v) => !v)} style={styles.expandBtn}>
               <Text style={styles.expandText}>
-                {descExpanded ? 'Thu gọn ▲' : 'Xem thêm ▼'}
+                {descExpanded ? t('locCollapse') : t('locExpand')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -212,24 +237,24 @@ export default function LocationDetailScreen() {
 
         <View style={styles.divider} />
 
-        {/* Accordion: Giờ mở cửa */}
-        <AccordionSection title="Giờ mở cửa">
+        {/* Accordion: Opening hours */}
+        <AccordionSection title={t('locOpenHours')}>
           <View style={styles.infoGrid}>
             {location.opening_hours ? (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Mở cửa</Text>
+                <Text style={styles.infoLabel}>{t('locOpen')}</Text>
                 <Text style={styles.infoValue}>{location.opening_hours}</Text>
               </View>
             ) : null}
             {location.closing_hours ? (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Đóng cửa</Text>
+                <Text style={styles.infoLabel}>{t('locClose')}</Text>
                 <Text style={styles.infoValue}>{location.closing_hours}</Text>
               </View>
             ) : null}
             {location.off_days ? (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Ngày nghỉ</Text>
+                <Text style={styles.infoLabel}>{t('locOffDays')}</Text>
                 <Text style={styles.infoValue}>{location.off_days}</Text>
               </View>
             ) : null}
@@ -238,39 +263,53 @@ export default function LocationDetailScreen() {
 
         <View style={styles.accordionDivider} />
 
-        {/* Accordion: Liên hệ & Địa chỉ */}
-        <AccordionSection title="Liên hệ & Địa chỉ">
-          <View style={styles.infoGrid}>
-            {location.address ? (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Địa chỉ</Text>
-                <Text style={styles.infoValue}>{location.address}</Text>
-              </View>
-            ) : null}
-            {location.phone ? (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Điện thoại</Text>
-                <TouchableOpacity onPress={() => Linking.openURL(`tel:${location.phone}`)}>
-                  <Text style={[styles.infoValue, styles.link]}>{location.phone}</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-          </View>
+        {/* Accordion: Contact & Address */}
+        <AccordionSection title={t('locContact')}>
+          {isPro ? (
+            <View style={styles.infoGrid}>
+              {location.address ? (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>{t('locAddress')}</Text>
+                  <Text style={styles.infoValue}>{location.address}</Text>
+                </View>
+              ) : null}
+              {location.phone ? (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>{t('locPhone')}</Text>
+                  <TouchableOpacity onPress={() => Linking.openURL(`tel:${location.phone}`)}>
+                    <Text style={[styles.infoValue, styles.link]}>{location.phone}</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <View style={styles.proLockRow}>
+              <Ionicons name="lock-closed-outline" size={16} color={colors.nomad.outline} />
+              <Text style={styles.proLockText}>{t('locProAddressLock')}</Text>
+            </View>
+          )}
         </AccordionSection>
       </ScrollView>
 
       {/* ── Bottom bar ─────────────────────────────────────────────── */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
-        <TouchableOpacity
-          style={[styles.mapsBtn, !hasMapsUrl && styles.mapsBtnDisabled]}
-          activeOpacity={hasMapsUrl ? 0.85 : 1}
-          onPress={() => hasMapsUrl && Linking.openURL(location.google_maps_url!)}
-        >
-          <Ionicons name="map-outline" size={18} color={hasMapsUrl ? colors.nomad.onPrimary : colors.nomad.outline} />
-          <Text style={[styles.mapsBtnText, !hasMapsUrl && styles.mapsBtnTextDisabled]}>
-            Mở Google Maps
-          </Text>
-        </TouchableOpacity>
+        {isPro ? (
+          <TouchableOpacity
+            style={[styles.mapsBtn, !hasMapsUrl && styles.mapsBtnDisabled]}
+            activeOpacity={hasMapsUrl ? 0.85 : 1}
+            onPress={() => hasMapsUrl && Linking.openURL(location.google_maps_url!)}
+          >
+            <Ionicons name="map-outline" size={18} color={hasMapsUrl ? colors.nomad.onPrimary : colors.nomad.outline} />
+            <Text style={[styles.mapsBtnText, !hasMapsUrl && styles.mapsBtnTextDisabled]}>
+              {t('locOpenMaps')}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.mapsBtn}>
+            <Ionicons name="lock-closed-outline" size={18} color={colors.nomad.onPrimary} />
+            <Text style={styles.mapsBtnText}>{t('locMapsPro')}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -346,6 +385,12 @@ const styles = StyleSheet.create({
   infoLabel: { width: 90, fontSize: 13, color: colors.nomad.onSurfaceVariant },
   infoValue: { flex: 1, fontSize: 13, color: colors.nomad.onSurface, lineHeight: 20 },
   link:      { color: colors.nomad.primary, textDecorationLine: 'underline' },
+
+  // Lock UI
+  lockedNameWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.nomad.surfaceContainer, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  lockedNameText: { fontSize: 14, color: colors.nomad.outline, fontStyle: 'italic' },
+  proLockRow:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 16 },
+  proLockText:    { fontSize: 13, color: colors.nomad.outline, fontStyle: 'italic' },
 
   // Bottom bar
   bottomBar: {
