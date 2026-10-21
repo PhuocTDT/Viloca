@@ -13,6 +13,7 @@ import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
 import { getCoverForDestination, DESTINATION_COVERS } from '@/src/lib/destination-covers';
 import { stripDiacritics } from '@/src/lib/trip-utils';
+import { countLocations } from '@/src/lib/location-access';
 import { useT, type StringKey } from '@/src/lib/i18n';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -223,15 +224,12 @@ export default function CreateTripScreen() {
 
     // Preflight: kiểm tra điểm đến có dữ liệu không trước khi tạo trip
     const cityCode = DEST_TO_CITY[destination];
-    const preflightQ = supabase
-      .from('locations')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true);
-    const { count: destCount } = await (
-      cityCode
-        ? preflightQ.eq('city', cityCode)
-        : preflightQ.ilike('address', `%${destination}%`)
-    );
+    // Free bị chặn bảng `locations`; view `locations_preview` không có `address`
+    // nên với điểm đến không có mã thành phố chỉ kiểm tra được trên bảng đầy đủ.
+    const destCount = await countLocations((q, table) => {
+      const base = table === 'locations' ? q.eq('is_active', true) : q;
+      return cityCode ? base.eq('city', cityCode) : base.ilike('address', `%${destination}%`);
+    });
 
     if (!destCount || destCount === 0) {
       setError(`"${destination}" chưa có dữ liệu địa điểm trên Viloca. Hiện hỗ trợ: Hà Nội, Đà Nẵng, TP. Hồ Chí Minh, Quảng Nam. Vui lòng chọn lại điểm đến.`);

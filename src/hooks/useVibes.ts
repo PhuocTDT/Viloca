@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import supabase from '@/src/lib/supabase';
+import { readLocations } from '@/src/lib/location-access';
 
 export interface Vibe {
   id: number;
@@ -27,15 +28,12 @@ export function useVibes(): { vibes: Vibe[]; loading: boolean } {
       }
 
       // Fallback: derive distinct tags from locations.style_tag (comma-separated)
-      const { data: locs } = await supabase
-        .from('locations')
-        .select('style_tag')
-        .eq('is_active', true)
-        .eq('verified', true)
-        .not('style_tag', 'is', null)
-        .limit(150);
+      const locs = await readLocations<{ style_tag: string | null }>((table) => {
+        const q = supabase.from(table).select('style_tag').not('style_tag', 'is', null).limit(150);
+        return table === 'locations' ? q.eq('is_active', true).eq('verified', true) : q;
+      });
 
-      if (locs) {
+      if (locs.length > 0) {
         const seen = new Set<string>();
         const unique: Vibe[] = [];
         for (const row of locs) {

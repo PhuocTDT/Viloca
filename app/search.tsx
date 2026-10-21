@@ -21,7 +21,7 @@ const LOAD_MORE     = 7;
 // ─── Result card ─────────────────────────────────────────────────────────────
 function LocationResultCard({ location, onPick }: { location: Location; onPick?: (loc: Location) => void }) {
   const t = useT();
-  const firstPhoto = location.photos?.split(',')[0]?.trim();
+  const firstPhoto = location.photos?.split(',')[0]?.trim() || location.cover_image;
   const cityLabel = location.city === 'SG' ? t('cityHCM') : location.city === 'HN' ? t('cityHN') : t('cityDN');
   const subtitle = [location.district, cityLabel].filter(Boolean).join(', ');
 
