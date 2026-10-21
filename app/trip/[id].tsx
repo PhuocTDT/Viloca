@@ -268,10 +268,10 @@ function CardInner({ item }: { item: TripItem }) {
         resizeMode="cover"
       >
         {!photoUrl && (
-          <LinearGradient colors={[colors.nomad.primaryContainer, colors.nomad.primary]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[colors.nomad.primaryContainer, colors.nomad.primary]} style={StyleSheet.absoluteFill} />
         )}
         {photoUrl && (
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} locations={[0.4, 1]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} locations={[0.4, 1]} style={StyleSheet.absoluteFill} />
         )}
       </ImageBackground>
       <View style={styles.cardBody}>
@@ -1025,7 +1025,7 @@ export default function TripDetailScreen() {
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.28)', 'rgba(0,0,0,0.88)']}
             locations={[0.25, 0.58, 1]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           <Animated.View style={[styles.heroContent, { opacity: heroOpacity }]}>
             <View style={styles.heroBottom}>
@@ -1764,7 +1764,7 @@ const styles = StyleSheet.create({
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   navbar:        { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md },
-  navbarBg:      { ...StyleSheet.absoluteFillObject as any, backgroundColor: colors.nomad.primary },
+  navbarBg:      { ...StyleSheet.absoluteFill as any, backgroundColor: colors.nomad.primary },
   backBtn:       { width: 38, height: 38, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
   editNavBtn:    { width: 38, height: 38, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
   navbarInfo:    { flex: 1 },
@@ -1993,7 +1993,7 @@ const styles = StyleSheet.create({
   },
   mapModalTitle: { fontSize: 17, fontWeight: '700', color: colors.nomad.onSurface },
   mapLoadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.nomad.surfaceContainerLow,
     alignItems: 'center', justifyContent: 'center', gap: 12,
   },

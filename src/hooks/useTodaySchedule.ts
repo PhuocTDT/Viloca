@@ -16,7 +16,7 @@ export function useTodaySchedule(trip: Trip | null): TodayScheduleResult {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!trip || trip.status !== 'active') {
+    if (!trip || trip.status !== 'active' || !trip.start_date) {
       setItems([]);
       setDayNumber(0);
       return;
@@ -24,7 +24,7 @@ export function useTodaySchedule(trip: Trip | null): TodayScheduleResult {
 
     async function load() {
       setLoading(true);
-      const startMs = new Date(trip!.start_date).getTime();
+      const startMs = new Date(trip!.start_date as string).getTime();
       const day = Math.floor((Date.now() - startMs) / 86_400_000) + 1;
       setDayNumber(day);
 

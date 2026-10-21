@@ -324,7 +324,6 @@ export default function ExploreScreen() {
         source={require('@/assets/viloca-logo.png')}
         style={s.watermark}
         resizeMode="contain"
-        pointerEvents="none"
       />
 
       <View style={s.header}>
@@ -371,7 +370,7 @@ const s = StyleSheet.create({
   screen:       { flex: 1, backgroundColor: colors.nomad.background, overflow: 'hidden' },
   blobTopRight:   { position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: 110, backgroundColor: colors.nomad.secondaryContainer, opacity: 0.28 },
   blobBottomLeft: { position: 'absolute', bottom: 60, left: -50, width: 160, height: 160, borderRadius: 80, backgroundColor: colors.nomad.primary, opacity: 0.07 },
-  watermark:      { position: 'absolute', bottom: 24, right: 20, width: 88, height: 88, opacity: 0.05 },
+  watermark:      { position: 'absolute', bottom: 24, right: 20, width: 88, height: 88, opacity: 0.05, pointerEvents: 'none' },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

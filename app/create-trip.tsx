@@ -524,7 +524,7 @@ export default function CreateTripScreen() {
               {hasCover ? (
                 <>
                   <Image source={{ uri: coverUri! }} style={styles.heroImg} resizeMode="cover" />
-                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={StyleSheet.absoluteFillObject} />
+                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={StyleSheet.absoluteFill} />
                   <View style={styles.heroCityWrap}>
                     <Text style={styles.heroCity}>{destination}</Text>
                   </View>

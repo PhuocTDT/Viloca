@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { colors } from '../../theme/colors';
 import { radius } from '../../theme/spacing';
 
@@ -26,13 +26,13 @@ const fontSize: Record<Size, number> = { sm: 13, md: 15, lg: 17 };
 export function Button({ label, onPress, variant = 'primary', size = 'md', loading, disabled, style }: Props) {
   const isDisabled = disabled || loading;
 
-  const containerStyle: ViewStyle[] = [
+  const containerStyle: StyleProp<ViewStyle> = [
     styles.base,
     padding[size],
     variant === 'primary' && { backgroundColor: isDisabled ? colors.nomad.primaryContainer : colors.nomad.primary },
     variant === 'outline' && { borderWidth: 1.5, borderColor: colors.nomad.primary },
     variant === 'ghost'   && {},
-    style as ViewStyle,
+    style,
   ];
 
   const textColor =
