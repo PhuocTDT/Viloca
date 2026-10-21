@@ -12,6 +12,12 @@ Oct 19, 2026 · @r3dh4t
 - Làm rõ số địa điểm: 70 row trên production, 68 row được đánh dấu verified và hiển thị.
 - Giai đoạn A thêm bước "quyết định số phận từng nhánh"; Giai đoạn B ghi rõ việc nào là "merge", việc nào là "làm mới". Đây là **đề xuất thứ tự**, việc merge thật do team quyết định.
 
+**Tiến độ Giai đoạn A (21/10/2026, nhánh `feat/phase-a-cleanup`, chưa push):**
+
+- Đã làm: typecheck từ 32 lỗi xuống 1 (lỗi còn lại ở `app/_layout.tsx`, file khởi động); thêm CI (Jest bắt buộc, `tsc` chưa chặn); sửa 2 điều hướng tới route không tồn tại (`/(auth)/onboarding`); thay ô "Đánh giá" cứng `'0'` ở Profile bằng số bài viết thật; xóa `useExperiences` và dữ liệu mock; nối Home với chuyến đi (thẻ "Chuyến đi của tôi": lịch hôm nay hoặc chuyến sắp tới); viết `README.md`, cập nhật `CLAUDE.md`; test Jest 29 → 34.
+- Phát hiện thêm khi làm: 16 chỗ dùng `StyleSheet.absoluteFillObject` (RN 0.85 đã bỏ, nên các lớp phủ mất định vị tuyệt đối); `search.tsx` mở bộ lọc bằng tab `'hashtag'` không còn tồn tại; dự án có hai client Supabase (`lib/` và `src/lib/`); NativeWind gần như không được dùng.
+- Chưa làm, cần quyết định: gating `locations` (xem vấn đề #1; cần chạy SQL và đổi các chỗ truy vấn, không thể kiểm thử khi chưa có staging), tách `trip/[id].tsx`, chuẩn hóa migration trùng timestamp, analytics, xử lý các nhánh. Phần nối Home mới kiểm tra bằng typecheck và test đơn vị, chưa chạy với dữ liệu Supabase thật.
+
 Cách kiểm chứng: đọc code và migration trên `main`; `git cherry` và `git merge-tree` (merge thử, không ghi gì) cho các nhánh; chạy `jest`. Chưa kiểm tra được trực tiếp: database production, và các ước lượng thời gian.
 
 ## Tóm tắt
@@ -49,7 +55,7 @@ Có 8 vấn đề, trong đó hai cái đầu ảnh hưởng trực tiếp đế
 
 | # | Vấn đề | Bằng chứng trong repo |
 | --- | --- | --- |
-| 1 | Freemium chưa bị chặn thật | Migration `20260627000002_enable_public_read_locations` vẫn hiệu lực. Proposal `revive-location-data` ghi việc bật gating là "ngoài scope, có change riêng" và chưa làm |
+| 1 | Freemium chưa bị chặn thật | Migration `20260627000002_enable_public_read_locations` vẫn hiệu lực. Proposal `revive-location-data` ghi việc bật gating là "ngoài scope, có change riêng" và chưa làm. Change `fix-freemium-and-security` (12/10) đánh dấu xong mọi task, nhưng task 1.2 chỉ gỡ policy tên `authenticated_read_locations`; policy mở thật sự là `public_read_locations` (từ 20260627) và không migration nào gỡ nó, nên mục tiêu của change chưa đạt dù spec báo hoàn thành. Ngoài policy, RPC `search_locations` là `SECURITY DEFINER` trả `SETOF locations` (đủ mọi cột, kể cả tên và địa chỉ) nên phải viết lại cùng lúc, và 7 chỗ trong app đọc thẳng bảng `locations` (Home 2 chỗ, danh mục, vibe, tạo chuyến đi, chi tiết trải nghiệm, và `location/[id]` vốn đã có nhánh dự phòng sang `locations_preview`) sẽ trống với người dùng free nếu chỉ gỡ policy |
 | 2 | Nút "Nâng cấp Pro" không làm gì | `create-trip.tsx:845` chỉ đóng modal. Không có Stripe, RevenueCat, MoMo hay VNPay. Cột `plan` chỉ đổi được bằng tay |
 | 3 | Code chết hoặc chưa nối | `usePackingList`, `useTodaySchedule`, `useUpcomingTrip` không màn hình nào dùng; `useExperiences` vẫn đọc mock; ô "Đánh giá" trên Profile gán cứng `'0'` |
 | 4 | Journal chưa đủ | Trên `main`, journal chỉ lưu text và mood; khi insert luôn gán `photos: []`, `weather: null` (`trip/[id].tsx:669`). Nhánh `feat/trip-journal-lifecycle-stats` (commit `7bd33c5`, chưa merge vào `main`) đã thêm ảnh, thời tiết, tự chuyển trạng thái chuyến đi, màn hoàn thành và bản đồ thống kê |
