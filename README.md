@@ -59,6 +59,7 @@ Lưu ý: dự án đang có **hai client Supabase** (`lib/supabase.ts` ở gốc
 ## Backend (Supabase)
 
 - Cách triển khai và cấu hình: `docs/deploy-supabase.md` (danh sách "13 migrations" trong file đó đã cũ, hiện có 50 file).
+- **Phân hạng Free/Pro** (`profiles.plan`) được thực thi ở server bằng RLS (`20261021000001_enforce_locations_freemium.sql`): Free chỉ đọc được view `locations_preview` (không có địa chỉ, tọa độ, SĐT, giờ mở cửa), Pro đọc đủ bảng `locations`. Code app đọc địa điểm qua `src/lib/location-access.ts`. Chưa có luồng thanh toán; hiện chỉ đổi `plan` bằng tay trong database.
 - Một số file migration **trùng timestamp** nên thứ tự chạy phụ thuộc tên file; kiểm tra kỹ trước khi dùng `supabase db push` lên môi trường thật.
 - Edge Functions đọc các biến môi trường: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `BEDROCK_MODEL_ID`, `GOOGLE_ROUTES_API_KEY`, `ANTHROPIC_API_KEY` (đặt trong Supabase, không đặt trong `.env.local` của app).
 

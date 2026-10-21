@@ -47,9 +47,9 @@ Only public values belong in `EXPO_PUBLIC_*` variables (they ship inside the app
 
 ### Backend (`supabase/`)
 
-- `migrations/` — schema and RLS. Several files share a timestamp, and `locations` access is governed by the RLS policies in `20260627000002_enable_public_read_locations.sql` (still open to everyone) and `20260921000002_update_locations_rls_freemium.sql`. Read both before touching location access.
+- `migrations/` — schema and RLS. Several files share a timestamp, and `locations` access is governed by RLS; the current rules are in `20261021000001_enforce_locations_freemium.sql` (it drops the old open `public_read_locations` policy from `20260627000002`). Read it before touching location access.
 - `functions/` — `plan-trip` (AWS Bedrock, JWT check, AI credits), `get-distances`, `generate-location-hint`, `batch-generate-hints`.
-- Freemium model: free users should only see the free-tier fields exposed by the `locations_preview` view; pro users read `locations` directly. Do not assume this is enforced server-side yet.
+- Freemium model (`profiles.plan` = `'free'` | `'pro'`), enforced server-side: pro users read `locations` directly; free users get only the card fields in the `locations_preview` view (no address/coordinates/phone/hours), and `search_locations` masks those columns for them. Everyone can read the full row of locations in their own trips. Client code must read through `readLocations`/`countLocations` in `src/lib/location-access.ts` rather than querying `locations` directly. There is no purchase flow yet: `plan` is only changed by hand in the database.
 
 ### Team conventions
 
