@@ -2,11 +2,23 @@
 
 Oct 19, 2026 · @r3dh4t
 
+## Nhật ký cập nhật
+
+**21/10/2026.** Đối chiếu lại toàn bộ tài liệu với `main` (commit `5987fbc`, 16/10/2026) và các nhánh của team. Các thay đổi:
+
+- Sửa số test Jest: 35 → 29 (đã chạy `jest`).
+- Thêm mục **"Tình trạng các nhánh chưa merge"**: nhiều việc trong lộ trình đã có người làm trên nhánh cũ.
+- Sửa câu "khoảng 50 checkbox kiểm thử thủ công" (không có căn cứ) và câu về `CLAUDE.md`, ví dụ mâu thuẫn giữa hai roadmap (xem vấn đề #6 và #8).
+- Làm rõ số địa điểm: 70 row trên production, 68 row được đánh dấu verified và hiển thị.
+- Giai đoạn A thêm bước "quyết định số phận từng nhánh"; Giai đoạn B ghi rõ việc nào là "merge", việc nào là "làm mới". Đây là **đề xuất thứ tự**, việc merge thật do team quyết định.
+
+Cách kiểm chứng: đọc code và migration trên `main`; `git cherry` và `git merge-tree` (merge thử, không ghi gì) cho các nhánh; chạy `jest`. Chưa kiểm tra được trực tiếp: database production, và các ước lượng thời gian.
+
 ## Tóm tắt
 
 Viloca đã có đủ lõi "khám phá → lên lịch bằng AI → ghi nhật ký", nhưng mô hình kinh doanh freemium chưa hoạt động thật và app chưa có lý do để người dùng quay lại hằng ngày.
 
-Viloca là app du lịch Việt Nam (Expo SDK 56, React Native 0.85, Supabase), khoảng 5 tháng tuổi, có 68 địa điểm đã duyệt ở TP.HCM (27), Hà Nội (15) và Đà Nẵng (26). Số liệu này lấy từ tài liệu trong repo, chưa kiểm tra trực tiếp trên database production.
+Viloca là app du lịch Việt Nam (Expo SDK 56, React Native 0.85, Supabase), khoảng 5 tháng tuổi, có 68 địa điểm đã duyệt (verified) ở TP.HCM (27), Hà Nội (15) và Đà Nẵng (26), trên tổng 70 row của bảng `locations`. Số liệu này lấy từ `openspec/changes/revive-location-data` trong repo, chưa kiểm tra trực tiếp trên database production.
 
 Ba việc nên làm đầu tiên:
 
@@ -42,11 +54,26 @@ Có 8 vấn đề, trong đó hai cái đầu ảnh hưởng trực tiếp đế
 | 3 | Code chết hoặc chưa nối | `usePackingList`, `useTodaySchedule`, `useUpcomingTrip` không màn hình nào dùng; `useExperiences` vẫn đọc mock; ô "Đánh giá" trên Profile gán cứng `'0'` |
 | 4 | Journal chưa đủ | Trên `main`, journal chỉ lưu text và mood; khi insert luôn gán `photos: []`, `weather: null` (`trip/[id].tsx:669`). Nhánh `feat/trip-journal-lifecycle-stats` (commit `7bd33c5`, chưa merge vào `main`) đã thêm ảnh, thời tiết, tự chuyển trạng thái chuyến đi, màn hoàn thành và bản đồ thống kê |
 | 5 | Không có notification, offline, analytics | `package.json` không có `expo-notifications` hay NetInfo |
-| 6 | Test, CI và kỹ thuật | Chỉ có test cho `trip-utils`; không có `.github/`; `trip/[id].tsx` 2046 dòng, `create-trip.tsx` 992 dòng; chuỗi migration có nhiều file trùng timestamp và `supabase db push` không dùng được; còn khoảng 50 checkbox kiểm thử thủ công chưa tick (chủ yếu map WebView, Android thật, test APK) |
+| 6 | Test, CI và kỹ thuật | Chỉ có test cho `trip-utils`; không có `.github/`; `trip/[id].tsx` 2046 dòng, `create-trip.tsx` 992 dòng; chuỗi migration có nhiều file trùng timestamp và `supabase db push` không dùng được; còn 122 checkbox chưa tick trong các file `docs/` và `openspec/` được git theo dõi (không tính tài liệu này): 47 ở plan Home (`2026-09-24-home-below-search.md`), 18 ở `deploy-supabase.md`, 12 ở `SPEC_MVP.md`, 11 ở hai change openspec (`social-posts` 6, `trip-map-webview-leaflet` 5). Checklist kiểm thử map thủ công `HUONG_DAN_KIEM_TRA_MAP.md` (10 mục) chưa được theo dõi bởi git |
 | 7 | Dữ liệu còn mỏng | Hà Nội ở mức ngân sách thấp nhất (≤30k) chỉ còn 13 địa điểm, Đà Nẵng 12; một lịch 3 ngày cần khoảng 15 slot nên Hà Nội không dựng nổi mà không lặp địa điểm |
-| 8 | Tài liệu lệch với code | `SPEC_MVP.md` và `ARCHITECTURE.md` còn mô tả cấu trúc cũ (`(tabs)`, `onboarding`, mock data); `README.md` trống; `CLAUDE.md` nói chỉ có 2 route group và không có test; `ROADMAP.md` và `Viloca_Phase1_Plan.md` mâu thuẫn nhau |
+| 8 | Tài liệu lệch với code | `SPEC_MVP.md` và `ARCHITECTURE.md` còn mô tả cấu trúc cũ (`(tabs)`, `onboarding`, mock data); `README.md` gần như trống (8 byte); `CLAUDE.md` ghi "No lint or test scripts" trong khi `package.json` đã có `"test": "jest"` (phần "hai route group" thì vẫn đúng: `(app)` và `(auth)`); `ROADMAP.md` và `Viloca_Phase1_Plan.md` mâu thuẫn nhau về cách chia phase (xem bên dưới) |
 
-Hai task còn treo của `revive-location-data`: 8.2 (migration DDL `drop_rating_from_locations_preview` cần chạy trong SQL editor) và 9.2 (xác nhận card nổi bật render ở Home).
+Hai task còn treo của `revive-location-data`: 8.2 (verify `GET /rest/v1/locations_preview?select=*` không trả về `rating`; task 8.1 tạo migration `20261012010300_drop_rating_from_locations_preview` đã tick) và 9.2 (xác nhận card nổi bật render ở Home).
+
+## Tình trạng các nhánh chưa merge
+
+Đo ngày 21/10/2026, so với `origin/main` tại `5987fbc` (16/10/2026). "Patch chưa vào main" lấy từ `git cherry`; "Merge thử" từ `git merge-tree` (chỉ mô phỏng, không ghi gì vào repo).
+
+| Nhánh | Commit cuối | Chậm hơn main | Patch chưa vào main | Nội dung chính | Merge thử |
+| --- | --- | --- | --- | --- | --- |
+| `feat/trip-journal-lifecycle-stats` | 29/06 | 46 commit | 1/1 | Journal có ảnh và thời tiết, tự chuyển trạng thái chuyến đi, màn hoàn thành, bản đồ thống kê (`7bd33c5`) | 4 xung đột: `trip/[id].tsx`, `(app)/index.tsx`, `package.json`, `package-lock.json` |
+| `feat/social-posts` | 29/06 | 46 | 8/8 | Trong 4 commit đầu đã đọc: sửa `likes_count`, giảm giật khi cuộn màn booking detail, thêm quy tắc qa-review vào `CLAUDE.md` (4 commit còn lại chưa đọc) | 0 xung đột |
+| `fix/likes-count-negative` | 29/06 | 46 | 1/1 | Chặn `likes_count` âm khi bỏ like | 0 xung đột |
+| `feat/guide-tour-flow` | 14/07 | 41 | 9/9 | Sửa tương thích web (`darkMode: 'class'`, `app/map.web.tsx`, cài `expo-notifications`), sửa bản đồ và AWS service, độ chính xác like, gắn tỉnh cho lịch AI | 12 xung đột (gồm `app.json`, `explore.tsx`, `.npmrc`) |
+| `feat/roadmap-next` | 22/07 | 39 | 2/2 | Theo tên commit: reaction, bookmark, tương tác bình luận, quyền xem bài; bảo mật upload, kiểm tra phía client, chia sẻ phong phú | 5 xung đột (gồm `app.json`, `explore.tsx`, `post/[id].tsx`) |
+| `feat/home-gui` | 22/06 | 93 | 0/0 | Chỉ có một merge commit (PR #5 `feat/user_info`), không có patch riêng | không có gì để merge |
+
+Điều này ảnh hưởng tới lộ trình: các nhánh đều cũ (tháng 6–7) trong khi `main` đã đi xa, nên "merge lại" thường nghĩa là rebase hoặc cherry-pick từng phần, không phải thao tác nhỏ. Cần xác nhận với tác giả từng nhánh trước khi coi các việc trên là "đã xong".
 
 ## Định hướng sản phẩm hiện tại
 
@@ -58,7 +85,7 @@ Viloca đang chuyển từ "app lập kế hoạch du lịch chung" sang **khám
 - **Địa phương hóa**: lễ hội, vibe, dữ liệu 3 thành phố, hai ngôn ngữ.
 - **Cộng đồng UGC** là lớp giữ chân.
 
-Roadmap trong repo (`ROADMAP.md`, `Viloca_Phase1_Plan.md`) nhắm đúng retention và growth nhưng gần như chưa triển khai, và hai file này mâu thuẫn nhau (ví dụ ngân sách và AI chatbot ở Phase 1 hay Phase 4). Tài liệu này đề xuất thay chúng bằng một lộ trình duy nhất.
+Roadmap trong repo (`ROADMAP.md`, `Viloca_Phase1_Plan.md`) nhắm đúng retention và growth nhưng gần như chưa triển khai, và hai file này mâu thuẫn nhau về cách chia phase: Phase 1 của `ROADMAP.md` là "MVP Core" (Trip Journal nâng cao, Experience Bookmarks, Trip Lifecycle), còn Phase 1 của `Viloca_Phase1_Plan.md` là "Quick Wins", trong đó Budget Management nằm ở Phase 2 và AI chatbot ở Phase 4. Tài liệu này đề xuất thay chúng bằng một lộ trình duy nhất.
 
 ## Lộ trình đề xuất
 
@@ -68,7 +95,8 @@ Bốn giai đoạn, khoảng 8–12 tuần cho A–C; thời gian là ước lư
 
 Mục tiêu: đóng lỗ hổng bảo mật và sạch nợ kỹ thuật trước khi mở rộng.
 
-- [ ] Áp migration còn treo `drop_rating_from_locations_preview` trong SQL editor; xác nhận card nổi bật render ở Home
+- [ ] Quyết định số phận từng nhánh chưa merge (xem mục "Tình trạng các nhánh chưa merge"). Thứ tự đề xuất: merge `fix/likes-count-negative` và `feat/social-posts` (0 xung đột, sau khi đọc 4 commit còn lại của nhánh sau); lấy riêng bản sửa web từ `feat/guide-tour-flow` (`darkMode: 'class'`, `app/map.web.tsx`, `expo-notifications`) thay vì merge cả nhánh 12 xung đột; rebase `feat/trip-journal-lifecycle-stats` và `feat/roadmap-next` khi `main` ổn định; xóa `feat/home-gui`
+- [ ] Verify task 8.2 của `revive-location-data` (`locations_preview` không trả `rating`); xác nhận card nổi bật render ở Home (task 9.2)
 - [ ] Bật gating thật: bỏ policy `public_read_locations`, sửa RPC `search_locations`, chuyển các query sang `locations_preview`
 - [ ] Chuẩn hóa chuỗi migration (đổi tên file trùng timestamp), thử `supabase db push` trên môi trường staging
 - [ ] Nối `useUpcomingTrip` và `useTodaySchedule` vào Home (chuyến đi sắp tới, lịch hôm nay); quyết định số phận `usePackingList`
@@ -85,7 +113,7 @@ Mục tiêu: có người trả tiền và có lý do để họ quay lại.
 - [ ] Thanh toán Pro (RevenueCat/IAP hoặc cổng VN như PayOS, MoMo), webhook cập nhật `plan`, gói mua thêm credit AI
 - [ ] Trip lifecycle: tự chuyển `planning → active → completed` theo ngày, màn Trip Summary khi kết thúc (đã có trên nhánh `feat/trip-journal-lifecycle-stats`, chưa merge; cần xem lại và merge thay vì làm lại)
 - [ ] Journal đầy đủ: ảnh từ thư viện, thời tiết, xem lại theo dòng thời gian (ảnh và thời tiết đã có trên cùng nhánh đó; phần xem lại theo dòng thời gian chưa kiểm tra)
-- [ ] Push notification: nhắc trước chuyến đi, nhắc ghi nhật ký khi đang đi
+- [ ] Push notification: nhắc trước chuyến đi, nhắc ghi nhật ký khi đang đi (nhánh `feat/guide-tour-flow` mới chỉ cài thư viện `expo-notifications`, chưa phải tính năng nhắc)
 - [ ] Ngân sách và chi tiêu theo chuyến (dự kiến so với thực tế, chia danh mục) và packing list
 - [ ] Onboarding quiz chọn phong cách du lịch để cá nhân hóa ngay lần đầu
 - [ ] Làm đầy dữ liệu: Hà Nội và Đà Nẵng ở mức ngân sách thấp, sau đó thêm Huế và Nha Trang (đã có file seed Nha Trang)
@@ -120,9 +148,11 @@ Group trip với Supabase Realtime, local guide, referral, thêm tỉnh thành, 
 | 9 | Gợi ý theo mùa và thời tiết | Gắn dự báo thời tiết vào từng ngày, tự đề xuất phương án trong nhà khi có mưa | Giảm chuyến đi hỏng vì thời tiết |
 | 10 | Thử thách hàng tuần theo thành phố | Ví dụ "Ăn 3 món phở khác nhau ở Hà Nội", kết hợp huy hiệu | Tạo thói quen hàng tuần |
 
-## Kế hoạch coding ngày mai
+## Kế hoạch coding cho bước tiếp theo
 
-Bắt đầu bằng Giai đoạn A, theo thứ tự dưới đây. Bước 1 cần bạn chạy SQL trên Supabase, vì migration DDL không áp được qua REST API.
+(Bản gốc viết cho ngày hôm sau 19/10; giữ lại vì vẫn là thứ tự hợp lý, chỉ thêm bước 0.) Bắt đầu bằng Giai đoạn A, theo thứ tự dưới đây.
+
+0. **Chốt hướng xử lý các nhánh** (mục "Tình trạng các nhánh chưa merge") trước khi sửa `trip/[id].tsx`, `explore.tsx` hay `app.json`: đây là các file nhiều nhánh cùng đang đụng tới, sửa trước sẽ làm tăng xung đột. Bước 1 cần bạn chạy SQL trên Supabase, vì migration DDL không áp được qua REST API.
 
 1. **Gating `locations`.** Đọc `supabase/migrations/20260627000002_enable_public_read_locations.sql` và `20260921000002_update_locations_rls_freemium.sql`, viết migration mới bỏ policy công khai. Sau đó sửa `src/hooks/useLocationSearch.ts` (RPC `search_locations`) và dọn mọi nơi gọi `from('locations')` (tìm bằng grep) sang `locations_preview`. Cần thử với tài khoản free và pro.
 2. **Nối Home.** `app/(app)/index.tsx` cùng `src/hooks/useUpcomingTrip.ts` và `src/hooks/useTodaySchedule.ts`.
@@ -137,3 +167,5 @@ Cần bạn quyết định trước khi code:
 - [ ] Thành phố tiếp theo để bơm dữ liệu: Huế hay Nha Trang?
 - [ ] Chọn công cụ analytics (PostHog hay Supabase).
 - [ ] Roadmap nào là bản chính thức: giữ tài liệu này và gỡ `ROADMAP.md` cũ khỏi repo, hay chuyển nội dung này vào `docs/`?
+- [ ] Với từng nhánh trong mục "Tình trạng các nhánh chưa merge": giữ, rebase hay bỏ, và ai phụ trách (hỏi tác giả nhánh, vì phần lớn đã cũ 3–4 tháng).
+- [ ] Có bật nền web cho app không? Trên `main`, `app.json` chỉ khai báo `ios` và `android`; chạy web cần thêm `web`, `react-dom` và bản sửa tương thích web ở nhánh `feat/guide-tour-flow`.
