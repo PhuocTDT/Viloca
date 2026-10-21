@@ -22,6 +22,7 @@ import { useFeaturedLocation } from '@/src/hooks/useFeaturedLocation';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 import { usePlaceDistances } from '@/src/hooks/usePlaceDistances';
 import { VibeChips } from '@/src/components/home/VibeChips';
+import { MyTripCard } from '@/src/components/home/MyTripCard';
 import { useLangStore } from '@/src/store/langStore';
 import { useT, type StringKey } from '@/src/lib/i18n';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
@@ -275,6 +276,9 @@ export default function HomeScreen() {
             <Ionicons name="options-outline" size={18} color={colors.nomad.primary} />
           </TouchableOpacity>
         </View>
+
+        {/* ── My trip: today's schedule or next upcoming trip ── */}
+        <MyTripCard />
 
         {/* ── Vibe chips (from DB vibes table) ── */}
         <VibeChips selected={activeVibe} onSelect={setActiveVibe} />
