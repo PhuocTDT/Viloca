@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import supabase from '../lib/supabase';
 import type { PackingItem } from '../types';
 
+// Quyết định (Giai đoạn A, 21/10/2026): hook này đã viết đầy đủ CRUD và bảng
+// `packing_items` đã có migration, nhưng chưa màn hình nào gọi nó. Giữ lại —
+// không xóa — vì Giai đoạn B ("Ngân sách và chi tiêu... và packing list")
+// dùng đúng hook này cho màn hình checklist đóng đồ, không viết lại từ đầu.
+
 const TEMPLATES: Record<string, string[]> = {
   beach:         ['Kem chống nắng', 'Kính râm', 'Đồ bơi', 'Dép lê', 'Khăn tắm'],
   mountain:      ['Áo khoác', 'Giày trekking', 'Thuốc cảm', 'Đèn pin', 'Áo mưa'],

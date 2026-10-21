@@ -1,3 +1,8 @@
+> **Đã thay bằng `docs/HIEN_TRANG_VA_LO_TRINH.md` (21/10/2026).** File đó là nguồn
+> lộ trình duy nhất hiện tại, hợp nhất tài liệu này và `Viloca_Phase1_Plan.md`
+> (hai file từng mâu thuẫn nhau về cách chia phase). Giữ file này lại chỉ để
+> tham khảo ý tưởng gốc; đừng cập nhật ở đây nữa.
+
 # Viloca — Feature Roadmap: Retention & Growth
 
 ## Context
