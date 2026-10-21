@@ -23,6 +23,7 @@ import { useUserLocation } from '@/src/hooks/useUserLocation';
 import { usePlaceDistances } from '@/src/hooks/usePlaceDistances';
 import { VibeChips } from '@/src/components/home/VibeChips';
 import { MyTripCard } from '@/src/components/home/MyTripCard';
+import { usePreferredVibes } from '@/src/hooks/usePreferredVibes';
 import { useLangStore } from '@/src/store/langStore';
 import { useT, type StringKey } from '@/src/lib/i18n';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
@@ -144,6 +145,7 @@ export default function HomeScreen() {
   const { locations, loading: locationsLoading }   = useLocations(20, null, activeVibe);
   const { location: featuredLocation }             = useFeaturedLocation(null);
   const { coords: userCoords, permissionDenied }   = useUserLocation();
+  const { vibes: preferredVibes, loading: preferredVibesLoading } = usePreferredVibes();
 
   // Grid excludes the featured card
   const gridLocations = useMemo(
@@ -281,7 +283,12 @@ export default function HomeScreen() {
         <MyTripCard />
 
         {/* ── Vibe chips (from DB vibes table) ── */}
-        <VibeChips selected={activeVibe} onSelect={setActiveVibe} />
+        <VibeChips
+          selected={activeVibe}
+          onSelect={setActiveVibe}
+          preferredVibe={preferredVibes[0] ?? null}
+          preferredLoading={preferredVibesLoading}
+        />
 
         {/* ── Category chips — tap to open search filtered by category ── */}
         <CategoryChips />

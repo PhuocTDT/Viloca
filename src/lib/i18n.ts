@@ -78,6 +78,11 @@ const strings = {
     ageUnit:          'tuổi',
     ageContinueBtn:   'Tiếp tục',
     ageSkip:          'Bỏ qua',
+    // Onboarding style quiz
+    onbStyleTitle:       'Bạn thích du lịch theo cách nào?',
+    onbStyleSub:         'Chọn tối đa 3 — giúp Viloca gợi ý đúng gu của bạn ngay từ đầu.',
+    onbStyleContinueBtn: 'Tiếp tục',
+    onbStyleSkip:        'Bỏ qua',
     // Verify email
     verifyHeadline:   'Xác nhận email',
     verifySub:        'Nhập mã 6 số được gửi đến',
@@ -487,6 +492,11 @@ const strings = {
     ageUnit:          'years old',
     ageContinueBtn:   'Continue',
     ageSkip:          'Skip',
+    // Onboarding style quiz
+    onbStyleTitle:       'How do you like to travel?',
+    onbStyleSub:         'Pick up to 3 — helps Viloca match your taste right away.',
+    onbStyleContinueBtn: 'Continue',
+    onbStyleSkip:        'Skip',
     // Verify email
     verifyHeadline:   'Verify email',
     verifySub:        'Enter the 6-digit code sent to',
