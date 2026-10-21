@@ -29,7 +29,7 @@ App có 10 nhóm tính năng chạy được; phần lớn đã dịch sang ti�
 | Địa điểm | Màn chi tiết phân tầng: free chỉ thấy gợi ý ẩn tên (`hint`), ảnh bìa, vibe; pro thấy tên, địa chỉ, ảnh đầy đủ |
 | Cộng đồng | Tab Khám phá là feed bài viết: tạo bài tối đa 5 ảnh, like, comment, lưu bài, share |
 | Hồ sơ | Sửa hồ sơ và avatar, thống kê số chuyến đi và số địa điểm, danh sách bài viết và chuyến đi của tôi, huy hiệu gói và số credit AI còn lại |
-| Khác | Bookmark/favorite, cấu hình build APK qua EAS, 35 test Jest cho `trip-utils` |
+| Khác | Bookmark/favorite, cấu hình build APK qua EAS, 29 test Jest cho `trip-utils` |
 
 ## Vấn đề phát hiện
 
@@ -40,7 +40,7 @@ Có 8 vấn đề, trong đó hai cái đầu ảnh hưởng trực tiếp đế
 | 1 | Freemium chưa bị chặn thật | Migration `20260627000002_enable_public_read_locations` vẫn hiệu lực. Proposal `revive-location-data` ghi việc bật gating là "ngoài scope, có change riêng" và chưa làm |
 | 2 | Nút "Nâng cấp Pro" không làm gì | `create-trip.tsx:845` chỉ đóng modal. Không có Stripe, RevenueCat, MoMo hay VNPay. Cột `plan` chỉ đổi được bằng tay |
 | 3 | Code chết hoặc chưa nối | `usePackingList`, `useTodaySchedule`, `useUpcomingTrip` không màn hình nào dùng; `useExperiences` vẫn đọc mock; ô "Đánh giá" trên Profile gán cứng `'0'` |
-| 4 | Journal chưa đủ | Chỉ lưu text và mood; khi insert luôn gán `photos: []`, `weather: null` |
+| 4 | Journal chưa đủ | Trên `main`, journal chỉ lưu text và mood; khi insert luôn gán `photos: []`, `weather: null` (`trip/[id].tsx:669`). Nhánh `feat/trip-journal-lifecycle-stats` (commit `7bd33c5`, chưa merge vào `main`) đã thêm ảnh, thời tiết, tự chuyển trạng thái chuyến đi, màn hoàn thành và bản đồ thống kê |
 | 5 | Không có notification, offline, analytics | `package.json` không có `expo-notifications` hay NetInfo |
 | 6 | Test, CI và kỹ thuật | Chỉ có test cho `trip-utils`; không có `.github/`; `trip/[id].tsx` 2046 dòng, `create-trip.tsx` 992 dòng; chuỗi migration có nhiều file trùng timestamp và `supabase db push` không dùng được; còn khoảng 50 checkbox kiểm thử thủ công chưa tick (chủ yếu map WebView, Android thật, test APK) |
 | 7 | Dữ liệu còn mỏng | Hà Nội ở mức ngân sách thấp nhất (≤30k) chỉ còn 13 địa điểm, Đà Nẵng 12; một lịch 3 ngày cần khoảng 15 slot nên Hà Nội không dựng nổi mà không lặp địa điểm |
@@ -83,8 +83,8 @@ Mục tiêu: đóng lỗ hổng bảo mật và sạch nợ kỹ thuật trướ
 Mục tiêu: có người trả tiền và có lý do để họ quay lại.
 
 - [ ] Thanh toán Pro (RevenueCat/IAP hoặc cổng VN như PayOS, MoMo), webhook cập nhật `plan`, gói mua thêm credit AI
-- [ ] Trip lifecycle: tự chuyển `planning → active → completed` theo ngày, màn Trip Summary khi kết thúc
-- [ ] Journal đầy đủ: ảnh từ thư viện, thời tiết, xem lại theo dòng thời gian
+- [ ] Trip lifecycle: tự chuyển `planning → active → completed` theo ngày, màn Trip Summary khi kết thúc (đã có trên nhánh `feat/trip-journal-lifecycle-stats`, chưa merge; cần xem lại và merge thay vì làm lại)
+- [ ] Journal đầy đủ: ảnh từ thư viện, thời tiết, xem lại theo dòng thời gian (ảnh và thời tiết đã có trên cùng nhánh đó; phần xem lại theo dòng thời gian chưa kiểm tra)
 - [ ] Push notification: nhắc trước chuyến đi, nhắc ghi nhật ký khi đang đi
 - [ ] Ngân sách và chi tiêu theo chuyến (dự kiến so với thực tế, chia danh mục) và packing list
 - [ ] Onboarding quiz chọn phong cách du lịch để cá nhân hóa ngay lần đầu
