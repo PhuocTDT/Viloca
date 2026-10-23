@@ -20,9 +20,7 @@ import { NearbyListItem } from '@/src/components/home/NearbyListItem';
 import { useFeaturedLocation } from '@/src/hooks/useFeaturedLocation';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 import { usePlaceDistances } from '@/src/hooks/usePlaceDistances';
-import { VibeChips } from '@/src/components/home/VibeChips';
 import { MyTripCard } from '@/src/components/home/MyTripCard';
-import { usePreferredVibes } from '@/src/hooks/usePreferredVibes';
 import { useLangStore } from '@/src/store/langStore';
 import { useT, type StringKey } from '@/src/lib/i18n';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
@@ -143,7 +141,6 @@ export default function HomeScreen() {
   const firstName = user?.user_metadata?.full_name?.split(' ').pop() ?? t('homeFallbackName');
   const mascot = useMascot();
 
-  const [activeVibe,     setActiveVibe]     = useState<string | null>(null);
   const [sheetVisible, setSheetVisible]     = useState(false);
   const [sheetTab, setSheetTab]             = useState<FilterTab>('category');
   const [carouselIndex, setCarouselIndex]   = useState(0);
@@ -152,10 +149,9 @@ export default function HomeScreen() {
   const festivalRef  = useRef<ScrollView>(null);
 
   const { festivals, loading: festivalsLoading }  = useFestivals();
-  const { locations, loading: locationsLoading }   = useLocations(20, null, activeVibe);
+  const { locations, loading: locationsLoading }   = useLocations(20, null, null);
   const { location: featuredLocation }             = useFeaturedLocation(null);
   const { coords: userCoords, permissionDenied }   = useUserLocation();
-  const { vibes: preferredVibes, loading: preferredVibesLoading } = usePreferredVibes();
 
   // "Just for you": thẻ nổi bật lên đầu, phần còn lại xáo một lần mỗi phiên
   const restLocations = useMemo(
@@ -289,21 +285,13 @@ export default function HomeScreen() {
         {/* ── Search bar ── */}
         <View style={styles.searchBar}>
           <TouchableOpacity style={styles.searchInput} activeOpacity={0.85} onPress={() => router.push('/search')}>
-            <Ionicons name="search-outline" size={18} color="#9E9E9E" />
+            <Ionicons name="search-outline" size={16} color="#9E9E9E" />
             <Text style={styles.searchPlaceholder}>{t('homeSearchHint')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterBtn} onPress={() => { setSheetTab('category'); setSheetVisible(true); }}>
-            <Ionicons name="options-outline" size={18} color={colors.nomad.primary} />
+            <Ionicons name="options-outline" size={16} color={colors.nomad.primary} />
           </TouchableOpacity>
         </View>
-
-        {/* ── Vibe chips (from DB vibes table) ── */}
-        <VibeChips
-          selected={activeVibe}
-          onSelect={setActiveVibe}
-          preferredVibe={preferredVibes[0] ?? null}
-          preferredLoading={preferredVibesLoading}
-        />
 
         {/* ── My trip: today's schedule or next upcoming trip ── */}
         <MyTripCard />
@@ -473,10 +461,10 @@ const styles = StyleSheet.create({
   senBubbleText:   { fontSize: 13, color: '#3D3D3D', lineHeight: 18, fontWeight: '600' },
 
   // Search
-  searchBar:         { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 28, height: 56, borderWidth: 1, borderColor: '#E5E5E5', paddingLeft: 16, paddingRight: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
-  searchInput:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, height: '100%' },
-  searchPlaceholder: { flex: 1, fontSize: 15, color: '#9E9E9E' },
-  filterBtn:         { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E3F0D6', alignItems: 'center', justifyContent: 'center' },
+  searchBar:         { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 24, height: 48, borderWidth: 1, borderColor: '#E5E5E5', paddingLeft: 14, paddingRight: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  searchInput:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: '100%' },
+  searchPlaceholder: { flex: 1, fontSize: 13.5, color: '#9E9E9E' },
+  filterBtn:         { width: 34, height: 34, borderRadius: 17, backgroundColor: '#E3F0D6', alignItems: 'center', justifyContent: 'center' },
 
   // Section headers (festivals + carousel — keep for "Đừng bỏ lỡ" and "Phải ghé một lần")
   sectionHeader: {
