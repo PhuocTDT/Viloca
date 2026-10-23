@@ -14,7 +14,6 @@ import MascotAvatar from '@/components/Mascot/MascotAvatar';
 import { useFestivals } from '@/src/hooks/useFestivals';
 import { useLocations } from '@/src/hooks/useLocations';
 import { FilterSheet, FilterTab } from '@/src/components/home/FilterSheet';
-import { CategoryChips } from '@/src/components/home/CategoryChips';
 import { HomeSectionHeader } from '@/src/components/home/HomeSectionHeader';
 import { JustForYouCard } from '@/src/components/home/JustForYouCard';
 import { NearbyListItem } from '@/src/components/home/NearbyListItem';
@@ -277,18 +276,13 @@ export default function HomeScreen() {
           <View style={styles.heroDecorCircle} pointerEvents="none" />
           <View style={styles.heroCardBody}>
             <View style={styles.heroCardLeft}>
-              <View style={styles.heroBadge}>
-                <View style={styles.heroDot} />
-                <Text style={styles.heroLabelText}>{t('homeSidekick')}</Text>
-              </View>
               <Text style={styles.greetingName}>{t('homeGreeting')} {firstName},</Text>
               <Text style={styles.greetingTagline}>{t('homeTodayQ')}</Text>
+              <View style={styles.senBubble}>
+                <Text style={styles.senBubbleText}>{mascot.senMessage}</Text>
+              </View>
             </View>
-            <MascotAvatar emotion={mascot.emotion} size={160} />
-          </View>
-          <View style={styles.senBubbleTail} />
-          <View style={styles.senBubble}>
-            <Text style={styles.senBubbleText}>{mascot.senMessage}</Text>
+            <MascotAvatar emotion={mascot.emotion} size={100} />
           </View>
         </View>{/* greetingCard */}
 
@@ -303,9 +297,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── My trip: today's schedule or next upcoming trip ── */}
-        <MyTripCard />
-
         {/* ── Vibe chips (from DB vibes table) ── */}
         <VibeChips
           selected={activeVibe}
@@ -314,8 +305,8 @@ export default function HomeScreen() {
           preferredLoading={preferredVibesLoading}
         />
 
-        {/* ── Category chips — tap to open search filtered by category ── */}
-        <CategoryChips />
+        {/* ── My trip: today's schedule or next upcoming trip ── */}
+        <MyTripCard />
 
         {/* ── Just for you ── */}
         <HomeSectionHeader
@@ -472,18 +463,14 @@ const styles = StyleSheet.create({
   notifDot:    { position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF4D6D', borderWidth: 1.5, borderColor: '#fff' },
 
   // Hero card
-  greetingCard:    { marginHorizontal: 16, marginTop: 10, marginBottom: 12, borderRadius: 24, padding: 12, paddingBottom: 10, overflow: 'hidden', shadowColor: '#3a6010', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
+  greetingCard:    { marginHorizontal: 16, marginTop: 10, marginBottom: 12, borderRadius: 24, padding: 14, overflow: 'hidden', shadowColor: '#3a6010', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
   heroDecorCircle: { position: 'absolute', bottom: -44, right: -44, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(160,210,100,0.22)' },
-  heroCardBody:    { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  heroCardLeft:    { flex: 1 },
-  heroBadge:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5, alignSelf: 'flex-start', marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1 },
-  heroDot:         { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.nomad.primary },
-  heroLabelText:   { fontSize: 12, color: colors.nomad.primary, fontWeight: '500' },
-  greetingName:    { fontSize: 24, fontWeight: '800', color: '#1C1C1C', lineHeight: 30 },
-  greetingTagline: { fontSize: 24, fontWeight: '800', color: '#3E7B27', lineHeight: 30 },
-  senBubbleTail:   { width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 8, borderBottomWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#fff', marginRight: 72, alignSelf: 'flex-end' },
-  senBubble:       { backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4, elevation: 1 },
-  senBubbleText:   { fontSize: 13, color: '#3D3D3D', lineHeight: 19 },
+  heroCardBody:    { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  heroCardLeft:    { flex: 1, gap: 10 },
+  greetingName:    { fontSize: 19, fontWeight: '900', color: '#1C1C1C', lineHeight: 22 },
+  greetingTagline: { fontSize: 19, fontWeight: '900', color: '#3E7B27', lineHeight: 22 },
+  senBubble:       { backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4, elevation: 1 },
+  senBubbleText:   { fontSize: 13, color: '#3D3D3D', lineHeight: 18, fontWeight: '600' },
 
   // Search
   searchBar:         { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 28, height: 56, borderWidth: 1, borderColor: '#E5E5E5', paddingLeft: 16, paddingRight: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
