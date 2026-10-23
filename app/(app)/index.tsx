@@ -56,13 +56,6 @@ function festivalBadge(f: FestivalWithStatus, t: (k: StringKey) => string) {
   return `${f.monthsAway} ${t('festMonthsAway')}`;
 }
 
-function cityLabel(code: string | null, t: (k: StringKey) => string) {
-  if (code === 'SG') return t('cityHCM');
-  if (code === 'HN') return t('cityHN');
-  if (code === 'DN') return t('cityDN');
-  return code ?? '';
-}
-
 // ─── Festival carousel card ──────────────────────────────────────────────────
 function FestivalCarouselCard({ festival }: { festival: FestivalWithStatus }) {
   const t = useT();
@@ -97,48 +90,6 @@ function FestivalCarouselCard({ festival }: { festival: FestivalWithStatus }) {
   );
 }
 
-// ─── Carousel card (auto-scroll) ─────────────────────────────────────────────
-function CarouselCard({ location }: { location: Location }) {
-  const t = useT();
-  const firstPhoto    = location.photos?.split(',')[0]?.trim();
-  const subtitle      = [location.district, cityLabel(location.city, t)].filter(Boolean).join(', ');
-  const firstCategory = location.category?.split(',')[0]?.trim();
-  return (
-    <TouchableOpacity activeOpacity={0.9} onPress={() => router.push(`/location/${location.id}`)}>
-      <ImageBackground
-        source={firstPhoto ? { uri: firstPhoto } : undefined}
-        style={[styles.carouselCard, { width: CAROUSEL_W }]}
-        resizeMode="cover"
-        imageStyle={{ borderRadius: 20 }}
-      >
-        {!firstPhoto && (
-          <LinearGradient
-            colors={[colors.nomad.surfaceDim, colors.nomad.inverseSurface]}
-            style={StyleSheet.absoluteFill}
-          />
-        )}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.82)']}
-          locations={[0.25, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-        {firstCategory && (
-          <View style={styles.carouselBadge}>
-            <Text style={styles.carouselBadgeText}>{firstCategory}</Text>
-          </View>
-        )}
-        <View style={styles.carouselInfo}>
-          <Text style={styles.carouselName} numberOfLines={1}>{location.name}</Text>
-          <View style={styles.carouselSubRow}>
-            <Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.75)" />
-            <Text style={styles.carouselSub}>{subtitle}</Text>
-          </View>
-        </View>
-      </ImageBackground>
-    </TouchableOpacity>
-  );
-}
-
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const insets    = useSafeAreaInsets();
@@ -150,9 +101,7 @@ export default function HomeScreen() {
 
   const [sheetVisible, setSheetVisible]     = useState(false);
   const [sheetTab, setSheetTab]             = useState<FilterTab>('category');
-  const [carouselIndex, setCarouselIndex]   = useState(0);
   const [festivalIndex, setFestivalIndex]   = useState(0);
-  const carouselRef  = useRef<ScrollView>(null);
   const festivalRef  = useRef<ScrollView>(null);
 
   const { festivals, loading: festivalsLoading }  = useFestivals();
@@ -206,17 +155,6 @@ export default function HomeScreen() {
   const nearFestivals = festivals.filter(
     (f) => f.displayStatus !== 'months_away' || (f.monthsAway ?? 99) <= 1
   );
-
-  // Auto-scroll location carousel every 3s
-  useEffect(() => {
-    if (locations.length === 0) return;
-    const interval = setInterval(() => {
-      const next = (carouselIndex + 1) % locations.length;
-      carouselRef.current?.scrollTo({ x: next * (CAROUSEL_W + 14), animated: true });
-      setCarouselIndex(next);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [carouselIndex, locations.length]);
 
   // Auto-scroll festival carousel every 3.5s
   useEffect(() => {
@@ -379,42 +317,26 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Must Visit (auto-scroll carousel) ── */}
-        <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-          <Text style={styles.sectionTitle}>{t('homeMustVisit')}</Text>
-        </View>
+        {/* ── Must Visit (compact grid — distinct from the festival poster carousel above) ── */}
+        <HomeSectionHeader
+          title={t('homeMustVisit')}
+          onViewAll={() => router.push('/(app)/explore')}
+        />
 
         {locationsLoading ? (
           <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 24 }} />
         ) : locations.length === 0 ? (
           <Text style={styles.emptyText}>{t('homeEmptyPlaces')}</Text>
         ) : (
-          <View>
-            <ScrollView
-              ref={carouselRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={CAROUSEL_W + 14}
-              decelerationRate="fast"
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
-              scrollEventThrottle={16}
-              onMomentumScrollEnd={(e) => {
-                const idx = Math.round(e.nativeEvent.contentOffset.x / (CAROUSEL_W + 14));
-                setCarouselIndex(Math.max(0, Math.min(idx, locations.length - 1)));
-              }}
-            >
-              {locations.map((loc) => <CarouselCard key={loc.id} location={loc} />)}
-            </ScrollView>
-
-            {/* Dot indicators */}
-            <View style={styles.dotsWrap}>
-              <View style={styles.dotsPill}>
-                {visibleDotIndices(locations.length, carouselIndex).map((i) => (
-                  <View key={i} style={[styles.dot, i === carouselIndex && styles.dotActive]} />
-                ))}
-              </View>
-            </View>
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.justForYouRow}
+          >
+            {locations.map((loc) => (
+              <JustForYouCard key={loc.id} location={loc} width={JFY_CARD_W} />
+            ))}
+          </ScrollView>
         )}
       </ScrollView>
 
@@ -495,18 +417,6 @@ const styles = StyleSheet.create({
   festivalInfo:      { position: 'absolute', bottom: 20, left: 20, right: 20 },
   festivalTitle:     { fontSize: 20, fontWeight: '700', color: '#fff', lineHeight: 26, marginBottom: 4 },
   festivalSub:       { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
-
-  // Carousel
-  carouselCard: {
-    height: 200, borderRadius: 20,
-    overflow: 'hidden', backgroundColor: colors.nomad.surfaceContainer,
-  },
-  carouselBadge:     { position: 'absolute', top: 16, left: 16, backgroundColor: colors.nomad.primary, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  carouselBadgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
-  carouselInfo:      { position: 'absolute', bottom: 20, left: 20, right: 20 },
-  carouselName:      { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
-  carouselSubRow:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  carouselSub:       { fontSize: 12, color: 'rgba(255,255,255,0.75)' },
 
   // Dots
   dotsWrap: { alignItems: 'center', marginTop: 14 },
