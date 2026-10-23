@@ -43,6 +43,13 @@ function haversineMeters(a: { lat: number; lng: number }, b: { latitude: number;
 }
 
 
+/** Chỉ số chấm sẽ hiển thị cho carousel — tối đa `max` chấm, cửa sổ trượt theo vị trí đang active. */
+function visibleDotIndices(total: number, active: number, max = 5): number[] {
+  if (total <= max) return Array.from({ length: total }, (_, i) => i);
+  const start = Math.max(0, Math.min(active - Math.floor(max / 2), total - max));
+  return Array.from({ length: max }, (_, i) => start + i);
+}
+
 function festivalBadge(f: FestivalWithStatus, t: (k: StringKey) => string) {
   if (f.displayStatus === 'coming_soon') return t('festComingSoon');
   if (f.displayStatus === 'days_away')   return `${f.daysAway} ${t('festDaysAway')}`;
@@ -363,7 +370,7 @@ export default function HomeScreen() {
             {nearFestivals.length > 1 && (
               <View style={styles.dotsWrap}>
                 <View style={styles.dotsPill}>
-                  {nearFestivals.map((_, i) => (
+                  {visibleDotIndices(nearFestivals.length, festivalIndex).map((i) => (
                     <View key={i} style={[styles.dot, i === festivalIndex && styles.dotActive]} />
                   ))}
                 </View>
@@ -402,7 +409,7 @@ export default function HomeScreen() {
             {/* Dot indicators */}
             <View style={styles.dotsWrap}>
               <View style={styles.dotsPill}>
-                {locations.map((_, i) => (
+                {visibleDotIndices(locations.length, carouselIndex).map((i) => (
                   <View key={i} style={[styles.dot, i === carouselIndex && styles.dotActive]} />
                 ))}
               </View>
