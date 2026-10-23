@@ -16,8 +16,8 @@ import { useLocations } from '@/src/hooks/useLocations';
 import { FilterSheet, FilterTab } from '@/src/components/home/FilterSheet';
 import { CategoryChips } from '@/src/components/home/CategoryChips';
 import { HomeSectionHeader } from '@/src/components/home/HomeSectionHeader';
-import { FeaturedPlaceCard } from '@/src/components/home/FeaturedPlaceCard';
-import { PlaceGridCard } from '@/src/components/home/PlaceGridCard';
+import { JustForYouCard } from '@/src/components/home/JustForYouCard';
+import { NearbyListItem } from '@/src/components/home/NearbyListItem';
 import { useFeaturedLocation } from '@/src/hooks/useFeaturedLocation';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 import { usePlaceDistances } from '@/src/hooks/usePlaceDistances';
@@ -31,8 +31,19 @@ import type { Location } from '@/src/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CAROUSEL_W = SCREEN_W - 56;
-const CARD_WIDTH      = Math.floor((SCREEN_W - 16 - 16 - 12) / 2);
-const CARD_FULL_WIDTH = SCREEN_W - 16 - 16; // grid paddingHorizontal 16 each side
+const JFY_CARD_W = Math.round(SCREEN_W * 0.42); // "Just for you" row: ~2 cards + peek of a 3rd
+
+/** Khoảng cách đường chim bay (m) — chỉ để SẮP XẾP "Gần bạn", không hiển thị.
+ *  Nhãn hiển thị vẫn lấy từ usePlaceDistances (qua Google Routes). */
+function haversineMeters(a: { lat: number; lng: number }, b: { latitude: number; longitude: number }): number {
+  const R = 6371000;
+  const dLat = ((b.latitude - a.lat) * Math.PI) / 180;
+  const dLng = ((b.longitude - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.latitude * Math.PI) / 180;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
 
 
 function festivalBadge(f: FestivalWithStatus, t: (k: StringKey) => string) {
@@ -147,32 +158,45 @@ export default function HomeScreen() {
   const { coords: userCoords, permissionDenied }   = useUserLocation();
   const { vibes: preferredVibes, loading: preferredVibesLoading } = usePreferredVibes();
 
-  // Grid excludes the featured card
-  const gridLocations = useMemo(
+  // "Just for you": thẻ nổi bật lên đầu, phần còn lại xáo một lần mỗi phiên
+  const restLocations = useMemo(
     () => locations.filter((l) => l.id !== featuredLocation?.id),
     [locations, featuredLocation]
   );
-
-  // Pick 3 random — re-randomise on mount only
-  const [displayLocations, setDisplayLocations] = useState<Location[]>([]);
+  const [shuffledRest, setShuffledRest] = useState<Location[]>([]);
   const hasPickedRef = useRef(false);
   useEffect(() => {
-    if (gridLocations.length === 0) return;
-    if (hasPickedRef.current && displayLocations.length > 0) return;
+    if (restLocations.length === 0) return;
+    if (hasPickedRef.current && shuffledRest.length > 0) return;
     hasPickedRef.current = true;
-    const shuffled = [...gridLocations].sort(() => Math.random() - 0.5);
-    setDisplayLocations(shuffled.slice(0, 3));
-  }, [gridLocations]);
+    setShuffledRest([...restLocations].sort(() => Math.random() - 0.5));
+  }, [restLocations]);
+  const justForYouLocations = useMemo(
+    () => (featuredLocation ? [featuredLocation, ...shuffledRest] : shuffledRest).slice(0, 8),
+    [featuredLocation, shuffledRest]
+  );
 
-  // Build coords list for distance calculation (featured + 3 grid cards)
-  const allCoordsForDistance = useMemo(() => [
-    ...(featuredLocation?.coordinates
-      ? [{ id: featuredLocation.id, lat: featuredLocation.coordinates.lat, lng: featuredLocation.coordinates.lng }]
-      : []),
-    ...displayLocations
+  // "Gần bạn": 3 địa điểm gần nhất theo đường chim bay, cần có tọa độ + vị trí người dùng
+  const nearbyLocations = useMemo(() => {
+    if (!userCoords) return [];
+    return locations
       .filter((l) => l.coordinates != null)
-      .map((l) => ({ id: l.id, lat: l.coordinates!.lat, lng: l.coordinates!.lng })),
-  ], [featuredLocation, displayLocations]);
+      .map((l) => ({ loc: l, meters: haversineMeters(l.coordinates!, userCoords) }))
+      .sort((a, b) => a.meters - b.meters)
+      .slice(0, 3)
+      .map((x) => x.loc);
+  }, [locations, userCoords]);
+
+  // Build coords list for distance calculation (featured + just-for-you + nearby)
+  const allCoordsForDistance = useMemo(() => {
+    const byId = new Map<string, { id: string; lat: number; lng: number }>();
+    for (const l of [...justForYouLocations, ...nearbyLocations]) {
+      if (l.coordinates && !byId.has(l.id)) {
+        byId.set(l.id, { id: l.id, lat: l.coordinates.lat, lng: l.coordinates.lng });
+      }
+    }
+    return Array.from(byId.values());
+  }, [justForYouLocations, nearbyLocations]);
 
   const distanceMap = usePlaceDistances(allCoordsForDistance, userCoords);
 
@@ -293,44 +317,41 @@ export default function HomeScreen() {
         {/* ── Category chips — tap to open search filtered by category ── */}
         <CategoryChips />
 
-        {/* ── Dành riêng cho bạn ── */}
+        {/* ── Just for you ── */}
         <HomeSectionHeader
           title={t('homeForYou')}
-          subtitle={t('homeForYouSub')}
           onViewAll={() => router.push('/(app)/explore')}
         />
 
-        {/* Location hint when permission denied */}
-        {permissionDenied && (
-          <Text style={styles.locationHint}>{t('homeLocationHint')}</Text>
-        )}
-
-        {/* Featured card */}
-        {featuredLocation && (
-          <FeaturedPlaceCard
-            location={featuredLocation}
-            distanceLabel={distanceMap.get(featuredLocation.id)}
-          />
-        )}
-
-        {/* 2-column suggestion grid — 3 random per session */}
         {locationsLoading ? (
           <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 24 }} />
-        ) : displayLocations.length === 0 ? (
+        ) : justForYouLocations.length === 0 ? (
           <Text style={styles.emptyText}>{t('homeEmptyCategory')}</Text>
         ) : (
-          <View style={styles.grid}>
-            {displayLocations.map((loc, i) => (
-              <PlaceGridCard
-                key={loc.id}
-                location={loc}
-                distanceLabel={distanceMap.get(loc.id)}
-                width={i === 0 ? CARD_FULL_WIDTH : CARD_WIDTH}
-                imageRatio={i === 0 ? 0.45 : 0.72}
-                overlay={i === 0}
-              />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.justForYouRow}
+          >
+            {justForYouLocations.map((loc) => (
+              <JustForYouCard key={loc.id} location={loc} width={JFY_CARD_W} />
             ))}
-          </View>
+          </ScrollView>
+        )}
+
+        {/* ── Gần bạn ── */}
+        <HomeSectionHeader title={t('homeNearby')} />
+
+        {permissionDenied ? (
+          <Text style={styles.locationHint}>{t('homeLocationHint')}</Text>
+        ) : !userCoords ? (
+          <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 16 }} />
+        ) : nearbyLocations.length === 0 ? (
+          <Text style={styles.emptyText}>{t('homeEmptyCategory')}</Text>
+        ) : (
+          nearbyLocations.map((loc) => (
+            <NearbyListItem key={loc.id} location={loc} distanceLabel={distanceMap.get(loc.id)} />
+          ))
         )}
 
         {/* ── Don't Miss ── */}
@@ -479,7 +500,7 @@ const styles = StyleSheet.create({
   seeAll:       { fontSize: 12, fontWeight: '600', color: colors.nomad.primary },
 
   // New: suggestion grid + location hint
-  grid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, marginBottom: 24 },
+  justForYouRow: { flexDirection: 'row', gap: 14, paddingHorizontal: 16, marginBottom: 28 },
   locationHint: { fontSize: 12, color: colors.nomad.onSurfaceVariant, textAlign: 'center', marginHorizontal: 16, marginBottom: 12 },
 
   // Festival carousel
