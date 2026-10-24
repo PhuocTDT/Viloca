@@ -214,7 +214,6 @@ export default function HomeScreen() {
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
           />
-          <View style={styles.heroDecorCircle} pointerEvents="none" />
           <View style={styles.heroCardBody}>
             <View style={styles.heroCardLeft}>
               <Text style={styles.greetingName}>{t('homeGreeting')} {firstName},</Text>
@@ -381,7 +380,6 @@ const styles = StyleSheet.create({
 
   // Hero card
   greetingCard:    { marginHorizontal: 16, marginTop: 10, marginBottom: 12, borderRadius: 24, padding: 14, overflow: 'hidden', shadowColor: '#3a6010', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
-  heroDecorCircle: { position: 'absolute', bottom: -44, right: -44, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(160,210,100,0.22)' },
   heroCardBody:    { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
   heroCardLeft:    { flex: 1, gap: 10 },
   greetingName:    { fontSize: 19, fontWeight: '900', color: '#1C1C1C', lineHeight: 22 },
