@@ -27,7 +27,7 @@ import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
 import type { Location } from '@/src/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CAROUSEL_W = SCREEN_W - 56;
+const CAROUSEL_W = SCREEN_W - 96;
 const JFY_CARD_W = Math.round(SCREEN_W * 0.32); // "Just for you" row: ~3 cards + peek of a 4th
 
 /** Khoảng cách đường chim bay (m) — chỉ để SẮP XẾP "Gần bạn", không hiển thị.
@@ -392,14 +392,14 @@ const styles = StyleSheet.create({
 
   // Festival carousel
   festivalCard: {
-    height: 220, borderRadius: 24,
+    height: 150, borderRadius: 18,
     overflow: 'hidden', backgroundColor: colors.nomad.surfaceContainer,
   },
-  festivalBadge:     { position: 'absolute', top: 16, left: 16, backgroundColor: colors.nomad.primary, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 5 },
-  festivalBadgeText: { fontSize: 12, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
-  festivalInfo:      { position: 'absolute', bottom: 20, left: 20, right: 20 },
-  festivalTitle:     { fontSize: 20, fontWeight: '700', color: '#fff', lineHeight: 26, marginBottom: 4 },
-  festivalSub:       { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+  festivalBadge:     { position: 'absolute', top: 10, left: 10, backgroundColor: colors.nomad.primary, borderRadius: 99, paddingHorizontal: 9, paddingVertical: 3 },
+  festivalBadgeText: { fontSize: 10, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
+  festivalInfo:      { position: 'absolute', bottom: 12, left: 14, right: 14 },
+  festivalTitle:     { fontSize: 15, fontWeight: '700', color: '#fff', lineHeight: 19, marginBottom: 2 },
+  festivalSub:       { fontSize: 10.5, color: 'rgba(255,255,255,0.8)' },
 
   // Dots
   dotsWrap: { alignItems: 'center', marginTop: 14 },
