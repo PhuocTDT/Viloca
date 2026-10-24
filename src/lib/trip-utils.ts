@@ -61,3 +61,18 @@ export function buildGoogleMapsUrl(dayItems: TripItem[]): string {
 export function stripDiacritics(str: string): string {
   return str.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, (c) => c === 'đ' ? 'd' : 'D');
 }
+
+function pad2(n: number) { return String(n).padStart(2, '0'); }
+
+/** YYYY-MM-DD theo giờ địa phương (toISOString trả ngày UTC nên lệch trước 7h sáng ở Việt Nam). */
+export function localDateString(d = new Date()): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** Số ngày lịch giữa hôm nay và `dateStr` (YYYY-MM-DD), tính ở nửa đêm địa phương. */
+export function daysFromToday(dateStr: string, now = new Date()): number {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const target = new Date(y, m - 1, d).getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.max(0, Math.round((target - today) / 86_400_000));
+}

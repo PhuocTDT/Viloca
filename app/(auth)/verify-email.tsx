@@ -53,7 +53,7 @@ export default function VerifyEmailScreen() {
       setError(mapOtpError(verifyError.message, t));
       setOtpValue('');
     } else {
-      router.replace('/(app)');
+      router.replace('/(auth)/onboarding-style');
     }
   }
 

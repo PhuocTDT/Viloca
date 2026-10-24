@@ -127,7 +127,7 @@ export default function RegisterScreen() {
     }
 
     if (data.session) {
-      router.replace('/(app)');
+      router.replace('/(auth)/onboarding-style');
     } else if (data.user) {
       router.replace({ pathname: '/(auth)/verify-email', params: { email } });
     }

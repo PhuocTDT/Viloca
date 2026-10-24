@@ -173,7 +173,7 @@ export default function LoginScreen() {
               <View style={styles.legalDot} />
               <Text style={styles.legalLink}>{t('privacyPolicy')}</Text>
             </View>
-            <Text style={styles.copyright}>© 2024 Viloca Travel. All rights reserved.</Text>
+            <Text style={styles.copyright}>{t('copyrightFooter')}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

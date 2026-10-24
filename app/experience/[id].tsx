@@ -10,6 +10,7 @@ import { Button } from '@/src/components/ui/Button';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
+import { readLocations } from '@/src/lib/location-access';
 import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Location, Trip, TimeSlot, BookmarkStatus } from '@/src/types';
 
@@ -100,8 +101,9 @@ export default function ExperienceDetailScreen() {
 
   useEffect(() => {
     if (!id) return;
-    supabase.from('locations').select('*').eq('id', id).single()
-      .then(({ data }) => { setLocation(data); setLoading(false); });
+    // Free: bảng `locations` bị chặn, lùi về view `locations_preview` (cột miễn phí).
+    readLocations<Location>((table) => supabase.from(table).select('*').eq('id', id).limit(1))
+      .then((rows) => { setLocation(rows[0] ?? null); setLoading(false); });
   }, [id]);
 
   function handleBookmark() {

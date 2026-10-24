@@ -21,7 +21,7 @@ const LOAD_MORE     = 7;
 // ─── Result card ─────────────────────────────────────────────────────────────
 function LocationResultCard({ location, onPick }: { location: Location; onPick?: (loc: Location) => void }) {
   const t = useT();
-  const firstPhoto = location.photos?.split(',')[0]?.trim();
+  const firstPhoto = location.photos?.split(',')[0]?.trim() || location.cover_image;
   const cityLabel = location.city === 'SG' ? t('cityHCM') : location.city === 'HN' ? t('cityHN') : t('cityDN');
   const subtitle = [location.district, cityLabel].filter(Boolean).join(', ');
 
@@ -41,7 +41,7 @@ function LocationResultCard({ location, onPick }: { location: Location; onPick?:
         {!firstPhoto && (
           <LinearGradient
             colors={[colors.nomad.primaryContainer, colors.nomad.primary]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
         )}
       </ImageBackground>
@@ -128,7 +128,7 @@ export default function SearchScreen() {
         {!isPickMode && (
           <TouchableOpacity
             style={styles.filterBtn}
-            onPress={() => { setSheetTab('hashtag'); setSheetVisible(true); }}
+            onPress={() => { setSheetTab('category'); setSheetVisible(true); }}
             activeOpacity={0.7}
           >
             <Ionicons name="options-outline" size={20} color={colors.nomad.primary} />

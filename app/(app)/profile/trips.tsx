@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   imageWrap:    { height: 140 },
   image:        { height: 140, justifyContent: 'flex-end' },
   imageStyle:   { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
-  overlay:      { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.08)' },
+  overlay:      { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.08)' },
   aiBadge:      { position: 'absolute', top: 10, right: 10, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(69,97,27,0.88)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: radius.full },
   aiBadgeText:  { fontSize: 10, color: '#fff', fontWeight: '700' },
   info:         { paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: 5 },

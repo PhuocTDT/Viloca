@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import type { MascotEmotion, MascotState } from '@/types/mascot';
+import { useT, type StringKey } from '@/src/lib/i18n';
+import { useLangStore } from '@/src/store/langStore';
 
 interface TimeSlot {
   emotion: MascotEmotion;
-  greetings: string[];
+  greetingKeys: StringKey[];
 }
 
 const TIME_SLOTS: { start: number; end: number; slot: TimeSlot }[] = [
@@ -11,44 +13,28 @@ const TIME_SLOTS: { start: number; end: number; slot: TimeSlot }[] = [
     start: 5, end: 11,
     slot: {
       emotion: 'happy',
-      greetings: [
-        'Chào buổi sáng! Hôm nay khám phá đâu nào? ☀️',
-        'Sáng sớm rồi, sẵn sàng lên đường chưa? 🌸',
-        'Buổi sáng đẹp trời! Đi dạo đâu không? 🌿',
-      ],
+      greetingKeys: ['mascotGreetMorning1', 'mascotGreetMorning2', 'mascotGreetMorning3'],
     },
   },
   {
     start: 12, end: 17,
     slot: {
       emotion: 'excited',
-      greetings: [
-        'Chiều rồi, đi dạo đâu đó không? 🍃',
-        'Giờ này ghé thử quán cà phê view đẹp nhé! ☕',
-        'Buổi chiều lý tưởng để khám phá phố cổ! 🏮',
-      ],
+      greetingKeys: ['mascotGreetAfternoon1', 'mascotGreetAfternoon2', 'mascotGreetAfternoon3'],
     },
   },
   {
     start: 18, end: 21,
     slot: {
       emotion: 'happy',
-      greetings: [
-        'Tối rồi, tìm chỗ ăn ngon thôi! 🍜',
-        'Tối nay thử món mới nhé? Sen biết chỗ ngon lắm! 🌙',
-        'Đêm xuống rồi, đi ăn vặt vỉa hè không? 🍢',
-      ],
+      greetingKeys: ['mascotGreetEvening1', 'mascotGreetEvening2', 'mascotGreetEvening3'],
     },
   },
   {
     start: 22, end: 28, // 22:00 - 04:59 (28 = 24+4)
     slot: {
       emotion: 'idle',
-      greetings: [
-        'Khuya rồi, lên kế hoạch chuyến đi ngày mai nhé 🌙',
-        'Đêm khuya vẫn còn thức à? Lên lịch trip thôi! ✨',
-        'Chưa ngủ à? Cùng Sen khám phá điểm đến mới nhé 🗺️',
-      ],
+      greetingKeys: ['mascotGreetNight1', 'mascotGreetNight2', 'mascotGreetNight3'],
     },
   },
 ];
@@ -59,17 +45,9 @@ function getTimeSlot(hour: number): TimeSlot {
   return match?.slot ?? TIME_SLOTS[0].slot;
 }
 
-const SEN_MESSAGES = [
-  'Sen đã chuẩn bị 3 điểm đến cực mát mẻ cho bạn nè! ✨',
-  'Hôm nay trời đẹp, đi dạo đâu đó không bạn? 🌿',
-  'Có chỗ mới mẻ lắm, để Sen dẫn đường nhé! 🗺️',
-  'Cà phê xong rồi thì mình đi thôi nào~ ☕',
-  'Sen tìm được quán ăn ngon lắm, ghé thử nha! 🍜',
-  'Cuối tuần rồi, lên kế hoạch đi chơi chưa? 🎒',
-  'Một địa điểm mới đang chờ bạn khám phá đó! 🏮',
-  'Đi một mình hay rủ bạn bè cùng đi? Sen giúp lên lịch nha 🌸',
-  'Hôm nay Sen có gợi ý hay ho cho bạn đó, xem thử nào! 💡',
-  'Bước ra ngoài đi, thế giới rộng lớn lắm bạn ơi! 🌍',
+const SEN_MESSAGE_KEYS: StringKey[] = [
+  'senMsg1', 'senMsg2', 'senMsg3', 'senMsg4', 'senMsg5',
+  'senMsg6', 'senMsg7', 'senMsg8', 'senMsg9', 'senMsg10',
 ];
 
 function pickRandom<T>(arr: T[]): T {
@@ -77,13 +55,17 @@ function pickRandom<T>(arr: T[]): T {
 }
 
 export function useMascot(overrideEmotion?: MascotEmotion): MascotState {
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+
   return useMemo(() => {
     const hour = new Date().getHours();
     const slot = getTimeSlot(hour);
     return {
       emotion:    overrideEmotion ?? slot.emotion,
-      greeting:   pickRandom(slot.greetings),
-      senMessage: pickRandom(SEN_MESSAGES),
+      greeting:   t(pickRandom(slot.greetingKeys)),
+      senMessage: t(pickRandom(SEN_MESSAGE_KEYS)),
     };
-  }, [overrideEmotion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overrideEmotion, lang]);
 }

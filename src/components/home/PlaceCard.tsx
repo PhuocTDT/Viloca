@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
   },
   cardSm: { width: 140, height: 170 },
   cardLg: { width: 200, height: 240 },
-  image:   { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.28)' },
+  image:   { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
+  overlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.28)' },
   content: { flex: 1, justifyContent: 'flex-end', padding: 10 },
   regionPill: {
     alignSelf: 'flex-start',

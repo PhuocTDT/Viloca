@@ -164,13 +164,13 @@ export default function AddLocationScreen() {
           {!photo && (
             <LinearGradient
               colors={[colors.nomad.primaryContainer, colors.nomad.primary]}
-              style={StyleSheet.absoluteFillObject}
+              style={StyleSheet.absoluteFill}
             />
           )}
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.82)']}
             locations={[0.15, 1]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           {cat && (
             <View style={styles.catBadge}>

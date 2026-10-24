@@ -1,3 +1,8 @@
+> **Đã thay bằng `docs/HIEN_TRANG_VA_LO_TRINH.md` (21/10/2026).** File đó là nguồn
+> lộ trình duy nhất hiện tại, hợp nhất tài liệu này và `ROADMAP.md` (hai file
+> từng mâu thuẫn nhau về cách chia phase). Giữ file này lại chỉ để tham khảo ý
+> tưởng gốc; đừng cập nhật ở đây nữa.
+
 # Viloca — Feature Plan Phase 1
 
 > Travel Planning App · Version 1.0 · Tháng 6/2026

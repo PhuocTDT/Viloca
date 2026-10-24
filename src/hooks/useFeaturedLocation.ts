@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import supabase from '@/src/lib/supabase';
 import type { Location } from '@/src/types';
+import { readLocations } from '@/src/lib/location-access';
 
 export function useFeaturedLocation(
   category: string | null
@@ -11,18 +12,13 @@ export function useFeaturedLocation(
   useEffect(() => {
     setLoading(true);
 
-    let query = supabase
-      .from('locations')
-      .select('*')
-      .eq('is_featured', true)
-      .eq('is_active', true);
-
-    if (category) {
-      query = query.ilike('category', `%${category}%`);
-    }
-
-    query.limit(1).maybeSingle().then(({ data, error }) => {
-      setLocation(!error && data ? (data as Location) : null);
+    readLocations<Location>((table) => {
+      let query = supabase.from(table).select('*').eq('is_featured', true).limit(1);
+      if (table === 'locations') query = query.eq('is_active', true);
+      if (category) query = query.ilike('category', `%${category}%`);
+      return query;
+    }).then((rows) => {
+      setLocation(rows[0] ?? null);
       setLoading(false);
     });
   }, [category]);

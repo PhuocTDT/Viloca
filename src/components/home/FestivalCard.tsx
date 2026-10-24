@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 3,
   },
-  image:   { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)' },
+  image:   { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
+  overlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.38)' },
   content: { flex: 1, justifyContent: 'flex-end', padding: 12 },
   badge: {
     alignSelf: 'flex-start',

@@ -115,13 +115,13 @@ export default function LocationDetailScreen() {
         {!firstPhoto && (
           <LinearGradient
             colors={[colors.nomad.primaryContainer, colors.nomad.primary]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
         )}
         <LinearGradient
           colors={['rgba(0,0,0,0.35)', 'transparent']}
           locations={[0, 0.6]}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
         <TouchableOpacity
           style={[styles.backBtn, { top: insets.top + 8 }]}

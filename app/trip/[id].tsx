@@ -27,7 +27,8 @@ type LeafletMarker = { lat: number; lng: number; name: string; order: number };
 
 function buildLeafletHtml(
   markers: LeafletMarker[],
-  userLocation?: { lat: number; lng: number } | null,
+  userLocation: { lat: number; lng: number } | null | undefined,
+  labels: { loadingRoute: string; yourLocation: string; minUnit: string },
 ): string {
   const PRIMARY  = '#4285F4';
   const START_BG = '#34A853';
@@ -100,7 +101,7 @@ html,body,#map{width:100%;height:100%}
 </head>
 <body>
 <div id="map"></div>
-<div id="route-status">Đang tải lộ trình...</div>
+<div id="route-status">${labels.loadingRoute}</div>
 <div id="info-bar"></div>
 <script>
 var pts=${data};
@@ -117,7 +118,7 @@ if(userLL){
     className:'',iconSize:[20,20],iconAnchor:[10,10]
   });
   L.marker([userLL.lat,userLL.lng],{icon:udIcon,zIndexOffset:-100}).addTo(map)
-    .bindPopup('<b>Vị trí của bạn<\/b>');
+    .bindPopup('<b>${labels.yourLocation}<\/b>');
 }
 
 if(pts.length===0){map.setView([16.047,108.206],10);}
@@ -155,7 +156,7 @@ else{
         // Info bar
         var km=(d.routes[0].distance/1000).toFixed(1);
         var min=Math.round(d.routes[0].duration/60);
-        infoEl.textContent=km+' km  ·  ~'+min+' phút';
+        infoEl.textContent=km+' km  ·  ~'+min+' ${labels.minUnit}';
         infoEl.style.display='block';
         statusEl.style.display='none';
       })
@@ -173,7 +174,7 @@ window.addUserLocation = function(lat, lng) {
     className: '', iconSize: [20, 20], iconAnchor: [10, 10]
   });
   window._userMarker = L.marker([lat, lng], {icon: udIcon, zIndexOffset: -100})
-    .addTo(map).bindPopup('<b>Vị trí của bạn<\/b>');
+    .addTo(map).bindPopup('<b>${labels.yourLocation}<\/b>');
 };
 <\/script>
 </body>
@@ -268,10 +269,10 @@ function CardInner({ item }: { item: TripItem }) {
         resizeMode="cover"
       >
         {!photoUrl && (
-          <LinearGradient colors={[colors.nomad.primaryContainer, colors.nomad.primary]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[colors.nomad.primaryContainer, colors.nomad.primary]} style={StyleSheet.absoluteFill} />
         )}
         {photoUrl && (
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} locations={[0.4, 1]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} locations={[0.4, 1]} style={StyleSheet.absoluteFill} />
         )}
       </ImageBackground>
       <View style={styles.cardBody}>
@@ -1025,7 +1026,7 @@ export default function TripDetailScreen() {
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.28)', 'rgba(0,0,0,0.88)']}
             locations={[0.25, 0.58, 1]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           <Animated.View style={[styles.heroContent, { opacity: heroOpacity }]}>
             <View style={styles.heroBottom}>
@@ -1465,6 +1466,7 @@ export default function TripDetailScreen() {
                     return acc;
                   }, []),
                 null,   // luôn null — user dot được inject sau qua JS
+                { loadingRoute: t('mapRouteLoading'), yourLocation: t('mapYourLocation'), minUnit: t('expMinUnit') },
               )}}
               onLoad={() => setMapWebViewLoading(false)}
               style={{ flex: 1 }}
@@ -1554,7 +1556,7 @@ export default function TripDetailScreen() {
                       <View style={[styles.detailRow, { flexWrap: 'wrap', gap: 12 }]}>
                         {!!loc?.rating && <Text style={styles.detailMeta}>⭐ {loc.rating}</Text>}
                         {!!loc?.duration_minutes && <Text style={styles.detailMeta}>⏱ {loc.duration_minutes >= 60 ? `${Math.floor(loc.duration_minutes / 60)}h` : `${loc.duration_minutes}p`}</Text>}
-                        {!!loc?.price_per_person && <Text style={styles.detailMeta}>💰 {(loc.price_per_person / 1000).toFixed(0)}k/người</Text>}
+                        {!!loc?.price_per_person && <Text style={styles.detailMeta}>💰 {(loc.price_per_person / 1000).toFixed(0)}k{t('unitPerPerson')}</Text>}
                         {!!loc?.opening_hours && <Text style={styles.detailMeta}>🕐 {loc.opening_hours}</Text>}
                       </View>
                     )}
@@ -1764,7 +1766,7 @@ const styles = StyleSheet.create({
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   navbar:        { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md },
-  navbarBg:      { ...StyleSheet.absoluteFillObject as any, backgroundColor: colors.nomad.primary },
+  navbarBg:      { ...StyleSheet.absoluteFill as any, backgroundColor: colors.nomad.primary },
   backBtn:       { width: 38, height: 38, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
   editNavBtn:    { width: 38, height: 38, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
   navbarInfo:    { flex: 1 },
@@ -1993,7 +1995,7 @@ const styles = StyleSheet.create({
   },
   mapModalTitle: { fontSize: 17, fontWeight: '700', color: colors.nomad.onSurface },
   mapLoadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.nomad.surfaceContainerLow,
     alignItems: 'center', justifyContent: 'center', gap: 12,
   },
