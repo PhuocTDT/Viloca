@@ -41,10 +41,10 @@ export function JustForYouCard({ location, width }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card:          { gap: 6 },
-  imageWrap:     { borderRadius: 18, overflow: 'hidden', backgroundColor: N.surfaceContainer },
+  card:          { gap: 4 },
+  imageWrap:     { borderRadius: 14, overflow: 'hidden', backgroundColor: N.surfaceContainer },
   image:         { width: '100%', height: '100%' },
   imageFallback: { flex: 1, backgroundColor: N.secondaryContainer, opacity: 0.5 },
-  name:          { fontSize: 14, fontWeight: '700', color: N.onSurface, lineHeight: 18 },
-  tags:          { fontSize: 12, fontWeight: '600', color: N.primary },
+  name:          { fontSize: 12.5, fontWeight: '700', color: N.onSurface, lineHeight: 15 },
+  tags:          { fontSize: 10.5, fontWeight: '600', color: N.primary },
 });

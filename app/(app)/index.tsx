@@ -28,7 +28,7 @@ import type { Location } from '@/src/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CAROUSEL_W = SCREEN_W - 56;
-const JFY_CARD_W = Math.round(SCREEN_W * 0.42); // "Just for you" row: ~2 cards + peek of a 3rd
+const JFY_CARD_W = Math.round(SCREEN_W * 0.32); // "Just for you" row: ~3 cards + peek of a 4th
 
 /** Khoảng cách đường chim bay (m) — chỉ để SẮP XẾP "Gần bạn", không hiển thị.
  *  Nhãn hiển thị vẫn lấy từ usePlaceDistances (qua Google Routes). */
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   seeAll:       { fontSize: 12, fontWeight: '600', color: colors.nomad.primary },
 
   // New: suggestion grid + location hint
-  justForYouRow: { flexDirection: 'row', gap: 14, paddingHorizontal: 16, marginBottom: 28 },
+  justForYouRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 24 },
   locationHint: { fontSize: 12, color: colors.nomad.onSurfaceVariant, textAlign: 'center', marginHorizontal: 16, marginBottom: 12 },
 
   // Festival carousel
