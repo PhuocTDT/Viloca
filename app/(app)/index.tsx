@@ -177,7 +177,6 @@ export default function HomeScreen() {
         style={styles.bgGradient}
         pointerEvents="none"
       />
-      <View style={styles.bgBlobTopRight} pointerEvents="none" />
       <View style={styles.bgBlobMidLeft} pointerEvents="none" />
 
       <ScrollView
@@ -356,11 +355,6 @@ const styles = StyleSheet.create({
   bgGradient: {
     position: 'absolute', top: 0, left: 0, right: 0, height: 280,
   },
-  bgBlobTopRight: {
-    position: 'absolute', top: -40, right: -60,
-    width: 220, height: 220, borderRadius: 110,
-    backgroundColor: colors.nomad.secondaryContainer, opacity: 0.35,
-  },
   bgBlobMidLeft: {
     position: 'absolute', top: 160, left: -50,
     width: 150, height: 150, borderRadius: 75,
@@ -368,9 +362,9 @@ const styles = StyleSheet.create({
   },
 
   // Header
-  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff' },
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   headerBrand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  headerRight: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   logoImg:     { width: 38, height: 38 },
   headerIcon:  { padding: 2, alignItems: 'center' },
   langBadge:   { fontSize: 9, fontWeight: '700', color: colors.nomad.onSurface, lineHeight: 11, opacity: 0.7 },
