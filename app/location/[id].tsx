@@ -11,6 +11,7 @@ import supabase from '@/src/lib/supabase';
 import { useFavorite } from '@/src/hooks/useFavorite';
 import { colors } from '@/src/theme/colors';
 import { useT } from '@/src/lib/i18n';
+import { useLocalize } from '@/src/lib/location-i18n';
 import type { Location } from '@/src/types';
 
 const PRICE_LABEL: Record<number, { symbol: string; label: string }> = {
@@ -56,6 +57,7 @@ export default function LocationDetailScreen() {
 
   const { isFavorite, toggle } = useFavorite(id);
   const t = useT();
+  const localize = useLocalize();
 
   useEffect(() => {
     async function load() {
@@ -158,7 +160,7 @@ export default function LocationDetailScreen() {
         {/* Name + heart */}
         <View style={styles.nameRow}>
           {isPro ? (
-            <Text style={styles.name} numberOfLines={3}>{location.name}</Text>
+            <Text style={styles.name} numberOfLines={3}>{localize(location.name, location.name_en)}</Text>
           ) : (
             <View style={styles.lockedNameWrap}>
               <Ionicons name="lock-closed" size={15} color={colors.nomad.outline} />
@@ -183,7 +185,7 @@ export default function LocationDetailScreen() {
         ) : (!isPro && location.hint) ? (
           <View style={styles.subtitleRow}>
             <Ionicons name="sparkles-outline" size={14} color={colors.nomad.onSurfaceVariant} />
-            <Text style={styles.subtitle}>{location.hint}</Text>
+            <Text style={styles.subtitle}>{localize(location.hint, location.hint_en)}</Text>
           </View>
         ) : null}
 
@@ -215,7 +217,7 @@ export default function LocationDetailScreen() {
 
         {/* Short description */}
         {location.short_description ? (
-          <Text style={styles.shortDesc}>{location.short_description}</Text>
+          <Text style={styles.shortDesc}>{localize(location.short_description, location.short_description_en)}</Text>
         ) : null}
 
         {/* Long description (expandable) */}

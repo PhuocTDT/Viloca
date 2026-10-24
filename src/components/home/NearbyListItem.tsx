@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors } from '@/src/theme/colors';
 import { useFavorite } from '@/src/hooks/useFavorite';
+import { useLocalize } from '@/src/lib/location-i18n';
 import type { Location } from '@/src/types';
 
 const N = colors.nomad;
@@ -25,6 +26,7 @@ interface Props {
 
 export function NearbyListItem({ location, distanceLabel }: Props) {
   const { isFavorite, toggle } = useFavorite(location.id);
+  const localize = useLocalize();
   const tags = (location.style_tag ?? location.category ?? '')
     .split(',')
     .map((s) => s.trim())
@@ -41,7 +43,7 @@ export function NearbyListItem({ location, distanceLabel }: Props) {
         <Ionicons name={iconForCategory(location.category)} size={18} color={N.primary} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.name} numberOfLines={1}>{location.name}</Text>
+        <Text style={styles.name} numberOfLines={1}>{localize(location.name, location.name_en)}</Text>
         <Text style={styles.tags} numberOfLines={1}>
           {[tags.join(' · '), distanceLabel].filter(Boolean).join(' · ')}
         </Text>

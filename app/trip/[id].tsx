@@ -19,6 +19,7 @@ import { getCoverForDestination } from '@/src/lib/destination-covers';
 import { suggestTime, tripDayCount, dayLabel, formatDate, buildGoogleMapsUrl } from '@/src/lib/trip-utils';
 import type { Trip, TripItem, TripJournal, TimeSlot, TripStatus } from '@/src/types';
 import { useT, type StringKey } from '@/src/lib/i18n';
+import { useLocalize } from '@/src/lib/location-i18n';
 import * as Location from 'expo-location';
 
 // ─── Leaflet HTML builder ─────────────────────────────────────────────────────
@@ -251,10 +252,11 @@ type SortableProps = {
 
 function CardInner({ item }: { item: TripItem }) {
   const t            = useT();
+  const localize     = useLocalize();
   const locData      = item.locations ?? null;
-  const displayTitle = locData?.name ?? item.experience_title ?? '—';
+  const displayTitle = (locData ? localize(locData.name, locData.name_en) : null) ?? item.experience_title ?? '—';
   const displayLoc   = locData?.district ?? item.experience_location;
-  const hintText     = item.note ?? locData?.hint ?? null;
+  const hintText     = item.note ?? (locData?.hint ? localize(locData.hint, locData.hint_en) : null);
   const displayCat   = locData?.category ?? item.experience_category;
   const photoUrl     = locData?.cover_image
     ?? (locData?.photos ? locData.photos.split(',')[0].trim() : null)
@@ -538,6 +540,7 @@ function SortableDayItems({ items, editMode, checkedIds, onToggleCheck, onReorde
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useT();
+  const localize = useLocalize();
   const [trip, setTrip]         = useState<Trip | null>(null);
   const [items, setItems]       = useState<TripItem[]>([]);
   const [journals, setJournals] = useState<TripJournal[]>([]);
@@ -612,7 +615,7 @@ export default function TripDetailScreen() {
     Promise.all([
       supabase.from('trips').select('*').eq('id', id).single(),
       supabase.from('trip_items')
-        .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
+        .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
         .eq('trip_id', id)
         .order('day_number')
         .order('sort_order'),
@@ -728,7 +731,7 @@ export default function TripDetailScreen() {
 
     const { data: refreshed } = await supabase
       .from('trip_items')
-      .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours)')
+      .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours)')
       .eq('trip_id', id)
       .order('day_number')
       .order('sort_order');
@@ -753,7 +756,7 @@ export default function TripDetailScreen() {
   useFocusEffect(useCallback(() => {
     if (!id) return;
     supabase.from('trip_items')
-      .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
+      .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
       .eq('trip_id', id)
       .order('day_number').order('sort_order')
       .then(({ data }) => { if (data) setItems(data); });
@@ -950,7 +953,8 @@ export default function TripDetailScreen() {
       grouped[Number(day)]
         .sort((a, b) => a.sort_order - b.sort_order)
         .forEach(item => {
-          const name = (item.locations as any)?.name ?? item.experience_title ?? '?';
+          const locName = item.locations as { name: string; name_en: string | null } | null | undefined;
+          const name = (locName ? localize(locName.name, locName.name_en) : null) ?? item.experience_title ?? '?';
           const slot = TIME_SLOTS.find(s => s.value === item.time_slot);
           lines.push(`  ${slot?.icon ?? ''} ${name}`);
           if (item.note) lines.push(`     → ${item.note}`);
@@ -1461,7 +1465,7 @@ export default function TripDetailScreen() {
                   .reduce<LeafletMarker[]>((acc, item, idx) => {
                     const loc = item.locations as any;
                     if (loc?.coordinates?.lat && loc?.coordinates?.lng) {
-                      acc.push({ lat: loc.coordinates.lat, lng: loc.coordinates.lng, name: loc.name ?? '—', order: idx + 1 });
+                      acc.push({ lat: loc.coordinates.lat, lng: loc.coordinates.lng, name: localize(loc.name, loc.name_en) ?? '—', order: idx + 1 });
                     }
                     return acc;
                   }, []),
@@ -1504,11 +1508,13 @@ export default function TripDetailScreen() {
               const loc       = selectedItem.locations as any;
               const slot      = TIME_SLOTS.find(s => s.value === selectedItem.time_slot);
               const coverImg  = loc?.cover_image ?? selectedItem.experience_image;
-              const title     = loc?.name ?? selectedItem.experience_title ?? '—';
+              const title     = (loc ? localize(loc.name, loc.name_en) : null) ?? selectedItem.experience_title ?? '—';
               const locLabel  = loc?.district ?? loc?.address ?? selectedItem.experience_location;
               const category  = loc?.category ?? selectedItem.experience_category;
-              const shortDesc = loc?.short_description ?? loc?.hint ?? selectedItem.note;
-              const longDesc  = loc?.short_description;
+              const shortDescLoc = loc?.short_description ? localize(loc.short_description, loc.short_description_en) : null;
+              const hintLoc   = loc?.hint ? localize(loc.hint, loc.hint_en) : null;
+              const shortDesc = shortDescLoc ?? hintLoc ?? selectedItem.note;
+              const longDesc  = shortDescLoc;
               return (
                 <ScrollView showsVerticalScrollIndicator={false}>
                   {coverImg ? (

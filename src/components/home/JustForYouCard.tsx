@@ -1,6 +1,7 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '@/src/theme/colors';
+import { useLocalize } from '@/src/lib/location-i18n';
 import type { Location } from '@/src/types';
 
 const N = colors.nomad;
@@ -12,6 +13,7 @@ interface Props {
 
 /** Thẻ vuông dùng cho hàng cuộn ngang "Just for you" trên Home. */
 export function JustForYouCard({ location, width }: Props) {
+  const localize = useLocalize();
   const firstPhoto = location.photos?.split(',')[0]?.trim() ?? location.cover_image ?? undefined;
   const tags = (location.style_tag ?? location.category ?? '')
     .split(',')
@@ -32,7 +34,7 @@ export function JustForYouCard({ location, width }: Props) {
           <View style={styles.imageFallback} />
         )}
       </View>
-      <Text style={styles.name} numberOfLines={2}>{location.name}</Text>
+      <Text style={styles.name} numberOfLines={2}>{localize(location.name, location.name_en)}</Text>
       {tags.length > 0 ? (
         <Text style={styles.tags} numberOfLines={1}>{tags.join(' · ')}</Text>
       ) : null}
