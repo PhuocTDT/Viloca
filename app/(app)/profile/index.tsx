@@ -109,7 +109,7 @@ export default function ProfileScreen() {
           <View style={styles.planLeft}>
             <View style={[styles.planBadge, userPlan === 'pro' && styles.planBadgePro]}>
               <Text style={[styles.planBadgeText, userPlan === 'pro' && styles.planBadgeTextPro]}>
-                {userPlan === 'pro' ? '✦ Pro' : 'Free'}
+                {userPlan === 'pro' ? '✦ Pro' : t('planFreeBadge')}
               </Text>
             </View>
             {userPlan === 'free' && (

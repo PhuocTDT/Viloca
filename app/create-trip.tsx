@@ -562,7 +562,7 @@ export default function CreateTripScreen() {
                 <View style={styles.tipCard}>
                   <Ionicons name="information-circle-outline" size={18} color={N.secondary} />
                   <Text style={styles.tipText}>
-                    {destination} là điểm đến được yêu thích trên Viloca. Bạn đã sẵn sàng khám phá chưa?
+                    {destination}{t('tripDestTipSuffix')}
                   </Text>
                 </View>
               )}
@@ -570,8 +570,8 @@ export default function CreateTripScreen() {
                 <View style={styles.tipCardWarn}>
                   <Ionicons name="alert-circle-outline" size={18} color={colors.error} />
                   <Text style={styles.tipTextWarn}>
-                    Viloca chưa có dữ liệu địa điểm tại {destination}. Tính năng AI Trip sẽ không khả dụng — bạn vẫn có thể tự lên lịch.{'\n'}
-                    <Text style={{ fontWeight: '600' }}>Hỗ trợ AI: Hà Nội, Đà Nẵng, TP. Hồ Chí Minh, Quảng Nam.</Text>
+                    {t('tripDestWarnPfx')}{destination}{t('tripDestWarnSfx')}{'\n'}
+                    <Text style={{ fontWeight: '600' }}>{t('tripDestAiSupportedCities')}</Text>
                   </Text>
                 </View>
               )}
