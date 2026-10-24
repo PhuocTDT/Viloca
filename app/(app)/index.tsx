@@ -222,11 +222,11 @@ export default function HomeScreen() {
         {/* ── Search bar ── */}
         <View style={styles.searchBar}>
           <TouchableOpacity style={styles.searchInput} activeOpacity={0.85} onPress={() => router.push('/search')}>
-            <Ionicons name="search-outline" size={16} color="#9E9E9E" />
+            <Ionicons name="search-outline" size={15} color="#9E9E9E" />
             <Text style={styles.searchPlaceholder}>{t('homeSearchHint')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterBtn} onPress={() => { setSheetTab('category'); setSheetVisible(true); }}>
-            <Ionicons name="options-outline" size={16} color={colors.nomad.primary} />
+            <Ionicons name="options-outline" size={14} color={colors.nomad.primary} />
           </TouchableOpacity>
         </View>
 
@@ -373,10 +373,10 @@ const styles = StyleSheet.create({
   senBubbleText:   { fontSize: 13, color: '#3D3D3D', lineHeight: 18, fontWeight: '600' },
 
   // Search
-  searchBar:         { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 24, height: 48, borderWidth: 1, borderColor: '#E5E5E5', paddingLeft: 14, paddingRight: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  searchBar:         { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 20, height: 40, borderWidth: 1, borderColor: '#E5E5E5', paddingLeft: 12, paddingRight: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
   searchInput:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: '100%' },
-  searchPlaceholder: { flex: 1, fontSize: 13.5, color: '#9E9E9E' },
-  filterBtn:         { width: 34, height: 34, borderRadius: 17, backgroundColor: '#E3F0D6', alignItems: 'center', justifyContent: 'center' },
+  searchPlaceholder: { flex: 1, fontSize: 13, color: '#9E9E9E' },
+  filterBtn:         { width: 30, height: 30, borderRadius: 15, backgroundColor: '#E3F0D6', alignItems: 'center', justifyContent: 'center' },
 
   // Section headers (festivals + carousel — keep for "Đừng bỏ lỡ" and "Phải ghé một lần")
   sectionHeader: {
