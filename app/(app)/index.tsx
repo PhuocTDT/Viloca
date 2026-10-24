@@ -172,7 +172,7 @@ export default function HomeScreen() {
 
       {/* ── Background decoration ── */}
       <LinearGradient
-        colors={['rgba(232,255,194,0.5)', 'rgba(250,250,240,0)']}
+        colors={['rgba(232,255,194,0.28)', 'rgba(250,250,240,0)']}
         locations={[0, 1]}
         style={styles.bgGradient}
         pointerEvents="none"
