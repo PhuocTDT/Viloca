@@ -171,12 +171,6 @@ export default function HomeScreen() {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
 
       {/* ── Background decoration ── */}
-      <LinearGradient
-        colors={['rgba(232,255,194,0.28)', 'rgba(250,250,240,0)']}
-        locations={[0, 1]}
-        style={styles.bgGradient}
-        pointerEvents="none"
-      />
       <View style={styles.bgBlobMidLeft} pointerEvents="none" />
 
       <ScrollView
@@ -352,9 +346,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.nomad.background },
 
   // Background decoration
-  bgGradient: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 280,
-  },
   bgBlobMidLeft: {
     position: 'absolute', top: 160, left: -50,
     width: 150, height: 150, borderRadius: 75,
