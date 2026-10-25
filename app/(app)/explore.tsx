@@ -15,6 +15,43 @@ import type { Post } from '@/src/types';
 const { width: SCREEN_W } = Dimensions.get('window');
 const PAGE_SIZE = 10;
 
+// ─── Mock posts (fallback khi DB chưa có data) ───────────────────────────────
+
+const MOCK_POSTS: Post[] = [
+  {
+    id: 'mock-1', user_id: 'mock', content: 'Hội An buổi tối thật sự ma mị 🏮 Đèn lồng rực rỡ khắp phố, ngồi cà phê bên sông nghe nhạc acoustic mà không muốn về. Ai chưa đến thì phải đến một lần nhé!',
+    images: ['https://picsum.photos/seed/hoian1/800/600', 'https://picsum.photos/seed/hoian2/800/600'],
+    location_id: null, trip_id: null, likes_count: 84, comments_count: 17,
+    created_at: new Date(Date.now() - 2 * 3600000).toISOString(), updated_at: new Date().toISOString(),
+    profiles: { full_name: 'Lan Anh', avatar_url: 'https://api.dicebear.com/7.x/avataaars/png?seed=lananh' },
+    post_likes: [], post_saves: [],
+  },
+  {
+    id: 'mock-2', user_id: 'mock', content: '🎬 Ngủ trên thuyền giữa vịnh Hạ Long — trải nghiệm không thể quên trong đời. Sáng dậy mở cửa cabin là thấy ngay cảnh này 🌊',
+    images: ['https://picsum.photos/seed/halong1/800/600'],
+    location_id: null, trip_id: null, likes_count: 201, comments_count: 43,
+    created_at: new Date(Date.now() - 5 * 3600000).toISOString(), updated_at: new Date().toISOString(),
+    profiles: { full_name: 'Minh Tú', avatar_url: 'https://api.dicebear.com/7.x/avataaars/png?seed=minhtu' },
+    post_likes: [], post_saves: [],
+  },
+  {
+    id: 'mock-3', user_id: 'mock', content: 'Ai mà không biết Cầu Vàng thì phải biết ngay 😂 Thật ra cầu đẹp thật, chỉ tội đông khách quá. Tip: đến sớm khoảng 7h sáng sẽ vắng hơn nhiều!',
+    images: ['https://picsum.photos/seed/danang1/800/600', 'https://picsum.photos/seed/danang2/800/600', 'https://picsum.photos/seed/danang3/800/600'],
+    location_id: null, trip_id: null, likes_count: 136, comments_count: 29,
+    created_at: new Date(Date.now() - 24 * 3600000).toISOString(), updated_at: new Date().toISOString(),
+    profiles: { full_name: 'Hương Giang', avatar_url: 'https://api.dicebear.com/7.x/avataaars/png?seed=huong' },
+    post_likes: [], post_saves: [],
+  },
+  {
+    id: 'mock-4', user_id: 'mock', content: 'Cuối tuần Hà Nội đông vui lắm 🍃 Bún chả Hàng Mành ăn xong đi bộ quanh hồ, ghé cà phê trứng nghe mưa rơi. Đó là Hà Nội của tôi.',
+    images: ['https://picsum.photos/seed/hanoi1/800/600'],
+    location_id: null, trip_id: null, likes_count: 57, comments_count: 8,
+    created_at: new Date(Date.now() - 48 * 3600000).toISOString(), updated_at: new Date().toISOString(),
+    profiles: { full_name: 'Đức Nam', avatar_url: 'https://api.dicebear.com/7.x/avataaars/png?seed=ducnam' },
+    post_likes: [], post_saves: [],
+  },
+];
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string, t: (k: StringKey) => string): string {
@@ -221,7 +258,10 @@ export default function ExploreScreen() {
     fetchPosts(realPosts.length, true);
   }, [realPosts.length, hasMore]);
 
-  const displayPosts: Post[] = realPosts;
+  // Real posts on top, mock posts at bottom as filler
+  const displayPosts: Post[] = realPosts.length > 0
+    ? [...realPosts, ...MOCK_POSTS]
+    : MOCK_POSTS;
 
   async function handleLike(post: Post) {
     if (!user || post.id.startsWith('mock-')) return;
