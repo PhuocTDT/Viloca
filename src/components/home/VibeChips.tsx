@@ -9,6 +9,10 @@ import { useVibes } from '@/src/hooks/useVibes';
 interface Props {
   selected: string | null;
   onSelect: (name: string) => void;
+  /** Phong cách từ quiz onboarding (`profiles.preferred_vibes`), ưu tiên hơn vibes[0] khi tự chọn mặc định. */
+  preferredVibe?: string | null;
+  /** true khi vẫn đang tải preferredVibe — chặn tự chọn mặc định quá sớm bằng vibes[0]. */
+  preferredLoading?: boolean;
 }
 
 const VIBE_ICONS: [string, string][] = [
@@ -107,17 +111,18 @@ function VibeChip({
   );
 }
 
-export function VibeChips({ selected, onSelect }: Props) {
+export function VibeChips({ selected, onSelect, preferredVibe = null, preferredLoading = false }: Props) {
   const { vibes, loading } = useVibes();
   const scrollRef = useRef<ScrollView>(null);
   const chipPositions = useRef<{ x: number; w: number }[]>([]);
 
-  // Auto-select first vibe when loaded
+  // Auto-select when loaded: ưu tiên phong cách người dùng chọn ở quiz onboarding
+  // nếu nó còn tồn tại trong danh sách, không thì mặc định vibes[0] như trước.
   useEffect(() => {
-    if (!loading && vibes.length > 0 && selected === null) {
-      onSelect(vibes[0].name);
-    }
-  }, [loading, vibes]);
+    if (loading || preferredLoading || vibes.length === 0 || selected !== null) return;
+    const match = preferredVibe && vibes.some((v) => v.name === preferredVibe);
+    onSelect(match ? preferredVibe! : vibes[0].name);
+  }, [loading, preferredLoading, vibes, preferredVibe, selected]);
 
   // Auto-scroll to keep selected chip fully visible
   useEffect(() => {

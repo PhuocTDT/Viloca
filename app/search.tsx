@@ -13,6 +13,7 @@ import { useCategories } from '@/src/hooks/useCategories';
 import { FilterSheet, FilterTab } from '@/src/components/home/FilterSheet';
 import { colors } from '@/src/theme/colors';
 import { useT } from '@/src/lib/i18n';
+import { useLocalize } from '@/src/lib/location-i18n';
 import type { Location } from '@/src/types';
 
 const INITIAL_COUNT = 5;
@@ -21,7 +22,8 @@ const LOAD_MORE     = 7;
 // ─── Result card ─────────────────────────────────────────────────────────────
 function LocationResultCard({ location, onPick }: { location: Location; onPick?: (loc: Location) => void }) {
   const t = useT();
-  const firstPhoto = location.photos?.split(',')[0]?.trim();
+  const localize = useLocalize();
+  const firstPhoto = location.photos?.split(',')[0]?.trim() || location.cover_image;
   const cityLabel = location.city === 'SG' ? t('cityHCM') : location.city === 'HN' ? t('cityHN') : t('cityDN');
   const subtitle = [location.district, cityLabel].filter(Boolean).join(', ');
 
@@ -41,14 +43,14 @@ function LocationResultCard({ location, onPick }: { location: Location; onPick?:
         {!firstPhoto && (
           <LinearGradient
             colors={[colors.nomad.primaryContainer, colors.nomad.primary]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
         )}
       </ImageBackground>
 
       {/* Info */}
       <View style={styles.cardInfo}>
-        <Text style={styles.cardName} numberOfLines={2}>{location.name}</Text>
+        <Text style={styles.cardName} numberOfLines={2}>{localize(location.name, location.name_en)}</Text>
         <View style={styles.cardMeta}>
           <Ionicons name="location-outline" size={11} color={colors.nomad.onSurfaceVariant} />
           <Text style={styles.cardSubtitle} numberOfLines={1}>{subtitle}</Text>
@@ -128,7 +130,7 @@ export default function SearchScreen() {
         {!isPickMode && (
           <TouchableOpacity
             style={styles.filterBtn}
-            onPress={() => { setSheetTab('hashtag'); setSheetVisible(true); }}
+            onPress={() => { setSheetTab('category'); setSheetVisible(true); }}
             activeOpacity={0.7}
           >
             <Ionicons name="options-outline" size={20} color={colors.nomad.primary} />

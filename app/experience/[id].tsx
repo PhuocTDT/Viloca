@@ -10,7 +10,9 @@ import { Button } from '@/src/components/ui/Button';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import supabase from '@/src/lib/supabase';
+import { readLocations } from '@/src/lib/location-access';
 import { useT, type StringKey } from '@/src/lib/i18n';
+import { useLocalize } from '@/src/lib/location-i18n';
 import type { Location, Trip, TimeSlot, BookmarkStatus } from '@/src/types';
 
 const TIME_SLOTS: { value: TimeSlot; tKey: StringKey; icon: string }[] = [
@@ -57,6 +59,7 @@ function buildMapsUrl(loc: Location): string {
 
 export default function ExperienceDetailScreen() {
   const t = useT();
+  const localize = useLocalize();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { bookmarks, toggle, setStatus } = useBookmarks();
   const [location, setLocation]     = useState<Location | null>(null);
@@ -100,8 +103,9 @@ export default function ExperienceDetailScreen() {
 
   useEffect(() => {
     if (!id) return;
-    supabase.from('locations').select('*').eq('id', id).single()
-      .then(({ data }) => { setLocation(data); setLoading(false); });
+    // Free: bảng `locations` bị chặn, lùi về view `locations_preview` (cột miễn phí).
+    readLocations<Location>((table) => supabase.from(table).select('*').eq('id', id).limit(1))
+      .then((rows) => { setLocation(rows[0] ?? null); setLoading(false); });
   }, [id]);
 
   function handleBookmark() {
@@ -152,8 +156,10 @@ export default function ExperienceDetailScreen() {
 
   const maxDays = selectedTrip ? tripDayCount(selectedTrip) : 7;
   const cityLine = [location.district, location.city ?? location.address].filter(Boolean).join(', ');
-  const longDesc   = location.description ?? location.short_description ?? '';
-  const shortText  = location.hint ?? location.short_description ?? '';
+  const shortDescText = location.short_description ? localize(location.short_description, location.short_description_en) : null;
+  const hintText   = location.hint ? localize(location.hint, location.hint_en) : null;
+  const longDesc   = location.description ?? shortDescText ?? '';
+  const shortText  = hintText ?? shortDescText ?? '';
   const fullDesc   = longDesc;
   const TRUNCATE  = 200;
   const needsTruncate = fullDesc.length > TRUNCATE;
@@ -193,7 +199,7 @@ export default function ExperienceDetailScreen() {
       >
         <View style={styles.body}>
           {/* Title */}
-          <Text style={styles.title}>{location.name}</Text>
+          <Text style={styles.title}>{localize(location.name, location.name_en)}</Text>
 
           {/* Location chip */}
           {cityLine ? (
@@ -330,7 +336,7 @@ export default function ExperienceDetailScreen() {
                 ? <Image source={{ uri: location.cover_image }} style={styles.expMiniImg} />
                 : <View style={[styles.expMiniImg, { backgroundColor: colors.nomad.outlineVariant }]} />}
               <View style={{ flex: 1 }}>
-                <Text style={styles.expMiniTitle} numberOfLines={1}>{location.name}</Text>
+                <Text style={styles.expMiniTitle} numberOfLines={1}>{localize(location.name, location.name_en)}</Text>
                 {cityLine ? <Text style={styles.expMiniLoc}>📍 {cityLine}</Text> : null}
               </View>
             </View>

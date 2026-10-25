@@ -89,9 +89,12 @@ export interface TripItem {
   // joined via select('*, locations(...)')
   locations?: {
     name: string;
+    name_en: string | null;
     category: string | null;
     hint: string | null;
+    hint_en: string | null;
     short_description: string | null;
+    short_description_en: string | null;
     cover_image: string | null;
     photos: string | null;
     district: string | null;
@@ -108,9 +111,11 @@ export interface Location {
   id: string;
   // Core / free-tier fields
   name: string;
+  name_en: string | null;
   category: string;
   vibes: string[];
   hint: string | null;
+  hint_en: string | null;
   cover_image: string | null;
   images: string[];
   price_per_person: number;
@@ -130,6 +135,7 @@ export interface Location {
   off_days: string | null;
   phone: string | null;
   short_description: string | null;
+  short_description_en: string | null;
   photos: string | null;
   verified: boolean;
   is_featured: boolean;

@@ -14,36 +14,46 @@ import MascotAvatar from '@/components/Mascot/MascotAvatar';
 import { useFestivals } from '@/src/hooks/useFestivals';
 import { useLocations } from '@/src/hooks/useLocations';
 import { FilterSheet, FilterTab } from '@/src/components/home/FilterSheet';
-import { CategoryChips } from '@/src/components/home/CategoryChips';
 import { HomeSectionHeader } from '@/src/components/home/HomeSectionHeader';
-import { FeaturedPlaceCard } from '@/src/components/home/FeaturedPlaceCard';
-import { PlaceGridCard } from '@/src/components/home/PlaceGridCard';
+import { JustForYouCard } from '@/src/components/home/JustForYouCard';
+import { NearbyListItem } from '@/src/components/home/NearbyListItem';
 import { useFeaturedLocation } from '@/src/hooks/useFeaturedLocation';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 import { usePlaceDistances } from '@/src/hooks/usePlaceDistances';
-import { VibeChips } from '@/src/components/home/VibeChips';
+import { MyTripCard } from '@/src/components/home/MyTripCard';
 import { useLangStore } from '@/src/store/langStore';
 import { useT, type StringKey } from '@/src/lib/i18n';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
 import type { Location } from '@/src/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CAROUSEL_W = SCREEN_W - 56;
-const CARD_WIDTH      = Math.floor((SCREEN_W - 16 - 16 - 12) / 2);
-const CARD_FULL_WIDTH = SCREEN_W - 16 - 16; // grid paddingHorizontal 16 each side
+const CAROUSEL_W = SCREEN_W - 96;
+const JFY_CARD_W = Math.round(SCREEN_W * 0.32); // "Just for you" row: ~3 cards + peek of a 4th
 
+/** Khoảng cách đường chim bay (m) — chỉ để SẮP XẾP "Gần bạn", không hiển thị.
+ *  Nhãn hiển thị vẫn lấy từ usePlaceDistances (qua Google Routes). */
+function haversineMeters(a: { lat: number; lng: number }, b: { latitude: number; longitude: number }): number {
+  const R = 6371000;
+  const dLat = ((b.latitude - a.lat) * Math.PI) / 180;
+  const dLng = ((b.longitude - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.latitude * Math.PI) / 180;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+
+
+/** Chỉ số chấm sẽ hiển thị cho carousel — tối đa `max` chấm, cửa sổ trượt theo vị trí đang active. */
+function visibleDotIndices(total: number, active: number, max = 5): number[] {
+  if (total <= max) return Array.from({ length: total }, (_, i) => i);
+  const start = Math.max(0, Math.min(active - Math.floor(max / 2), total - max));
+  return Array.from({ length: max }, (_, i) => start + i);
+}
 
 function festivalBadge(f: FestivalWithStatus, t: (k: StringKey) => string) {
   if (f.displayStatus === 'coming_soon') return t('festComingSoon');
   if (f.displayStatus === 'days_away')   return `${f.daysAway} ${t('festDaysAway')}`;
   return `${f.monthsAway} ${t('festMonthsAway')}`;
-}
-
-function cityLabel(code: string | null, t: (k: StringKey) => string) {
-  if (code === 'SG') return t('cityHCM');
-  if (code === 'HN') return t('cityHN');
-  if (code === 'DN') return t('cityDN');
-  return code ?? '';
 }
 
 // ─── Festival carousel card ──────────────────────────────────────────────────
@@ -80,48 +90,6 @@ function FestivalCarouselCard({ festival }: { festival: FestivalWithStatus }) {
   );
 }
 
-// ─── Carousel card (auto-scroll) ─────────────────────────────────────────────
-function CarouselCard({ location }: { location: Location }) {
-  const t = useT();
-  const firstPhoto    = location.photos?.split(',')[0]?.trim();
-  const subtitle      = [location.district, cityLabel(location.city, t)].filter(Boolean).join(', ');
-  const firstCategory = location.category?.split(',')[0]?.trim();
-  return (
-    <TouchableOpacity activeOpacity={0.9} onPress={() => router.push(`/location/${location.id}`)}>
-      <ImageBackground
-        source={firstPhoto ? { uri: firstPhoto } : undefined}
-        style={[styles.carouselCard, { width: CAROUSEL_W }]}
-        resizeMode="cover"
-        imageStyle={{ borderRadius: 20 }}
-      >
-        {!firstPhoto && (
-          <LinearGradient
-            colors={[colors.nomad.surfaceDim, colors.nomad.inverseSurface]}
-            style={StyleSheet.absoluteFill}
-          />
-        )}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.82)']}
-          locations={[0.25, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-        {firstCategory && (
-          <View style={styles.carouselBadge}>
-            <Text style={styles.carouselBadgeText}>{firstCategory}</Text>
-          </View>
-        )}
-        <View style={styles.carouselInfo}>
-          <Text style={styles.carouselName} numberOfLines={1}>{location.name}</Text>
-          <View style={styles.carouselSubRow}>
-            <Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.75)" />
-            <Text style={styles.carouselSub}>{subtitle}</Text>
-          </View>
-        </View>
-      </ImageBackground>
-    </TouchableOpacity>
-  );
-}
-
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const insets    = useSafeAreaInsets();
@@ -131,45 +99,55 @@ export default function HomeScreen() {
   const firstName = user?.user_metadata?.full_name?.split(' ').pop() ?? t('homeFallbackName');
   const mascot = useMascot();
 
-  const [activeVibe,     setActiveVibe]     = useState<string | null>(null);
   const [sheetVisible, setSheetVisible]     = useState(false);
   const [sheetTab, setSheetTab]             = useState<FilterTab>('category');
-  const [carouselIndex, setCarouselIndex]   = useState(0);
   const [festivalIndex, setFestivalIndex]   = useState(0);
-  const carouselRef  = useRef<ScrollView>(null);
   const festivalRef  = useRef<ScrollView>(null);
 
   const { festivals, loading: festivalsLoading }  = useFestivals();
-  const { locations, loading: locationsLoading }   = useLocations(20, null, activeVibe);
+  const { locations, loading: locationsLoading }   = useLocations(20, null, null);
   const { location: featuredLocation }             = useFeaturedLocation(null);
   const { coords: userCoords, permissionDenied }   = useUserLocation();
 
-  // Grid excludes the featured card
-  const gridLocations = useMemo(
+  // "Just for you": thẻ nổi bật lên đầu, phần còn lại xáo một lần mỗi phiên
+  const restLocations = useMemo(
     () => locations.filter((l) => l.id !== featuredLocation?.id),
     [locations, featuredLocation]
   );
-
-  // Pick 3 random — re-randomise on mount only
-  const [displayLocations, setDisplayLocations] = useState<Location[]>([]);
+  const [shuffledRest, setShuffledRest] = useState<Location[]>([]);
   const hasPickedRef = useRef(false);
   useEffect(() => {
-    if (gridLocations.length === 0) return;
-    if (hasPickedRef.current && displayLocations.length > 0) return;
+    if (restLocations.length === 0) return;
+    if (hasPickedRef.current && shuffledRest.length > 0) return;
     hasPickedRef.current = true;
-    const shuffled = [...gridLocations].sort(() => Math.random() - 0.5);
-    setDisplayLocations(shuffled.slice(0, 3));
-  }, [gridLocations]);
+    setShuffledRest([...restLocations].sort(() => Math.random() - 0.5));
+  }, [restLocations]);
+  const justForYouLocations = useMemo(
+    () => (featuredLocation ? [featuredLocation, ...shuffledRest] : shuffledRest).slice(0, 8),
+    [featuredLocation, shuffledRest]
+  );
 
-  // Build coords list for distance calculation (featured + 3 grid cards)
-  const allCoordsForDistance = useMemo(() => [
-    ...(featuredLocation?.coordinates
-      ? [{ id: featuredLocation.id, lat: featuredLocation.coordinates.lat, lng: featuredLocation.coordinates.lng }]
-      : []),
-    ...displayLocations
+  // "Gần bạn": 3 địa điểm gần nhất theo đường chim bay, cần có tọa độ + vị trí người dùng
+  const nearbyLocations = useMemo(() => {
+    if (!userCoords) return [];
+    return locations
       .filter((l) => l.coordinates != null)
-      .map((l) => ({ id: l.id, lat: l.coordinates!.lat, lng: l.coordinates!.lng })),
-  ], [featuredLocation, displayLocations]);
+      .map((l) => ({ loc: l, meters: haversineMeters(l.coordinates!, userCoords) }))
+      .sort((a, b) => a.meters - b.meters)
+      .slice(0, 3)
+      .map((x) => x.loc);
+  }, [locations, userCoords]);
+
+  // Build coords list for distance calculation (featured + just-for-you + nearby)
+  const allCoordsForDistance = useMemo(() => {
+    const byId = new Map<string, { id: string; lat: number; lng: number }>();
+    for (const l of [...justForYouLocations, ...nearbyLocations]) {
+      if (l.coordinates && !byId.has(l.id)) {
+        byId.set(l.id, { id: l.id, lat: l.coordinates.lat, lng: l.coordinates.lng });
+      }
+    }
+    return Array.from(byId.values());
+  }, [justForYouLocations, nearbyLocations]);
 
   const distanceMap = usePlaceDistances(allCoordsForDistance, userCoords);
 
@@ -177,17 +155,6 @@ export default function HomeScreen() {
   const nearFestivals = festivals.filter(
     (f) => f.displayStatus !== 'months_away' || (f.monthsAway ?? 99) <= 1
   );
-
-  // Auto-scroll location carousel every 3s
-  useEffect(() => {
-    if (locations.length === 0) return;
-    const interval = setInterval(() => {
-      const next = (carouselIndex + 1) % locations.length;
-      carouselRef.current?.scrollTo({ x: next * (CAROUSEL_W + 14), animated: true });
-      setCarouselIndex(next);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [carouselIndex, locations.length]);
 
   // Auto-scroll festival carousel every 3.5s
   useEffect(() => {
@@ -204,13 +171,6 @@ export default function HomeScreen() {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
 
       {/* ── Background decoration ── */}
-      <LinearGradient
-        colors={['rgba(232,255,194,0.5)', 'rgba(250,250,240,0)']}
-        locations={[0, 1]}
-        style={styles.bgGradient}
-        pointerEvents="none"
-      />
-      <View style={styles.bgBlobTopRight} pointerEvents="none" />
       <View style={styles.bgBlobMidLeft} pointerEvents="none" />
 
       <ScrollView
@@ -247,79 +207,67 @@ export default function HomeScreen() {
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
           />
-          <View style={styles.heroDecorCircle} pointerEvents="none" />
           <View style={styles.heroCardBody}>
             <View style={styles.heroCardLeft}>
-              <View style={styles.heroBadge}>
-                <View style={styles.heroDot} />
-                <Text style={styles.heroLabelText}>{t('homeSidekick')}</Text>
-              </View>
               <Text style={styles.greetingName}>{t('homeGreeting')} {firstName},</Text>
               <Text style={styles.greetingTagline}>{t('homeTodayQ')}</Text>
+              <View style={styles.senBubble}>
+                <Text style={styles.senBubbleText}>{mascot.senMessage}</Text>
+              </View>
             </View>
-            <MascotAvatar emotion={mascot.emotion} size={160} />
-          </View>
-          <View style={styles.senBubbleTail} />
-          <View style={styles.senBubble}>
-            <Text style={styles.senBubbleText}>{mascot.senMessage}</Text>
+            <MascotAvatar emotion={mascot.emotion} size={100} />
           </View>
         </View>{/* greetingCard */}
 
         {/* ── Search bar ── */}
         <View style={styles.searchBar}>
           <TouchableOpacity style={styles.searchInput} activeOpacity={0.85} onPress={() => router.push('/search')}>
-            <Ionicons name="search-outline" size={18} color="#9E9E9E" />
+            <Ionicons name="search-outline" size={15} color="#9E9E9E" />
             <Text style={styles.searchPlaceholder}>{t('homeSearchHint')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterBtn} onPress={() => { setSheetTab('category'); setSheetVisible(true); }}>
-            <Ionicons name="options-outline" size={18} color={colors.nomad.primary} />
+            <Ionicons name="options-outline" size={14} color={colors.nomad.primary} />
           </TouchableOpacity>
         </View>
 
-        {/* ── Vibe chips (from DB vibes table) ── */}
-        <VibeChips selected={activeVibe} onSelect={setActiveVibe} />
+        {/* ── My trip: today's schedule or next upcoming trip ── */}
+        <MyTripCard />
 
-        {/* ── Category chips — tap to open search filtered by category ── */}
-        <CategoryChips />
-
-        {/* ── Dành riêng cho bạn ── */}
+        {/* ── Just for you ── */}
         <HomeSectionHeader
           title={t('homeForYou')}
-          subtitle={t('homeForYouSub')}
           onViewAll={() => router.push('/(app)/explore')}
         />
 
-        {/* Location hint when permission denied */}
-        {permissionDenied && (
-          <Text style={styles.locationHint}>{t('homeLocationHint')}</Text>
-        )}
-
-        {/* Featured card */}
-        {featuredLocation && (
-          <FeaturedPlaceCard
-            location={featuredLocation}
-            distanceLabel={distanceMap.get(featuredLocation.id)}
-          />
-        )}
-
-        {/* 2-column suggestion grid — 3 random per session */}
         {locationsLoading ? (
           <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 24 }} />
-        ) : displayLocations.length === 0 ? (
+        ) : justForYouLocations.length === 0 ? (
           <Text style={styles.emptyText}>{t('homeEmptyCategory')}</Text>
         ) : (
-          <View style={styles.grid}>
-            {displayLocations.map((loc, i) => (
-              <PlaceGridCard
-                key={loc.id}
-                location={loc}
-                distanceLabel={distanceMap.get(loc.id)}
-                width={i === 0 ? CARD_FULL_WIDTH : CARD_WIDTH}
-                imageRatio={i === 0 ? 0.45 : 0.72}
-                overlay={i === 0}
-              />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.justForYouRow}
+          >
+            {justForYouLocations.map((loc) => (
+              <JustForYouCard key={loc.id} location={loc} width={JFY_CARD_W} />
             ))}
-          </View>
+          </ScrollView>
+        )}
+
+        {/* ── Gần bạn ── */}
+        <HomeSectionHeader title={t('homeNearby')} />
+
+        {permissionDenied ? (
+          <Text style={styles.locationHint}>{t('homeLocationHint')}</Text>
+        ) : !userCoords ? (
+          <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 16 }} />
+        ) : nearbyLocations.length === 0 ? (
+          <Text style={styles.emptyText}>{t('homeEmptyCategory')}</Text>
+        ) : (
+          nearbyLocations.map((loc) => (
+            <NearbyListItem key={loc.id} location={loc} distanceLabel={distanceMap.get(loc.id)} />
+          ))
         )}
 
         {/* ── Don't Miss ── */}
@@ -352,7 +300,7 @@ export default function HomeScreen() {
             {nearFestivals.length > 1 && (
               <View style={styles.dotsWrap}>
                 <View style={styles.dotsPill}>
-                  {nearFestivals.map((_, i) => (
+                  {visibleDotIndices(nearFestivals.length, festivalIndex).map((i) => (
                     <View key={i} style={[styles.dot, i === festivalIndex && styles.dotActive]} />
                   ))}
                 </View>
@@ -361,42 +309,26 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Must Visit (auto-scroll carousel) ── */}
-        <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-          <Text style={styles.sectionTitle}>{t('homeMustVisit')}</Text>
-        </View>
+        {/* ── Must Visit (compact grid — distinct from the festival poster carousel above) ── */}
+        <HomeSectionHeader
+          title={t('homeMustVisit')}
+          onViewAll={() => router.push('/(app)/explore')}
+        />
 
         {locationsLoading ? (
           <ActivityIndicator color={colors.nomad.primary} style={{ marginVertical: 24 }} />
         ) : locations.length === 0 ? (
           <Text style={styles.emptyText}>{t('homeEmptyPlaces')}</Text>
         ) : (
-          <View>
-            <ScrollView
-              ref={carouselRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={CAROUSEL_W + 14}
-              decelerationRate="fast"
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
-              scrollEventThrottle={16}
-              onMomentumScrollEnd={(e) => {
-                const idx = Math.round(e.nativeEvent.contentOffset.x / (CAROUSEL_W + 14));
-                setCarouselIndex(Math.max(0, Math.min(idx, locations.length - 1)));
-              }}
-            >
-              {locations.map((loc) => <CarouselCard key={loc.id} location={loc} />)}
-            </ScrollView>
-
-            {/* Dot indicators */}
-            <View style={styles.dotsWrap}>
-              <View style={styles.dotsPill}>
-                {locations.map((_, i) => (
-                  <View key={i} style={[styles.dot, i === carouselIndex && styles.dotActive]} />
-                ))}
-              </View>
-            </View>
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.justForYouRow}
+          >
+            {locations.map((loc) => (
+              <JustForYouCard key={loc.id} location={loc} width={JFY_CARD_W} />
+            ))}
+          </ScrollView>
         )}
       </ScrollView>
 
@@ -414,14 +346,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.nomad.background },
 
   // Background decoration
-  bgGradient: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 280,
-  },
-  bgBlobTopRight: {
-    position: 'absolute', top: -40, right: -60,
-    width: 220, height: 220, borderRadius: 110,
-    backgroundColor: colors.nomad.secondaryContainer, opacity: 0.35,
-  },
   bgBlobMidLeft: {
     position: 'absolute', top: 160, left: -50,
     width: 150, height: 150, borderRadius: 75,
@@ -429,9 +353,9 @@ const styles = StyleSheet.create({
   },
 
   // Header
-  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff' },
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   headerBrand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  headerRight: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   logoImg:     { width: 38, height: 38 },
   headerIcon:  { padding: 2, alignItems: 'center' },
   langBadge:   { fontSize: 9, fontWeight: '700', color: colors.nomad.onSurface, lineHeight: 11, opacity: 0.7 },
@@ -440,24 +364,19 @@ const styles = StyleSheet.create({
   notifDot:    { position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF4D6D', borderWidth: 1.5, borderColor: '#fff' },
 
   // Hero card
-  greetingCard:    { marginHorizontal: 16, marginTop: 10, marginBottom: 12, borderRadius: 24, padding: 12, paddingBottom: 10, overflow: 'hidden', shadowColor: '#3a6010', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
-  heroDecorCircle: { position: 'absolute', bottom: -44, right: -44, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(160,210,100,0.22)' },
-  heroCardBody:    { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  heroCardLeft:    { flex: 1 },
-  heroBadge:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5, alignSelf: 'flex-start', marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1 },
-  heroDot:         { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.nomad.primary },
-  heroLabelText:   { fontSize: 12, color: colors.nomad.primary, fontWeight: '500' },
-  greetingName:    { fontSize: 24, fontWeight: '800', color: '#1C1C1C', lineHeight: 30 },
-  greetingTagline: { fontSize: 24, fontWeight: '800', color: '#3E7B27', lineHeight: 30 },
-  senBubbleTail:   { width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 8, borderBottomWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#fff', marginRight: 72, alignSelf: 'flex-end' },
-  senBubble:       { backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4, elevation: 1 },
-  senBubbleText:   { fontSize: 13, color: '#3D3D3D', lineHeight: 19 },
+  greetingCard:    { marginHorizontal: 16, marginTop: 10, marginBottom: 12, borderRadius: 24, padding: 14, overflow: 'hidden', shadowColor: '#3a6010', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
+  heroCardBody:    { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  heroCardLeft:    { flex: 1, gap: 10 },
+  greetingName:    { fontSize: 19, fontWeight: '900', color: '#1C1C1C', lineHeight: 22 },
+  greetingTagline: { fontSize: 19, fontWeight: '900', color: '#3E7B27', lineHeight: 22 },
+  senBubble:       { backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4, elevation: 1 },
+  senBubbleText:   { fontSize: 13, color: '#3D3D3D', lineHeight: 18, fontWeight: '600' },
 
   // Search
-  searchBar:         { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 28, height: 56, borderWidth: 1, borderColor: '#E5E5E5', paddingLeft: 16, paddingRight: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
-  searchInput:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, height: '100%' },
-  searchPlaceholder: { flex: 1, fontSize: 15, color: '#9E9E9E' },
-  filterBtn:         { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E3F0D6', alignItems: 'center', justifyContent: 'center' },
+  searchBar:         { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 20, height: 40, borderWidth: 1, borderColor: '#E5E5E5', paddingLeft: 12, paddingRight: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  searchInput:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: '100%' },
+  searchPlaceholder: { flex: 1, fontSize: 13, color: '#9E9E9E' },
+  filterBtn:         { width: 30, height: 30, borderRadius: 15, backgroundColor: '#E3F0D6', alignItems: 'center', justifyContent: 'center' },
 
   // Section headers (festivals + carousel — keep for "Đừng bỏ lỡ" and "Phải ghé một lần")
   sectionHeader: {
@@ -468,31 +387,19 @@ const styles = StyleSheet.create({
   seeAll:       { fontSize: 12, fontWeight: '600', color: colors.nomad.primary },
 
   // New: suggestion grid + location hint
-  grid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, marginBottom: 24 },
+  justForYouRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 24 },
   locationHint: { fontSize: 12, color: colors.nomad.onSurfaceVariant, textAlign: 'center', marginHorizontal: 16, marginBottom: 12 },
 
   // Festival carousel
   festivalCard: {
-    height: 220, borderRadius: 24,
+    height: 150, borderRadius: 18,
     overflow: 'hidden', backgroundColor: colors.nomad.surfaceContainer,
   },
-  festivalBadge:     { position: 'absolute', top: 16, left: 16, backgroundColor: colors.nomad.primary, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 5 },
-  festivalBadgeText: { fontSize: 12, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
-  festivalInfo:      { position: 'absolute', bottom: 20, left: 20, right: 20 },
-  festivalTitle:     { fontSize: 20, fontWeight: '700', color: '#fff', lineHeight: 26, marginBottom: 4 },
-  festivalSub:       { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
-
-  // Carousel
-  carouselCard: {
-    height: 200, borderRadius: 20,
-    overflow: 'hidden', backgroundColor: colors.nomad.surfaceContainer,
-  },
-  carouselBadge:     { position: 'absolute', top: 16, left: 16, backgroundColor: colors.nomad.primary, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  carouselBadgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
-  carouselInfo:      { position: 'absolute', bottom: 20, left: 20, right: 20 },
-  carouselName:      { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
-  carouselSubRow:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  carouselSub:       { fontSize: 12, color: 'rgba(255,255,255,0.75)' },
+  festivalBadge:     { position: 'absolute', top: 10, left: 10, backgroundColor: colors.nomad.primary, borderRadius: 99, paddingHorizontal: 9, paddingVertical: 3 },
+  festivalBadgeText: { fontSize: 10, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
+  festivalInfo:      { position: 'absolute', bottom: 12, left: 14, right: 14 },
+  festivalTitle:     { fontSize: 15, fontWeight: '700', color: '#fff', lineHeight: 19, marginBottom: 2 },
+  festivalSub:       { fontSize: 10.5, color: 'rgba(255,255,255,0.8)' },
 
   // Dots
   dotsWrap: { alignItems: 'center', marginTop: 14 },

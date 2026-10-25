@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
+import { useT, type StringKey } from '../../lib/i18n';
 
-const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
-                'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-const DOW = ['CN','T2','T3','T4','T5','T6','T7'];
+const MONTH_KEYS: StringKey[] = [
+  'monthJan', 'monthFeb', 'monthMar', 'monthApr', 'monthMay', 'monthJun',
+  'monthJul', 'monthAug', 'monthSep', 'monthOct', 'monthNov', 'monthDec',
+];
+const DOW_KEYS: StringKey[] = ['dowSun', 'dowMon', 'dowTue', 'dowWed', 'dowThu', 'dowFri', 'dowSat'];
 
 interface Props {
   value: string;           // 'yyyy-mm-dd' hoặc ''
@@ -31,7 +34,9 @@ function displayLabel(s: string) {
   return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
 }
 
-export function DatePicker({ value, onChange, placeholder = 'Chọn ngày', minDate }: Props) {
+export function DatePicker({ value, onChange, placeholder, minDate }: Props) {
+  const t = useT();
+  const resolvedPlaceholder = placeholder ?? t('datePickerDefaultPH');
   const today = new Date();
   const selected = parseISO(value);
   const [visible, setVisible] = useState(false);
@@ -63,7 +68,7 @@ export function DatePicker({ value, onChange, placeholder = 'Chọn ngày', minD
       <TouchableOpacity style={styles.trigger} onPress={() => setVisible(true)}>
         <Ionicons name="calendar-outline" size={16} color={colors.nomad.onSurfaceVariant} />
         <Text style={[styles.triggerText, !value && styles.placeholder]}>
-          {value ? displayLabel(value) : placeholder}
+          {value ? displayLabel(value) : resolvedPlaceholder}
         </Text>
         <Ionicons name="chevron-down" size={14} color={colors.nomad.onSurfaceVariant} />
       </TouchableOpacity>
@@ -76,7 +81,7 @@ export function DatePicker({ value, onChange, placeholder = 'Chọn ngày', minD
               <TouchableOpacity onPress={() => setCursor(new Date(year, month - 1, 1))} style={styles.navBtn}>
                 <Ionicons name="chevron-back" size={20} color={colors.nomad.onSurface} />
               </TouchableOpacity>
-              <Text style={styles.navTitle}>{MONTHS[month]} {year}</Text>
+              <Text style={styles.navTitle}>{t(MONTH_KEYS[month])} {year}</Text>
               <TouchableOpacity onPress={() => setCursor(new Date(year, month + 1, 1))} style={styles.navBtn}>
                 <Ionicons name="chevron-forward" size={20} color={colors.nomad.onSurface} />
               </TouchableOpacity>
@@ -84,7 +89,7 @@ export function DatePicker({ value, onChange, placeholder = 'Chọn ngày', minD
 
             {/* Day-of-week header */}
             <View style={styles.dowRow}>
-              {DOW.map(d => <Text key={d} style={styles.dowText}>{d}</Text>)}
+              {DOW_KEYS.map(k => <Text key={k} style={styles.dowText}>{t(k)}</Text>)}
             </View>
 
             {/* Grid */}

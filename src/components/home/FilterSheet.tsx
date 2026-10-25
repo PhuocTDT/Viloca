@@ -5,14 +5,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/theme/colors';
+import { useT, type StringKey } from '@/src/lib/i18n';
 
 export type FilterTab = 'category' | 'city' | 'style' | 'price';
 
-const FILTER_TABS: { key: FilterTab; label: string; icon: string }[] = [
-  { key: 'category', label: 'Danh mục',   icon: 'grid-outline' },
-  { key: 'city',     label: 'Thành phố',  icon: 'business-outline' },
-  { key: 'style',    label: 'Không khí',  icon: 'sparkles-outline' },
-  { key: 'price',    label: 'Mức giá',    icon: 'pricetag-outline' },
+const FILTER_TABS: { key: FilterTab; labelKey: StringKey; icon: string }[] = [
+  { key: 'category', labelKey: 'filterTabCategory', icon: 'grid-outline' },
+  { key: 'city',     labelKey: 'filterTabCity',      icon: 'business-outline' },
+  { key: 'style',    labelKey: 'filterTabStyle',     icon: 'sparkles-outline' },
+  { key: 'price',    labelKey: 'filterTabPrice',     icon: 'pricetag-outline' },
 ];
 
 // Extracted from category column in DB
@@ -23,10 +24,10 @@ const CATEGORIES = [
 ];
 
 // Only cities with actual data in DB
-const CITIES = [
-  { code: 'HN', label: 'Hà Nội' },
-  { code: 'SG', label: 'TP. HCM' },
-  { code: 'DN', label: 'Đà Nẵng' },
+const CITIES: { code: string; labelKey: StringKey }[] = [
+  { code: 'HN', labelKey: 'cityHN' },
+  { code: 'SG', labelKey: 'cityHCM' },
+  { code: 'DN', labelKey: 'cityDN' },
 ];
 
 // Extracted from style_tag column in DB (individual tags)
@@ -78,6 +79,7 @@ interface Props {
 }
 
 export function FilterSheet({ visible, initialTab = 'category', onClose }: Props) {
+  const t = useT();
   const [activeTab, setActiveTab] = useState<FilterTab>(initialTab);
   const [selected, setSelected]   = useState<string[]>([]);
 
@@ -97,7 +99,7 @@ export function FilterSheet({ visible, initialTab = 'category', onClose }: Props
         <View style={styles.handle} />
 
         <View style={styles.header}>
-          <Text style={styles.title}>Lọc địa điểm</Text>
+          <Text style={styles.title}>{t('filterSheetTitle')}</Text>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={22} color={colors.nomad.onSurfaceVariant} />
           </TouchableOpacity>
@@ -120,7 +122,7 @@ export function FilterSheet({ visible, initialTab = 'category', onClose }: Props
                 color={activeTab === tab.key ? '#fff' : colors.nomad.onSurfaceVariant}
               />
               <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
-                {tab.label}
+                {t(tab.labelKey)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -141,7 +143,7 @@ export function FilterSheet({ visible, initialTab = 'category', onClose }: Props
                     style={[styles.chip, active && styles.chipActive]}
                     onPress={() => toggle(c.code)}
                   >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.label}</Text>
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{t(c.labelKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -178,10 +180,10 @@ export function FilterSheet({ visible, initialTab = 'category', onClose }: Props
         {selected.length > 0 && (
           <View style={styles.footer}>
             <TouchableOpacity style={styles.clearBtn} onPress={() => setSelected([])}>
-              <Text style={styles.clearText}>Xóa ({selected.length})</Text>
+              <Text style={styles.clearText}>{t('filterClearBtn')} ({selected.length})</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.applyBtn} onPress={onClose}>
-              <Text style={styles.applyText}>Áp dụng</Text>
+              <Text style={styles.applyText}>{t('filterApplyBtn')}</Text>
             </TouchableOpacity>
           </View>
         )}

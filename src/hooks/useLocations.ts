@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import supabase from '@/src/lib/supabase';
 import type { Location } from '@/src/types';
+import { readLocations } from '@/src/lib/location-access';
 
 export function useLocations(
   limit = 6,
@@ -12,23 +13,15 @@ export function useLocations(
 
   useEffect(() => {
     async function load() {
-      let query = supabase
-        .from('locations')
-        .select('*')
-        .eq('is_active', true)
-        .limit(limit);
+      const rows = await readLocations<Location>((table) => {
+        let query = supabase.from(table).select('*').limit(limit);
+        if (table === 'locations') query = query.eq('is_active', true);
+        if (categoryFilter) query = query.ilike('category', `%${categoryFilter}%`);
+        if (vibeFilter) query = query.ilike('style_tag', `%${vibeFilter}%`);
+        return query;
+      });
 
-      if (categoryFilter) {
-        query = query.ilike('category', `%${categoryFilter}%`);
-      }
-
-      if (vibeFilter) {
-        query = query.ilike('style_tag', `%${vibeFilter}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (!error && data) setLocations(data as Location[]);
+      setLocations(rows);
       setLoading(false);
     }
     load();

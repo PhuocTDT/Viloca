@@ -22,7 +22,7 @@ export default function AgeSelectScreen() {
   const t = useT();
   const [selectedAge, setSelectedAge] = useState(AGES[DEFAULT_INDEX]);
   const scrollY = useRef(new Animated.Value(DEFAULT_INDEX * ITEM_HEIGHT)).current;
-  const scrollRef = useRef<Animated.LegacyRef<Animated.ScrollView>>(null);
+  const scrollRef = useRef<any>(null);
   const paddingVertical = ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2);
 
   function onScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
@@ -72,7 +72,7 @@ export default function AgeSelectScreen() {
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0,
                 height: ITEM_HEIGHT * 2, zIndex: 10,
-                background: 'transparent',
+                backgroundColor: 'transparent',
               }}
             />
 

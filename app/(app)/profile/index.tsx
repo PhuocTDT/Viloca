@@ -27,6 +27,7 @@ export default function ProfileScreen() {
   const t = useT();
   const [tripCount, setTripCount]   = useState(0);
   const [placeCount, setPlaceCount] = useState(0);
+  const [postCount, setPostCount]   = useState(0);
   const [userPlan, setUserPlan]     = useState<'free' | 'pro'>('free');
   const [aiCredits, setAiCredits]   = useState(0);
   const [avatarUrl, setAvatarUrl]   = useState<string | null>(null);
@@ -47,6 +48,10 @@ export default function ProfileScreen() {
         setAiCredits(profile.ai_credits_remaining ?? 0);
         setAvatarUrl(profile.avatar_url ?? null);
       }
+      // Count posts written by this user
+      const { count: poCount } = await supabase
+        .from('posts').select('id', { count: 'exact', head: true }).eq('user_id', uid);
+      setPostCount(poCount ?? 0);
       // Count trips
       const { count: tCount } = await supabase
         .from('trips').select('id', { count: 'exact', head: true }).eq('user_id', uid);
@@ -65,7 +70,7 @@ export default function ProfileScreen() {
 
   async function handleSignOut() {
     await signOut();
-    router.replace('/(auth)/onboarding');
+    router.replace('/(auth)/login');
   }
 
   return (
@@ -90,7 +95,7 @@ export default function ProfileScreen() {
           {[
             { label: t('statTrips'),   value: String(tripCount)  },
             { label: t('statPlaces'),  value: String(placeCount) },
-            { label: t('statReviews'), value: '0' },
+            { label: t('statPosts'),   value: String(postCount) },
           ].map((s) => (
             <View key={s.label} style={styles.statItem}>
               <Text style={styles.statValue}>{s.value}</Text>
@@ -104,7 +109,7 @@ export default function ProfileScreen() {
           <View style={styles.planLeft}>
             <View style={[styles.planBadge, userPlan === 'pro' && styles.planBadgePro]}>
               <Text style={[styles.planBadgeText, userPlan === 'pro' && styles.planBadgeTextPro]}>
-                {userPlan === 'pro' ? '✦ Pro' : 'Free'}
+                {userPlan === 'pro' ? '✦ Pro' : t('planFreeBadge')}
               </Text>
             </View>
             {userPlan === 'free' && (

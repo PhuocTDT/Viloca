@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { router } from 'expo-router';
 import supabase from '../../src/lib/supabase';
 import { colors } from '../../src/theme/colors';
+import { useT } from '../../src/lib/i18n';
 
 export default function SplashScreen() {
+  const t = useT();
   const dot1 = useRef(new Animated.Value(0.3)).current;
   const dot2 = useRef(new Animated.Value(0.3)).current;
   const dot3 = useRef(new Animated.Value(0.3)).current;
@@ -28,7 +30,7 @@ export default function SplashScreen() {
       if (session?.user) {
         router.replace('/(app)');
       } else {
-        router.replace('/(auth)/onboarding');
+        router.replace('/(auth)/login');
       }
     }, 2500);
 
@@ -38,7 +40,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.logo}>Viloca</Text>
-      <Text style={styles.tagline}>Experience local culture like a local</Text>
+      <Text style={styles.tagline}>{t('splashTagline')}</Text>
       <View style={styles.dots}>
         {[dot1, dot2, dot3].map((dot, i) => (
           <Animated.View key={i} style={[styles.dot, { opacity: dot }]} />

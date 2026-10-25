@@ -19,6 +19,7 @@ import { getCoverForDestination } from '@/src/lib/destination-covers';
 import { suggestTime, tripDayCount, dayLabel, formatDate, buildGoogleMapsUrl } from '@/src/lib/trip-utils';
 import type { Trip, TripItem, TripJournal, TimeSlot, TripStatus } from '@/src/types';
 import { useT, type StringKey } from '@/src/lib/i18n';
+import { useLocalize } from '@/src/lib/location-i18n';
 import * as Location from 'expo-location';
 
 // ─── Leaflet HTML builder ─────────────────────────────────────────────────────
@@ -27,7 +28,8 @@ type LeafletMarker = { lat: number; lng: number; name: string; order: number };
 
 function buildLeafletHtml(
   markers: LeafletMarker[],
-  userLocation?: { lat: number; lng: number } | null,
+  userLocation: { lat: number; lng: number } | null | undefined,
+  labels: { loadingRoute: string; yourLocation: string; minUnit: string },
 ): string {
   const PRIMARY  = '#4285F4';
   const START_BG = '#34A853';
@@ -100,7 +102,7 @@ html,body,#map{width:100%;height:100%}
 </head>
 <body>
 <div id="map"></div>
-<div id="route-status">Đang tải lộ trình...</div>
+<div id="route-status">${labels.loadingRoute}</div>
 <div id="info-bar"></div>
 <script>
 var pts=${data};
@@ -117,7 +119,7 @@ if(userLL){
     className:'',iconSize:[20,20],iconAnchor:[10,10]
   });
   L.marker([userLL.lat,userLL.lng],{icon:udIcon,zIndexOffset:-100}).addTo(map)
-    .bindPopup('<b>Vị trí của bạn<\/b>');
+    .bindPopup('<b>${labels.yourLocation}<\/b>');
 }
 
 if(pts.length===0){map.setView([16.047,108.206],10);}
@@ -155,7 +157,7 @@ else{
         // Info bar
         var km=(d.routes[0].distance/1000).toFixed(1);
         var min=Math.round(d.routes[0].duration/60);
-        infoEl.textContent=km+' km  ·  ~'+min+' phút';
+        infoEl.textContent=km+' km  ·  ~'+min+' ${labels.minUnit}';
         infoEl.style.display='block';
         statusEl.style.display='none';
       })
@@ -173,7 +175,7 @@ window.addUserLocation = function(lat, lng) {
     className: '', iconSize: [20, 20], iconAnchor: [10, 10]
   });
   window._userMarker = L.marker([lat, lng], {icon: udIcon, zIndexOffset: -100})
-    .addTo(map).bindPopup('<b>Vị trí của bạn<\/b>');
+    .addTo(map).bindPopup('<b>${labels.yourLocation}<\/b>');
 };
 <\/script>
 </body>
@@ -233,7 +235,7 @@ function journalDateLabel(trip: Trip, dayNum: number): string {
 
 // ─── Sortable Day List ────────────────────────────────────────────────────────
 
-const ITEM_H = 96;
+const ITEM_H = 76;
 const LEFT_W = 88; // dragHandle(28) + timeCol(44) + dotCol(16)
 
 type SortableProps = {
@@ -250,10 +252,11 @@ type SortableProps = {
 
 function CardInner({ item }: { item: TripItem }) {
   const t            = useT();
+  const localize     = useLocalize();
   const locData      = item.locations ?? null;
-  const displayTitle = locData?.name ?? item.experience_title ?? '—';
+  const displayTitle = (locData ? localize(locData.name, locData.name_en) : null) ?? item.experience_title ?? '—';
   const displayLoc   = locData?.district ?? item.experience_location;
-  const hintText     = item.note ?? locData?.hint ?? null;
+  const hintText     = item.note ?? (locData?.hint ? localize(locData.hint, locData.hint_en) : null);
   const displayCat   = locData?.category ?? item.experience_category;
   const photoUrl     = locData?.cover_image
     ?? (locData?.photos ? locData.photos.split(',')[0].trim() : null)
@@ -268,10 +271,10 @@ function CardInner({ item }: { item: TripItem }) {
         resizeMode="cover"
       >
         {!photoUrl && (
-          <LinearGradient colors={[colors.nomad.primaryContainer, colors.nomad.primary]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[colors.nomad.primaryContainer, colors.nomad.primary]} style={StyleSheet.absoluteFill} />
         )}
         {photoUrl && (
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} locations={[0.4, 1]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} locations={[0.4, 1]} style={StyleSheet.absoluteFill} />
         )}
       </ImageBackground>
       <View style={styles.cardBody}>
@@ -537,6 +540,7 @@ function SortableDayItems({ items, editMode, checkedIds, onToggleCheck, onReorde
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useT();
+  const localize = useLocalize();
   const [trip, setTrip]         = useState<Trip | null>(null);
   const [items, setItems]       = useState<TripItem[]>([]);
   const [journals, setJournals] = useState<TripJournal[]>([]);
@@ -611,7 +615,7 @@ export default function TripDetailScreen() {
     Promise.all([
       supabase.from('trips').select('*').eq('id', id).single(),
       supabase.from('trip_items')
-        .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
+        .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
         .eq('trip_id', id)
         .order('day_number')
         .order('sort_order'),
@@ -727,7 +731,7 @@ export default function TripDetailScreen() {
 
     const { data: refreshed } = await supabase
       .from('trip_items')
-      .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours)')
+      .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours)')
       .eq('trip_id', id)
       .order('day_number')
       .order('sort_order');
@@ -752,7 +756,7 @@ export default function TripDetailScreen() {
   useFocusEffect(useCallback(() => {
     if (!id) return;
     supabase.from('trip_items')
-      .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
+      .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
       .eq('trip_id', id)
       .order('day_number').order('sort_order')
       .then(({ data }) => { if (data) setItems(data); });
@@ -949,7 +953,8 @@ export default function TripDetailScreen() {
       grouped[Number(day)]
         .sort((a, b) => a.sort_order - b.sort_order)
         .forEach(item => {
-          const name = (item.locations as any)?.name ?? item.experience_title ?? '?';
+          const locName = item.locations as { name: string; name_en: string | null } | null | undefined;
+          const name = (locName ? localize(locName.name, locName.name_en) : null) ?? item.experience_title ?? '?';
           const slot = TIME_SLOTS.find(s => s.value === item.time_slot);
           lines.push(`  ${slot?.icon ?? ''} ${name}`);
           if (item.note) lines.push(`     → ${item.note}`);
@@ -1025,7 +1030,7 @@ export default function TripDetailScreen() {
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.28)', 'rgba(0,0,0,0.88)']}
             locations={[0.25, 0.58, 1]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           <Animated.View style={[styles.heroContent, { opacity: heroOpacity }]}>
             <View style={styles.heroBottom}>
@@ -1460,11 +1465,12 @@ export default function TripDetailScreen() {
                   .reduce<LeafletMarker[]>((acc, item, idx) => {
                     const loc = item.locations as any;
                     if (loc?.coordinates?.lat && loc?.coordinates?.lng) {
-                      acc.push({ lat: loc.coordinates.lat, lng: loc.coordinates.lng, name: loc.name ?? '—', order: idx + 1 });
+                      acc.push({ lat: loc.coordinates.lat, lng: loc.coordinates.lng, name: localize(loc.name, loc.name_en) ?? '—', order: idx + 1 });
                     }
                     return acc;
                   }, []),
                 null,   // luôn null — user dot được inject sau qua JS
+                { loadingRoute: t('mapRouteLoading'), yourLocation: t('mapYourLocation'), minUnit: t('expMinUnit') },
               )}}
               onLoad={() => setMapWebViewLoading(false)}
               style={{ flex: 1 }}
@@ -1502,11 +1508,13 @@ export default function TripDetailScreen() {
               const loc       = selectedItem.locations as any;
               const slot      = TIME_SLOTS.find(s => s.value === selectedItem.time_slot);
               const coverImg  = loc?.cover_image ?? selectedItem.experience_image;
-              const title     = loc?.name ?? selectedItem.experience_title ?? '—';
+              const title     = (loc ? localize(loc.name, loc.name_en) : null) ?? selectedItem.experience_title ?? '—';
               const locLabel  = loc?.district ?? loc?.address ?? selectedItem.experience_location;
               const category  = loc?.category ?? selectedItem.experience_category;
-              const shortDesc = loc?.short_description ?? loc?.hint ?? selectedItem.note;
-              const longDesc  = loc?.short_description;
+              const shortDescLoc = loc?.short_description ? localize(loc.short_description, loc.short_description_en) : null;
+              const hintLoc   = loc?.hint ? localize(loc.hint, loc.hint_en) : null;
+              const shortDesc = shortDescLoc ?? hintLoc ?? selectedItem.note;
+              const longDesc  = shortDescLoc;
               return (
                 <ScrollView showsVerticalScrollIndicator={false}>
                   {coverImg ? (
@@ -1554,7 +1562,7 @@ export default function TripDetailScreen() {
                       <View style={[styles.detailRow, { flexWrap: 'wrap', gap: 12 }]}>
                         {!!loc?.rating && <Text style={styles.detailMeta}>⭐ {loc.rating}</Text>}
                         {!!loc?.duration_minutes && <Text style={styles.detailMeta}>⏱ {loc.duration_minutes >= 60 ? `${Math.floor(loc.duration_minutes / 60)}h` : `${loc.duration_minutes}p`}</Text>}
-                        {!!loc?.price_per_person && <Text style={styles.detailMeta}>💰 {(loc.price_per_person / 1000).toFixed(0)}k/người</Text>}
+                        {!!loc?.price_per_person && <Text style={styles.detailMeta}>💰 {(loc.price_per_person / 1000).toFixed(0)}k{t('unitPerPerson')}</Text>}
                         {!!loc?.opening_hours && <Text style={styles.detailMeta}>🕐 {loc.opening_hours}</Text>}
                       </View>
                     )}
@@ -1764,7 +1772,7 @@ const styles = StyleSheet.create({
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   navbar:        { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md },
-  navbarBg:      { ...StyleSheet.absoluteFillObject as any, backgroundColor: colors.nomad.primary },
+  navbarBg:      { ...StyleSheet.absoluteFill as any, backgroundColor: colors.nomad.primary },
   backBtn:       { width: 38, height: 38, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
   editNavBtn:    { width: 38, height: 38, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
   navbarInfo:    { flex: 1 },
@@ -1875,7 +1883,7 @@ const styles = StyleSheet.create({
   timelineCard:       { flex: 1, backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.nomad.primary + '30', overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 2 },
   timelineCardActive: { borderColor: colors.nomad.primary, borderWidth: 2, backgroundColor: '#f4f8ec', shadowOpacity: 0.14, elevation: 5 },
   cardInner:          { flexDirection: 'row', alignItems: 'stretch', flex: 1 },
-  cardThumb:          { width: 80, height: 88, justifyContent: 'flex-end' },
+  cardThumb:          { width: 68, height: 68, justifyContent: 'flex-end' },
   cardThumbImg:       { borderTopLeftRadius: radius.lg - 1, borderBottomLeftRadius: radius.lg - 1 },
   cardThumbTime:      { paddingHorizontal: 5, paddingVertical: 3 },
   cardThumbTimeText:  { fontSize: 10, fontWeight: '700', color: '#fff' },
@@ -1993,7 +2001,7 @@ const styles = StyleSheet.create({
   },
   mapModalTitle: { fontSize: 17, fontWeight: '700', color: colors.nomad.onSurface },
   mapLoadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.nomad.surfaceContainerLow,
     alignItems: 'center', justifyContent: 'center', gap: 12,
   },
