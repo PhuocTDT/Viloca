@@ -235,7 +235,7 @@ function journalDateLabel(trip: Trip, dayNum: number): string {
 
 // ─── Sortable Day List ────────────────────────────────────────────────────────
 
-const ITEM_H = 96;
+const ITEM_H = 76;
 const LEFT_W = 88; // dragHandle(28) + timeCol(44) + dotCol(16)
 
 type SortableProps = {
@@ -1883,7 +1883,7 @@ const styles = StyleSheet.create({
   timelineCard:       { flex: 1, backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.nomad.primary + '30', overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 2 },
   timelineCardActive: { borderColor: colors.nomad.primary, borderWidth: 2, backgroundColor: '#f4f8ec', shadowOpacity: 0.14, elevation: 5 },
   cardInner:          { flexDirection: 'row', alignItems: 'stretch', flex: 1 },
-  cardThumb:          { width: 80, height: 88, justifyContent: 'flex-end' },
+  cardThumb:          { width: 68, height: 68, justifyContent: 'flex-end' },
   cardThumbImg:       { borderTopLeftRadius: radius.lg - 1, borderBottomLeftRadius: radius.lg - 1 },
   cardThumbTime:      { paddingHorizontal: 5, paddingVertical: 3 },
   cardThumbTimeText:  { fontSize: 10, fontWeight: '700', color: '#fff' },
