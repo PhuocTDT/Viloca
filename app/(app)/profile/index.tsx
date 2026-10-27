@@ -14,6 +14,7 @@ import { useT, type StringKey } from '@/src/lib/i18n';
 const MENU_ITEMS: { icon: string; tKey: StringKey; route: string | null }[] = [
   { icon: 'grid-outline',          tKey: 'menuPosts',         route: '/(app)/profile/posts' },
   { icon: 'map-outline',           tKey: 'menuTrips',         route: '/(app)/profile/trips' },
+  { icon: 'trophy-outline',        tKey: 'menuMissions',      route: '/(app)/profile/missions' },
   { icon: 'heart-outline',         tKey: 'menuFavorites',     route: null },
   { icon: 'star-outline',          tKey: 'menuReviews',       route: null },
   { icon: 'notifications-outline', tKey: 'menuNotifications', route: null },
@@ -31,6 +32,7 @@ export default function ProfileScreen() {
   const [userPlan, setUserPlan]     = useState<'free' | 'pro'>('free');
   const [aiCredits, setAiCredits]   = useState(0);
   const [avatarUrl, setAvatarUrl]   = useState<string | null>(null);
+  const [bio, setBio]               = useState<string | null>(null);
 
   const name  = user?.user_metadata?.full_name ?? 'Traveler';
   const email = user?.email ?? '';
@@ -42,11 +44,12 @@ export default function ProfileScreen() {
       const uid = session.user.id;
       // Plan + credits
       const { data: profile } = await supabase
-        .from('profiles').select('plan, ai_credits_remaining, avatar_url').eq('id', uid).single();
+        .from('profiles').select('plan, ai_credits_remaining, avatar_url, bio').eq('id', uid).single();
       if (profile) {
         setUserPlan(profile.plan ?? 'free');
         setAiCredits(profile.ai_credits_remaining ?? 0);
         setAvatarUrl(profile.avatar_url ?? null);
+        setBio(profile.bio ?? null);
       }
       // Count posts written by this user
       const { count: poCount } = await supabase
@@ -79,8 +82,24 @@ export default function ProfileScreen() {
         {/* Profile Hero */}
         <View style={styles.hero}>
           <Avatar uri={avatarUrl} name={name} size={80} />
-          <Text style={styles.name}>{name}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{name}</Text>
+            <View style={[styles.planBadge, userPlan === 'pro' && styles.planBadgePro]}>
+              <Text style={[styles.planBadgeText, userPlan === 'pro' && styles.planBadgeTextPro]}>
+                {userPlan === 'pro' ? '✦ Pro' : t('planFreeBadge')}
+              </Text>
+            </View>
+          </View>
           <Text style={styles.email}>{email}</Text>
+          {bio ? <Text style={styles.bio}>{bio}</Text> : null}
+          {userPlan === 'free' && (
+            <View style={styles.creditsRow}>
+              <Text style={styles.planCredits}>{aiCredits} {t('aiCreditsLeft')}</Text>
+              <TouchableOpacity style={styles.planUpgradeBtn}>
+                <Text style={styles.planUpgradeText}>{t('planUpgradeBtn')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <TouchableOpacity
             style={styles.editBtn}
             onPress={() => router.push('/(app)/profile/edit')}
@@ -102,25 +121,6 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
           ))}
-        </View>
-
-        {/* Plan card */}
-        <View style={styles.planCard}>
-          <View style={styles.planLeft}>
-            <View style={[styles.planBadge, userPlan === 'pro' && styles.planBadgePro]}>
-              <Text style={[styles.planBadgeText, userPlan === 'pro' && styles.planBadgeTextPro]}>
-                {userPlan === 'pro' ? '✦ Pro' : t('planFreeBadge')}
-              </Text>
-            </View>
-            {userPlan === 'free' && (
-              <Text style={styles.planCredits}>{aiCredits} {t('aiCreditsLeft')}</Text>
-            )}
-          </View>
-          {userPlan === 'free' && (
-            <TouchableOpacity style={styles.planUpgradeBtn}>
-              <Text style={styles.planUpgradeText}>{t('planUpgradeBtn')}</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Menu */}
@@ -156,20 +156,21 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   hero:          { alignItems: 'center', paddingTop: spacing.xl, paddingBottom: spacing.lg, paddingHorizontal: spacing.lg },
-  name:          { fontSize: 22, fontWeight: '700', color: colors.nomad.onSurface, marginTop: 12 },
+  nameRow:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
+  name:          { fontSize: 22, fontWeight: '700', color: colors.nomad.onSurface },
   email:         { fontSize: 13, color: colors.nomad.onSurfaceVariant, marginTop: 2 },
+  bio:           { fontSize: 13, color: colors.nomad.onSurface, marginTop: 8, textAlign: 'center', lineHeight: 18, paddingHorizontal: spacing.lg },
   editBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: colors.nomad.primary, paddingHorizontal: 16, paddingVertical: 7, borderRadius: radius.full, marginTop: 12 },
   editText:      { fontSize: 13, fontWeight: '500', color: colors.nomad.primary },
   statsRow:      { flexDirection: 'row', marginHorizontal: spacing.lg, backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.outlineVariant, padding: spacing.md },
   statItem:      { flex: 1, alignItems: 'center' },
   statValue:     { fontSize: 20, fontWeight: '700', color: colors.nomad.onSurface },
   statLabel:     { fontSize: 11, color: colors.nomad.onSurfaceVariant, marginTop: 2 },
-  planCard:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.outlineVariant, paddingHorizontal: spacing.md, paddingVertical: 12 },
-  planLeft:          { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  planBadge:         { backgroundColor: colors.nomad.surfaceContainer, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 4 },
+  planBadge:         { backgroundColor: colors.nomad.surfaceContainer, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 },
   planBadgePro:      { backgroundColor: colors.nomad.primary },
   planBadgeText:     { fontSize: 12, fontWeight: '700', color: colors.nomad.onSurfaceVariant },
   planBadgeTextPro:  { color: colors.nomad.onPrimary },
+  creditsRow:        { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
   planCredits:       { fontSize: 12, color: colors.nomad.onSurfaceVariant },
   planUpgradeBtn:    { backgroundColor: colors.nomad.secondaryContainer, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 6 },
   planUpgradeText:   { fontSize: 12, fontWeight: '700', color: colors.nomad.primary },

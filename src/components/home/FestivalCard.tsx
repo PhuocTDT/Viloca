@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { colors } from '@/src/theme/colors';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
 
@@ -26,7 +27,8 @@ export function FestivalCard({ festival, onPress }: Props) {
       <Image
         source={{ uri: festival.cover_image ?? undefined }}
         style={styles.image}
-        resizeMode="cover"
+        contentFit="cover"
+        transition={150}
       />
       <View style={styles.overlay} />
       <View style={styles.content}>

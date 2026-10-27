@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors } from '@/src/theme/colors';
@@ -27,6 +28,7 @@ interface Props {
 export function NearbyListItem({ location, distanceLabel }: Props) {
   const { isFavorite, toggle } = useFavorite(location.id);
   const localize = useLocalize();
+  const firstPhoto = location.photos?.split(',')[0]?.trim() ?? location.cover_image ?? undefined;
   const tags = (location.style_tag ?? location.category ?? '')
     .split(',')
     .map((s) => s.trim())
@@ -40,7 +42,11 @@ export function NearbyListItem({ location, distanceLabel }: Props) {
       onPress={() => router.push(`/location/${location.id}`)}
     >
       <View style={styles.iconWrap}>
-        <Ionicons name={iconForCategory(location.category)} size={18} color={N.primary} />
+        {firstPhoto ? (
+          <Image source={{ uri: firstPhoto }} style={styles.thumb} contentFit="cover" transition={150} />
+        ) : (
+          <Ionicons name={iconForCategory(location.category)} size={18} color={N.primary} />
+        )}
       </View>
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>{localize(location.name, location.name_en)}</Text>
@@ -61,7 +67,8 @@ export function NearbyListItem({ location, distanceLabel }: Props) {
 
 const styles = StyleSheet.create({
   row:      { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', borderRadius: 16, padding: 12, marginHorizontal: 16, marginBottom: 10, borderWidth: 1, borderColor: N.outlineVariant },
-  iconWrap: { width: 42, height: 42, borderRadius: 12, backgroundColor: N.secondaryContainer, alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 42, height: 42, borderRadius: 12, backgroundColor: N.secondaryContainer, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  thumb:    { width: '100%', height: '100%' },
   body:     { flex: 1, gap: 2 },
   name:     { fontSize: 14, fontWeight: '700', color: N.onSurface },
   tags:     { fontSize: 12, fontWeight: '600', color: N.primary },

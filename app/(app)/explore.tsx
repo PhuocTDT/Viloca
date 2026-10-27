@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, RefreshControl, Alert,
-  Image, TouchableOpacity, Dimensions, Share, ActivityIndicator,
+  Image, TouchableOpacity, Dimensions, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import supabase from '@/src/lib/supabase';
+import { shareAndReportMission } from '@/src/lib/share-mission';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/src/theme/colors';
 import { useT, type StringKey } from '@/src/lib/i18n';
@@ -177,7 +178,7 @@ function PostCard({ post, currentUserId, onLike, onSave, onDelete }: {
           <Ionicons name="chatbubble-outline" size={21} color={colors.nomad.onSurfaceVariant} />
           <Text style={s.actionCount}>{post.comments_count}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.actionBtn} onPress={() => Share.share({ message: `Xem bài viết trên Viloca: viloca://post/${post.id}` })} activeOpacity={0.7}>
+        <TouchableOpacity style={s.actionBtn} onPress={() => shareAndReportMission({ message: `Xem bài viết trên Viloca: viloca://post/${post.id}` })} activeOpacity={0.7}>
           <Ionicons name="paper-plane-outline" size={21} color={colors.nomad.onSurfaceVariant} />
           <Text style={s.actionCount}>{t('postShare')}</Text>
         </TouchableOpacity>
@@ -207,6 +208,7 @@ export default function ExploreScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore]         = useState(true);
   const loadingMoreRef                = useRef(false);
+  const likeInFlightRef               = useRef<Set<string>>(new Set());
 
   async function fetchPosts(from = 0, append = false, isRefresh = false) {
     if (isRefresh) setRefreshing(true);
@@ -265,23 +267,29 @@ export default function ExploreScreen() {
 
   async function handleLike(post: Post) {
     if (!user || post.id.startsWith('mock-')) return;
-    const liked = post.post_likes?.some((l) => l.user_id === user.id);
-    if (liked) {
-      await supabase.from('post_likes').delete().eq('post_id', post.id).eq('user_id', user.id);
-    } else {
-      await supabase.from('post_likes').insert({ post_id: post.id, user_id: user.id });
+    if (likeInFlightRef.current.has(post.id)) return;
+    likeInFlightRef.current.add(post.id);
+    try {
+      const liked = post.post_likes?.some((l) => l.user_id === user.id);
+      if (liked) {
+        await supabase.from('post_likes').delete().eq('post_id', post.id).eq('user_id', user.id);
+      } else {
+        await supabase.from('post_likes').insert({ post_id: post.id, user_id: user.id });
+      }
+      setRealPosts((prev) => prev.map((p) => {
+        if (p.id !== post.id) return p;
+        const wasLiked = p.post_likes?.some((l) => l.user_id === user.id);
+        return {
+          ...p,
+          likes_count: wasLiked ? Math.max(0, p.likes_count - 1) : p.likes_count + 1,
+          post_likes: wasLiked
+            ? (p.post_likes ?? []).filter((l) => l.user_id !== user.id)
+            : [...(p.post_likes ?? []), { user_id: user.id }],
+        };
+      }));
+    } finally {
+      likeInFlightRef.current.delete(post.id);
     }
-    setRealPosts((prev) => prev.map((p) => {
-      if (p.id !== post.id) return p;
-      const wasLiked = p.post_likes?.some((l) => l.user_id === user.id);
-      return {
-        ...p,
-        likes_count: wasLiked ? p.likes_count - 1 : p.likes_count + 1,
-        post_likes: wasLiked
-          ? (p.post_likes ?? []).filter((l) => l.user_id !== user.id)
-          : [...(p.post_likes ?? []), { user_id: user.id }],
-      };
-    }));
   }
 
   async function handleSave(post: Post) {
@@ -389,8 +397,8 @@ export default function ExploreScreen() {
             <Text style={{ fontSize: 14, color: colors.nomad.onSurfaceVariant }}>{t('exploreNoPostsTitle')}</Text>
             <Text style={{ fontSize: 12, color: colors.nomad.outlineVariant }}>{t('exploreNoPostsSub')}</Text>
           </View>
-        ) : null}
-        ListFooterComponent={loadingMore ? <ActivityIndicator style={{ padding: 16 }} color={colors.nomad.primary} /> : null}
+        ) : undefined}
+        ListFooterComponent={loadingMore ? <ActivityIndicator style={{ padding: 16 }} color={colors.nomad.primary} /> : undefined}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

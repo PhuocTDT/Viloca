@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { colors } from '@/src/theme/colors';
@@ -33,7 +34,7 @@ export function PlaceGridCard({ location, distanceLabel, width, imageRatio = 0.7
         onPress={() => router.push(`/location/${location.id}`)}
       >
         {firstPhoto ? (
-          <Image source={{ uri: firstPhoto }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          <Image source={{ uri: firstPhoto }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
         ) : (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.nomad.surfaceContainer }]} />
         )}
@@ -72,7 +73,7 @@ export function PlaceGridCard({ location, distanceLabel, width, imageRatio = 0.7
       {/* Image */}
       <View style={[styles.imageWrap, { height: imageHeight }]}>
         {firstPhoto ? (
-          <Image source={{ uri: firstPhoto }} style={styles.image} resizeMode="cover" />
+          <Image source={{ uri: firstPhoto }} style={styles.image} contentFit="cover" transition={150} />
         ) : (
           <View style={[styles.imageFallback, { height: imageHeight }]} />
         )}

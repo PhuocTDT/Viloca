@@ -47,6 +47,7 @@ export interface Experience {
 
 export interface Profile {
   id: string;
+  username: string | null;
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -54,6 +55,40 @@ export interface Profile {
   plan: 'free' | 'pro';
   ai_credits_remaining: number;
   created_at: string;
+}
+
+/** Tập con của Profile dùng cho danh sách/kết quả tìm kiếm (không cần fetch nguyên row). */
+export type ProfileSummary = Pick<Profile, 'id' | 'username' | 'full_name' | 'avatar_url'>;
+
+/** ProfileSummary + bio + số người theo dõi/đang theo dõi — dùng cho ProfileCard ở màn tìm bạn. */
+export type ProfileSearchResult = Pick<Profile, 'id' | 'username' | 'full_name' | 'avatar_url' | 'bio'> & {
+  followersCount: number;
+  followingCount: number;
+};
+
+export interface CheckinMilestone {
+  day_threshold: number;
+  reward_credits: number;
+  grants_shield: boolean;
+}
+
+export interface CheckinState {
+  current_streak: number;
+  last_checkin_date: string | null;
+  streak_shields: number;
+}
+
+export interface CheckinResult {
+  streak: number;
+  credits_granted: number;
+  shield_used: boolean;
+  milestone_hit: number | null;
+  shields_remaining: number;
+}
+
+export interface LeaderboardEntry extends ProfileSummary {
+  rank: number;
+  value: number;
 }
 
 export interface Trip {
@@ -208,4 +243,33 @@ export interface PostComment {
   content: string;
   created_at: string;
   profiles?: { full_name: string | null; avatar_url: string | null } | null;
+}
+
+export interface Mission {
+  id: string;
+  code: string;
+  title: string;
+  title_en: string | null;
+  description: string | null;
+  description_en: string | null;
+  icon: string | null;
+  verification_mode: 'server_count' | 'client_report';
+  metric: string;
+  target_count: number;
+  reward_credits: number;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface UserMissionProgress {
+  mission_id: string;
+  progress_count: number;
+  completed_at: string | null;
+  claimed_at: string | null;
+}
+
+export interface MissionWithProgress extends Mission {
+  progressCount: number;
+  completedAt: string | null;
+  claimedAt: string | null;
 }

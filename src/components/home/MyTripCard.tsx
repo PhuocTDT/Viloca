@@ -49,7 +49,7 @@ export function MyTripCard() {
     >
       <View style={styles.head}>
         <View style={styles.iconWrap}>
-          <Ionicons name={isActive ? 'walk-outline' : 'calendar-outline'} size={18} color={N.primary} />
+          <Ionicons name={isActive ? 'walk-outline' : 'calendar-outline'} size={14} color={N.primary} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{title}</Text>
@@ -83,22 +83,22 @@ export function MyTripCard() {
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16, marginBottom: 16, padding: 14,
-    backgroundColor: '#fff', borderRadius: 20,
+    marginHorizontal: 16, marginBottom: 12, padding: 10,
+    backgroundColor: '#fff', borderRadius: 16,
     borderWidth: 1, borderColor: N.outlineVariant,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconWrap: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: '#E3F0D6',
+    width: 28, height: 28, borderRadius: 14, backgroundColor: '#E3F0D6',
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 15, fontWeight: '700', color: N.onSurface },
-  sub: { fontSize: 13, color: N.onSurfaceVariant, marginTop: 2 },
-  list: { marginTop: 12, gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: N.surfaceContainer },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  slot: { width: 56, fontSize: 12, fontWeight: '600', color: N.primary },
-  itemTitle: { flex: 1, fontSize: 14, color: N.onSurface },
-  empty: { fontSize: 13, color: N.onSurfaceVariant },
-  more: { fontSize: 12, color: N.outline },
+  title: { fontSize: 13, fontWeight: '700', color: N.onSurface },
+  sub: { fontSize: 11, color: N.onSurfaceVariant, marginTop: 1 },
+  list: { marginTop: 8, gap: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: N.surfaceContainer },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  slot: { width: 48, fontSize: 11, fontWeight: '600', color: N.primary },
+  itemTitle: { flex: 1, fontSize: 12, color: N.onSurface },
+  empty: { fontSize: 11, color: N.onSurfaceVariant },
+  more: { fontSize: 11, color: N.outline },
 });

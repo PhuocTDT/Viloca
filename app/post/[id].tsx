@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Share,
+  Image, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import supabase from '@/src/lib/supabase';
+import { shareAndReportMission } from '@/src/lib/share-mission';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius, shadow } from '@/src/theme/spacing';
@@ -30,6 +31,7 @@ export default function PostDetailScreen() {
   const [loading, setLoading]   = useState(true);
   const [newComment, setNewComment] = useState('');
   const [sending, setSending]   = useState(false);
+  const likeInFlightRef         = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -60,19 +62,24 @@ export default function PostDetailScreen() {
   const liked = post?.post_likes?.some((l) => l.user_id === user?.id) ?? false;
 
   async function handleLike() {
-    if (!post || !user) return;
-    if (liked) {
-      await supabase.from('post_likes').delete().eq('post_id', post.id).eq('user_id', user.id);
-      setPost({ ...post, likes_count: post.likes_count - 1, post_likes: (post.post_likes ?? []).filter((l) => l.user_id !== user.id) });
-    } else {
-      await supabase.from('post_likes').insert({ post_id: post.id, user_id: user.id });
-      setPost({ ...post, likes_count: post.likes_count + 1, post_likes: [...(post.post_likes ?? []), { user_id: user.id }] });
+    if (!post || !user || likeInFlightRef.current) return;
+    likeInFlightRef.current = true;
+    try {
+      if (liked) {
+        await supabase.from('post_likes').delete().eq('post_id', post.id).eq('user_id', user.id);
+        setPost((prev) => prev && { ...prev, likes_count: Math.max(0, prev.likes_count - 1), post_likes: (prev.post_likes ?? []).filter((l) => l.user_id !== user.id) });
+      } else {
+        await supabase.from('post_likes').insert({ post_id: post.id, user_id: user.id });
+        setPost((prev) => prev && { ...prev, likes_count: prev.likes_count + 1, post_likes: [...(prev.post_likes ?? []), { user_id: user.id }] });
+      }
+    } finally {
+      likeInFlightRef.current = false;
     }
   }
 
   async function handleShare() {
     if (!post) return;
-    await Share.share({ message: `${t('postShareMsgPfx')}viloca://post/${post.id}` });
+    await shareAndReportMission({ message: `${t('postShareMsgPfx')}viloca://post/${post.id}` });
   }
 
   async function sendComment() {

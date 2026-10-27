@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { colors } from '@/src/theme/colors';
 import { useLocalize } from '@/src/lib/location-i18n';
@@ -29,7 +30,7 @@ export function JustForYouCard({ location, width }: Props) {
     >
       <View style={[styles.imageWrap, { width, height: width }]}>
         {firstPhoto ? (
-          <Image source={{ uri: firstPhoto }} style={styles.image} resizeMode="cover" />
+          <Image source={{ uri: firstPhoto }} style={styles.image} contentFit="cover" transition={150} />
         ) : (
           <View style={styles.imageFallback} />
         )}
@@ -47,6 +48,6 @@ const styles = StyleSheet.create({
   imageWrap:     { borderRadius: 14, overflow: 'hidden', backgroundColor: N.surfaceContainer },
   image:         { width: '100%', height: '100%' },
   imageFallback: { flex: 1, backgroundColor: N.secondaryContainer, opacity: 0.5 },
-  name:          { fontSize: 12.5, fontWeight: '700', color: N.onSurface, lineHeight: 15 },
+  name:          { fontSize: 12.5, fontWeight: '700', color: N.onSurface, lineHeight: 15, minHeight: 30 },
   tags:          { fontSize: 10.5, fontWeight: '600', color: N.primary },
 });

@@ -150,7 +150,7 @@ export default function RegisterScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scroll,
-            { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+            { paddingTop: insets.top + 6, paddingBottom: insets.bottom + 12 },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -345,24 +345,24 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: 20 },
 
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 34, height: 34, borderRadius: 17,
     backgroundColor: c.surfaceContainer,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 8,
   },
 
-  header: { alignItems: 'center', marginBottom: 32 },
-  logoWrap: { position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  header: { alignItems: 'center', marginTop: 10, marginBottom: 12 },
+  logoWrap: { position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   logoGlow: {
-    position: 'absolute', width: 100, height: 100, borderRadius: 50,
-    backgroundColor: c.primary, opacity: 0.1, transform: [{ scale: 1.3 }],
+    position: 'absolute', width: 72, height: 72, borderRadius: 36,
+    backgroundColor: c.primary, opacity: 0.1, transform: [{ scale: 1.25 }],
   },
-  logo: { width: 80, height: 80 },
-  headlineWrap: { alignItems: 'center', gap: 6 },
-  headline: { fontSize: 26, fontWeight: '700', color: c.primary, letterSpacing: -0.5, textAlign: 'center' },
-  subheadline: { fontSize: 14, color: c.onSurfaceVariant, textAlign: 'center', maxWidth: 260, lineHeight: 20 },
+  logo: { width: 48, height: 48 },
+  headlineWrap: { alignItems: 'center', gap: 3 },
+  headline: { fontSize: 20, fontWeight: '700', color: c.primary, letterSpacing: -0.5, textAlign: 'center' },
+  subheadline: { fontSize: 11, color: c.onSurfaceVariant, textAlign: 'center', maxWidth: 260, lineHeight: 14 },
 
-  form: { gap: 14 },
+  form: { gap: 8 },
 
   errorBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -371,8 +371,8 @@ const styles = StyleSheet.create({
   },
   errorText: { flex: 1, fontSize: 14, color: c.primary },
 
-  fieldWrap: { gap: 6 },
-  fieldLabel: { fontSize: 11, fontWeight: '600', color: c.onSurfaceVariant, letterSpacing: 0.8, marginLeft: 4 },
+  fieldWrap: { gap: 3 },
+  fieldLabel: { fontSize: 10, fontWeight: '600', color: c.onSurfaceVariant, letterSpacing: 0.8, marginLeft: 4 },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: c.surfaceContainerLow,
@@ -380,30 +380,30 @@ const styles = StyleSheet.create({
   },
   inputRowError: { borderColor: colors.error },
   inputIcon: { marginLeft: 16, marginRight: 4 },
-  input: { flex: 1, fontSize: 16, color: c.onSurface, paddingHorizontal: 12, paddingVertical: 16 },
-  eyeBtn: { paddingHorizontal: 16, paddingVertical: 16 },
-  fieldError: { fontSize: 12, color: colors.error, marginLeft: 4 },
+  input: { flex: 1, fontSize: 15, color: c.onSurface, paddingHorizontal: 12, paddingVertical: 10 },
+  eyeBtn: { paddingHorizontal: 16, paddingVertical: 10 },
+  fieldError: { fontSize: 11, color: colors.error, marginLeft: 4 },
 
-  strengthWrap: { marginTop: 10, gap: 6 },
+  strengthWrap: { marginTop: 5, gap: 3 },
   strengthBars: { flexDirection: 'row', gap: 4 },
-  strengthBar: { flex: 1, height: 4, borderRadius: 2 },
-  strengthLabel: { fontSize: 12, fontWeight: '600' },
-  conditionList: { gap: 4, marginTop: 2 },
-  conditionRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  conditionText: { fontSize: 12 },
+  strengthBar: { flex: 1, height: 3, borderRadius: 2 },
+  strengthLabel: { fontSize: 10, fontWeight: '600' },
+  conditionList: { gap: 2, marginTop: 1 },
+  conditionRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  conditionText: { fontSize: 10 },
 
   primaryBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: c.primary, borderRadius: 12, paddingVertical: 16, marginTop: 8,
+    backgroundColor: c.primary, borderRadius: 12, paddingVertical: 11, marginTop: 4,
     shadowColor: c.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4,
   },
   primaryBtnDisabled: { opacity: 0.5, shadowOpacity: 0 },
-  primaryBtnText: { fontSize: 16, fontWeight: '700', color: c.onPrimary },
+  primaryBtnText: { fontSize: 15, fontWeight: '700', color: c.onPrimary },
 
-  footer: { alignItems: 'center', marginTop: 32 },
+  footer: { alignItems: 'center', marginTop: 10 },
   loginRow: { flexDirection: 'row', alignItems: 'center' },
-  loginText: { fontSize: 15, color: c.onSurface },
-  loginLink: { fontSize: 15, fontWeight: '700', color: c.onSurface, borderBottomWidth: 2, borderBottomColor: c.outlineVariant },
+  loginText: { fontSize: 12, color: c.onSurface },
+  loginLink: { fontSize: 12, fontWeight: '700', color: c.onSurface, borderBottomWidth: 1.5, borderBottomColor: c.outlineVariant },
 
   langToggleWrap: { position: 'absolute', right: 20, zIndex: 10 },
 });

@@ -1,3 +1,15 @@
+-- Đảm bảo các cột free-tier tồn tại trước khi tạo view bên dưới — lịch sử
+-- migration cũ có vài chỗ drop rồi re-add không khớp thứ tự khi build lại
+-- từ đầu (local). Trên DB đã có sẵn các cột này (prod) đây là no-op an toàn.
+ALTER TABLE public.locations
+  ADD COLUMN IF NOT EXISTS hint              TEXT,
+  ADD COLUMN IF NOT EXISTS cover_image       TEXT,
+  ADD COLUMN IF NOT EXISTS images            TEXT[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS vibes             TEXT[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS price_per_person  INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS duration_minutes  INTEGER NOT NULL DEFAULT 120,
+  ADD COLUMN IF NOT EXISTS rating            NUMERIC(2,1) DEFAULT NULL;
+
 -- Replace open read policy with plan-aware policies for freemium enforcement
 DROP POLICY IF EXISTS "authenticated_read_locations" ON locations;
 

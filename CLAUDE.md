@@ -26,6 +26,20 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 
 Only public values belong in `EXPO_PUBLIC_*` variables (they ship inside the app). Never put the service-role key or AWS keys there; Edge Functions read their own secrets from Supabase.
 
+### Local Supabase (dev DB, separate from prod)
+
+`.env.local` points at a **local Supabase stack** (Docker, via `npx supabase start`) by default — completely isolated from production, so migrations/seed data/testing never touch real user data. Prod credentials are backed up in `.env.production.local` (gitignored, only auto-loaded by Expo for production builds).
+
+```bash
+npx supabase start   # boots local stack (Docker must be running); prints local URL/anon key
+npx supabase db reset # re-applies all migrations + supabase/seed.sql from scratch
+npx supabase stop     # shuts the local stack down
+```
+
+Local Studio UI: http://127.0.0.1:54323. Local test accounts and their seed configuration are kept outside Git. On a physical device via Expo Go, `127.0.0.1` in `.env.local` won't reach the host machine — swap it for the machine's LAN IP.
+
+To point the app at production temporarily, copy `.env.production.local`'s values into `.env.local` (or swap the files) and restart the dev server.
+
 ## Architecture
 
 **Stack:** Expo (SDK 56) + React Native 0.85 + TypeScript (strict) + expo-router (file-based routing) + Supabase (auth/DB/Edge Functions) + Zustand (client state). Styling is almost entirely `StyleSheet`; NativeWind is configured but only one file uses `className`.
