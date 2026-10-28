@@ -29,9 +29,13 @@ export default function LoginScreen() {
     setError('');
     if (!email || !password) { setError(t('fillAll')); return; }
     setLoading(true);
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     setLoading(false);
-    if (authError) { console.log('LOGIN ERROR:', authError.status, authError.message); setError(t('loginError')); return; }
+    if (authError) {
+      console.log('LOGIN ERROR:', authError.status, authError.message);
+      setError(t(authError.status === 0 || authError.name === 'AuthRetryableFetchError' ? 'loginNetworkError' : 'loginError'));
+      return;
+    }
     setUser(data.user);
     router.replace('/(app)');
   }

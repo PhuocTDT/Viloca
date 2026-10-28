@@ -176,7 +176,7 @@ export function FilterSheet({ visible, initialTab = 'category', onClose, filters
         <ScrollView
           horizontal showsHorizontalScrollIndicator={false}
           style={styles.tabScroll}
-          contentContainerStyle={{ paddingHorizontal: 20, gap: 8, alignItems: 'center' }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingRight: 32, gap: 8, alignItems: 'center' }}
         >
           {FILTER_TABS.map((tab) => (
             <TouchableOpacity

@@ -13,12 +13,30 @@ function cacheKey(tripId: string) {
 }
 
 /** Lưu lại dữ liệu trip (trip + items + journals) sau mỗi lần fetch thành công, để xem offline. */
-export async function saveTripCache(tripId: string, payload: CachedTripPayload): Promise<void> {
+export async function saveTripCache(tripId: string, payload: CachedTripPayload, requireSuccess = false): Promise<void> {
   try {
     await AsyncStorage.setItem(cacheKey(tripId), JSON.stringify(payload));
-  } catch {
+  } catch (error) {
+    if (requireSuccess) throw error;
     // Lưu cache thất bại không nên chặn luồng chính — bỏ qua.
   }
+}
+
+/** Discover saved trips without depending on a successful network request. */
+export async function loadCachedTrips(userId: string): Promise<Trip[]> {
+  const keys = (await AsyncStorage.getAllKeys()).filter(key => key.startsWith('viloca:trip:'));
+  if (!keys.length) return [];
+  const entries = await AsyncStorage.multiGet(keys);
+  return entries.flatMap(([, raw]) => {
+    try {
+      const value = raw ? JSON.parse(raw) as CachedTripPayload : null;
+      return value?.trip?.user_id === userId ? [value.trip] : [];
+    } catch { return []; }
+  });
+}
+
+export async function removeTripCache(tripId: string): Promise<void> {
+  await AsyncStorage.removeItem(cacheKey(tripId));
 }
 
 /** Đọc lại dữ liệu trip đã cache, dùng khi mất mạng hoặc fetch lỗi. */

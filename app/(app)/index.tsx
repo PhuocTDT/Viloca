@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator, Image, Dimensions,
+  TouchableOpacity, ActivityIndicator, Image, Dimensions, useWindowDimensions,
   type ImageSourcePropType, type ScrollViewInstance,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -20,6 +20,7 @@ import { VN_CITY_CENTERS } from '@/src/lib/vn-cities';
 import { setPendingSearchFilters } from '@/store/searchFilters';
 import { HomeSectionHeader } from '@/src/components/home/HomeSectionHeader';
 import { JustForYouCard } from '@/src/components/home/JustForYouCard';
+import LocalExperienceCard from '@/src/components/home/LocalExperienceCard';
 import { NearbyListItem } from '@/src/components/home/NearbyListItem';
 import { useFeaturedLocation } from '@/src/hooks/useFeaturedLocation';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
@@ -31,9 +32,9 @@ import { InfoAlertModal } from '@/src/components/ui/InfoAlertModal';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
 import type { Location } from '@/src/types';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const CAROUSEL_W = SCREEN_W - 96;
-const JFY_CARD_W = Math.round(SCREEN_W * 0.32); // "Just for you" row: ~3 cards + peek of a 4th
+const SEN_GRID_PAGE_SIZE = 8;
+const SEN_GRID_ROW_SIZE = 4;
+const SEN_GRID_H = 192;
 
 /** Khoảng cách đường chim bay (m) — chỉ để SẮP XẾP "Gần bạn", không hiển thị.
  *  Nhãn hiển thị vẫn lấy từ usePlaceDistances (qua Google Routes). */
@@ -68,9 +69,9 @@ interface SenGridItemDef {
   onPress: () => void;
 }
 
-function SenGridButton({ item, label }: { item: SenGridItemDef; label: string }) {
+function SenGridButton({ item, label, width }: { item: SenGridItemDef; label: string; width: number }) {
   return (
-    <TouchableOpacity style={styles.senGridItem} activeOpacity={0.75} onPress={item.onPress}>
+    <TouchableOpacity style={[styles.senGridItem, { width }]} activeOpacity={0.75} onPress={item.onPress}>
       <Image source={item.icon} style={styles.senGridIcon} resizeMode="contain" />
       <Text style={styles.senGridLabel} numberOfLines={2}>{label}</Text>
     </TouchableOpacity>
@@ -78,11 +79,11 @@ function SenGridButton({ item, label }: { item: SenGridItemDef; label: string })
 }
 
 // ─── Festival carousel card ──────────────────────────────────────────────────
-function FestivalCarouselCard({ festival }: { festival: FestivalWithStatus }) {
+function FestivalCarouselCard({ festival, cardWidth }: { festival: FestivalWithStatus; cardWidth: number }) {
   const t = useT();
   return (
     <TouchableOpacity activeOpacity={0.9}>
-      <View style={[styles.festivalCard, { width: CAROUSEL_W }]}>
+      <View style={[styles.festivalCard, { width: cardWidth }]}>
         {festival.cover_image ? (
           <ExpoImage
             source={{ uri: festival.cover_image }}
@@ -121,6 +122,12 @@ export default function HomeScreen() {
   const t = useT();
   const firstName = user?.user_metadata?.full_name?.split(' ').pop() ?? t('homeFallbackName');
   const mascot = useMascot();
+
+  const { width: windowWidth } = useWindowDimensions();
+  const screenW = windowWidth > 0 ? windowWidth : Dimensions.get('window').width;
+  const carouselW = Math.max(screenW - 96, 220);
+  const jfyCardW = Math.max(Math.round(screenW * 0.32), 100);
+  const gridColW = Math.floor((screenW - 24) / 4);
 
   const [sheetVisible, setSheetVisible]     = useState(false);
   const [sheetTab, setSheetTab]             = useState<FilterTab>('category');
@@ -164,9 +171,10 @@ export default function HomeScreen() {
 
   const senGridItems: SenGridItemDef[] = [
     { labelKey: 'gridNearby',     icon: require('@/assets/sen-grid/nearby.png'),    onPress: () => scrollToY(nearbyY) },
-    { labelKey: 'gridMissions',   icon: require('@/assets/sen-grid/missions.png'),  onPress: () => router.push('/(app)/profile/missions') },
-    { labelKey: 'gridDailyCheckin', icon: require('@/assets/sen-grid/daily-checkin.png'), onPress: () => router.push('/(app)/profile/checkin') },
-    { labelKey: 'gridLeaderboard',  icon: require('@/assets/sen-grid/leaderboard.png'),   onPress: () => router.push('/(app)/profile/leaderboard') },
+    { labelKey: 'gridLocalExperience', icon: require('@/assets/mascot/sen-exploring.png'), onPress: () => router.push('/local') },
+    { labelKey: 'gridMissions',   icon: require('@/assets/sen-grid/missions.png'),  onPress: () => router.push('/missions') },
+    { labelKey: 'gridDailyCheckin', icon: require('@/assets/sen-grid/daily-checkin.png'), onPress: () => router.push('/checkin') },
+    { labelKey: 'gridLeaderboard',  icon: require('@/assets/sen-grid/leaderboard.png'),   onPress: () => router.push('/leaderboard') },
     { labelKey: 'gridFood',       icon: require('@/assets/sen-grid/food.png'),      onPress: () => router.push({ pathname: '/search', params: { category: 'Ẩm thực', near: '1' } }) },
     { labelKey: 'gridFestival',   icon: require('@/assets/sen-grid/festivals.png'), onPress: () => scrollToY(festivalY) },
     { labelKey: 'gridStay',       icon: require('@/assets/sen-grid/stays.png'),     onPress: () => router.push({ pathname: '/search', params: { category: 'Lưu trú', near: '1' } }) },
@@ -175,7 +183,6 @@ export default function HomeScreen() {
     { labelKey: 'gridFriends',    icon: require('@/assets/sen-grid/friends.png'),   onPress: () => router.push('/(app)/profile/friends') },
   ];
   // Chỉ hiện 2 dòng (4 cột x 2) mỗi lần — phần còn lại xem bằng cách vuốt ngang sang trang kế.
-  const SEN_GRID_PAGE_SIZE = 8;
   const senGridPages: SenGridItemDef[][] = [];
   for (let i = 0; i < senGridItems.length; i += SEN_GRID_PAGE_SIZE) {
     senGridPages.push(senGridItems.slice(i, i + SEN_GRID_PAGE_SIZE));
@@ -215,11 +222,11 @@ export default function HomeScreen() {
     if (nearFestivals.length <= 1) return;
     const interval = setInterval(() => {
       const next = (festivalIndex + 1) % nearFestivals.length;
-      festivalRef.current?.scrollTo({ x: next * (CAROUSEL_W + 14), animated: true });
+      festivalRef.current?.scrollTo({ x: next * (carouselW + 14), animated: true });
       setFestivalIndex(next);
     }, 3500);
     return () => clearInterval(interval);
-  }, [festivalIndex, nearFestivals.length]);
+  }, [festivalIndex, nearFestivals.length, carouselW]);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -265,7 +272,7 @@ export default function HomeScreen() {
           <View style={styles.heroCardBody}>
             <View style={styles.heroCardLeft}>
               <Text style={styles.greetingName}>
-                {t('homeGreeting')} {firstName},{' '}
+                {t('homeGreeting')} {firstName},{'\n'}
                 <Text style={styles.greetingTagline}>{t('homeTodayQ')}</Text>
               </Text>
               <View style={styles.senBubble}>
@@ -297,19 +304,33 @@ export default function HomeScreen() {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
-          style={senGridPages.length <= 1 ? { marginBottom: 28 } : undefined}
+          style={[{ height: SEN_GRID_H }, senGridPages.length <= 1 ? { marginBottom: 28 } : undefined]}
+          contentContainerStyle={{ height: SEN_GRID_H }}
           onMomentumScrollEnd={(e) => {
-            const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+            const idx = Math.round(e.nativeEvent.contentOffset.x / screenW);
             setSenGridPage(Math.max(0, Math.min(idx, senGridPages.length - 1)));
           }}
         >
-          {senGridPages.map((page, pageIdx) => (
-            <View key={pageIdx} style={[styles.senGridPage, { width: SCREEN_W }]}>
-              {page.map((item) => (
-                <SenGridButton key={item.labelKey} item={item} label={t(item.labelKey)} />
-              ))}
-            </View>
-          ))}
+          {senGridPages.map((page, pageIdx) => {
+            const row1 = page.slice(0, SEN_GRID_ROW_SIZE);
+            const row2 = page.slice(SEN_GRID_ROW_SIZE, SEN_GRID_PAGE_SIZE);
+            return (
+              <View key={pageIdx} style={[styles.senGridPage, { width: screenW }]}>
+                <View style={styles.senGridRow}>
+                  {row1.map((item) => (
+                    <SenGridButton key={item.labelKey} item={item} label={t(item.labelKey)} width={gridColW} />
+                  ))}
+                </View>
+                {row2.length > 0 && (
+                  <View style={styles.senGridRow}>
+                    {row2.map((item) => (
+                      <SenGridButton key={item.labelKey} item={item} label={t(item.labelKey)} width={gridColW} />
+                    ))}
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </ScrollView>
         {senGridPages.length > 1 && (
           <View style={styles.senGridDotsWrap}>
@@ -318,6 +339,12 @@ export default function HomeScreen() {
             ))}
           </View>
         )}
+
+        {/* ── Banner Trải nghiệm Bản địa (Shortcut vào màn hình Du lịch địa phương) ── */}
+        <LocalExperienceCard
+          onPress={() => router.push('/local')}
+          mascotSource={require('@/assets/mascot/sen-exploring.png')}
+        />
 
         {/* ── Just for you ── */}
         <HomeSectionHeader
@@ -336,7 +363,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.justForYouRow}
           >
             {justForYouLocations.map((loc) => (
-              <JustForYouCard key={loc.id} location={loc} width={JFY_CARD_W} />
+              <JustForYouCard key={loc.id} location={loc} width={jfyCardW} />
             ))}
           </ScrollView>
         )}
@@ -375,16 +402,18 @@ export default function HomeScreen() {
                 ref={festivalRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                snapToInterval={CAROUSEL_W + 14}
+                snapToInterval={carouselW + 14}
                 decelerationRate="fast"
                 contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
                 scrollEventThrottle={16}
                 onMomentumScrollEnd={(e) => {
-                  const idx = Math.round(e.nativeEvent.contentOffset.x / (CAROUSEL_W + 14));
+                  const idx = Math.round(e.nativeEvent.contentOffset.x / (carouselW + 14));
                   setFestivalIndex(Math.max(0, Math.min(idx, nearFestivals.length - 1)));
                 }}
               >
-                {nearFestivals.map((f) => <FestivalCarouselCard key={f.id} festival={f} />)}
+                {nearFestivals.map((f) => (
+                  <FestivalCarouselCard key={f.id} festival={f} cardWidth={carouselW} />
+                ))}
               </ScrollView>
               {nearFestivals.length > 1 && (
                 <View style={styles.dotsWrap}>
@@ -472,13 +501,16 @@ const styles = StyleSheet.create({
   locationHint: { fontSize: 12, color: colors.nomad.onSurfaceVariant, textAlign: 'center', marginHorizontal: 16, marginBottom: 12 },
 
   // "Sen đề xuất" grid
-  senGridPage:  { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 },
-  senGridItem:  { width: '25%', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 4 },
-  senGridIcon:  { width: 52, height: 52 },
-  senGridLabel: { fontSize: 11.5, fontWeight: '700', color: colors.nomad.onSurface, textAlign: 'center', lineHeight: 14 },
-  senGridDotsWrap: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 4, marginBottom: 28 },
+  senGridPage:     { height: SEN_GRID_H, justifyContent: 'flex-start', paddingHorizontal: 8 },
+  senGridRow:      { flexDirection: 'row', alignItems: 'flex-start', width: '100%', marginBottom: 6 },
+  senGridItem:     { alignItems: 'center', justifyContent: 'flex-start', gap: 4, paddingVertical: 2, paddingHorizontal: 2 },
+  senGridIcon:     { width: 48, height: 48 },
+  senGridLabel:    { fontSize: 11, fontWeight: '700', color: colors.nomad.onSurface, textAlign: 'center', lineHeight: 14 },
+  senGridDotsWrap: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 4, marginBottom: 14 },
   senGridDot:       { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.nomad.outlineVariant },
   senGridDotActive: { width: 16, height: 6, borderRadius: 3, backgroundColor: colors.nomad.primary },
+
+
 
   // Festival carousel
   festivalCard: {

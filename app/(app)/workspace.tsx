@@ -15,6 +15,8 @@ import supabase from '@/src/lib/supabase';
 import { getCoverForDestination } from '@/src/lib/destination-covers';
 import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Trip } from '@/src/types';
+import { loadCachedTrips, removeTripCache } from '@/src/lib/trip-cache';
+import NetInfo from '@react-native-community/netinfo';
 
 const STATUS_TKEY: Record<string, StringKey> = {
   planning:  'tripStatusPlanning',
@@ -44,11 +46,23 @@ export default function WorkspaceScreen() {
   const t = useT();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fromCache, setFromCache] = useState(false);
 
   useEffect(() => { fetchTrips(); }, [user]);
 
   async function fetchTrips() {
     setLoading(true);
+    if (user?.id) {
+      const saved = await loadCachedTrips(user.id).catch(() => []);
+      setTrips(saved);
+      setFromCache(saved.length > 0);
+      if (saved.length) setLoading(false);
+    }
+    const network = await NetInfo.fetch();
+    if (network.isConnected === false || network.isInternetReachable === false) {
+      setLoading(false);
+      return;
+    }
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
     const { data, error } = await supabase
@@ -56,7 +70,7 @@ export default function WorkspaceScreen() {
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
-    if (!error) setTrips(data ?? []);
+    if (!error) { setTrips(data ?? []); setFromCache(false); }
     setLoading(false);
   }
 
@@ -71,7 +85,10 @@ export default function WorkspaceScreen() {
           style: 'destructive',
           onPress: async () => {
             const { error } = await supabase.from('trips').delete().eq('id', trip.id);
-            if (!error) setTrips((prev) => prev.filter((item) => item.id !== trip.id));
+            if (!error) {
+              await removeTripCache(trip.id);
+              setTrips((prev) => prev.filter((item) => item.id !== trip.id));
+            }
           },
         },
       ],
@@ -99,6 +116,7 @@ export default function WorkspaceScreen() {
         </TouchableOpacity>
       </View>
 
+      {fromCache && <Text style={{ paddingHorizontal: spacing.lg, color: N.onSurfaceVariant, fontSize: 12 }}>{t('offlineTripsSaved')}</Text>}
       {trips.length === 0 ? (
         <EmptyState
           icon="map-outline"

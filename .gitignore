@@ -23,6 +23,14 @@ supabase/.temp/
 
 # Credentials / sensitive data
 *.csv
+*.xlsx
+*.rar
+.tmp/
+danang_jpg/
+danang_thumbs/
+jpg/
+jpg_thumbs/
+tphcm_jpg/
 assets/viloca_credentials.csv
 Locations_data/
 Screenshot/

@@ -14,7 +14,7 @@ import { useT, type StringKey } from '@/src/lib/i18n';
 const MENU_ITEMS: { icon: string; tKey: StringKey; route: string | null }[] = [
   { icon: 'grid-outline',          tKey: 'menuPosts',         route: '/(app)/profile/posts' },
   { icon: 'map-outline',           tKey: 'menuTrips',         route: '/(app)/profile/trips' },
-  { icon: 'trophy-outline',        tKey: 'menuMissions',      route: '/(app)/profile/missions' },
+  { icon: 'trophy-outline',        tKey: 'menuMissions',      route: '/missions' },
   { icon: 'heart-outline',         tKey: 'menuFavorites',     route: null },
   { icon: 'star-outline',          tKey: 'menuReviews',       route: null },
   { icon: 'notifications-outline', tKey: 'menuNotifications', route: null },

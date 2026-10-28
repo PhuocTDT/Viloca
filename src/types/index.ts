@@ -86,6 +86,13 @@ export interface CheckinResult {
   shields_remaining: number;
 }
 
+export interface CheckinLog {
+  id: string;
+  user_id: string;
+  checkin_date: string;
+  created_at?: string;
+}
+
 export interface LeaderboardEntry extends ProfileSummary {
   rank: number;
   value: number;
@@ -104,6 +111,7 @@ export interface Trip {
   place_id: string | null;
   is_ai_generated: boolean;
   created_at: string;
+  itinerary_revision?: number;
 }
 
 export interface TripItem {
@@ -121,6 +129,7 @@ export interface TripItem {
   note: string | null;
   ai_reason: string | null;
   sort_order: number;
+  weather_duration_minutes?: number | null;
   // joined via select('*, locations(...)')
   locations?: {
     name: string;
@@ -139,6 +148,11 @@ export interface TripItem {
     rating: number | null;
     opening_hours: string | null;
     coordinates: { lat: number; lng: number } | null;
+    travel_region?: 'hue' | 'hoi_an' | 'mekong_delta' | 'ha_giang' | null;
+    shelter_type?: 'indoor' | 'outdoor' | 'mixed' | 'unknown';
+    shelter_verified_at?: string | null;
+    weather_exposure?: 'ordinary' | 'water' | 'cycling' | 'mountain_road';
+    structured_opening_hours?: Record<string, unknown> | null;
   } | null;
 }
 
@@ -180,6 +194,11 @@ export interface Location {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  travel_region?: 'hue' | 'hoi_an' | 'mekong_delta' | 'ha_giang' | null;
+  shelter_type?: 'indoor' | 'outdoor' | 'mixed' | 'unknown';
+  shelter_verified_at?: string | null;
+  weather_exposure?: 'ordinary' | 'water' | 'cycling' | 'mountain_road';
+  structured_opening_hours?: Record<string, unknown> | null;
 }
 
 export interface Category {

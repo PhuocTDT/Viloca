@@ -4,8 +4,6 @@ import {
   ScrollView, TextInput, ActivityIndicator, Image, ImageBackground, Modal, Animated, Alert, Linking,
   SafeAreaView, type ScrollViewInstance,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { Image as ExpoImage } from 'expo-image';
 import NetInfo from '@react-native-community/netinfo';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,173 +20,15 @@ import { suggestTime, tripDayCount, dayLabel, formatDate, buildGoogleMapsUrl } f
 import type { Trip, TripItem, TripJournal, TimeSlot, TripStatus } from '@/src/types';
 import { useT, type StringKey } from '@/src/lib/i18n';
 import { useLocalize } from '@/src/lib/location-i18n';
-import { WeatherChip } from '@/src/components/ui/WeatherChip';
-import { saveTripCache, loadTripCache } from '@/src/lib/trip-cache';
+import { saveTripCache, loadTripCache, removeTripCache } from '@/src/lib/trip-cache';
 import { shareAndReportMission } from '@/src/lib/share-mission';
-import { buildMapboxStaticMapUrl, type StaticMapStop } from '@/src/lib/static-map';
-import * as Location from 'expo-location';
+import { TripOfflineMap } from '@/src/components/trip/TripOfflineMap';
+import { offlineMapStops } from '@/src/lib/offline-map';
+import { useAuthStore } from '@/store/authStore';
+import { useLangStore } from '@/src/store/langStore';
+import { useTripWeatherAdvice } from '@/src/hooks/useTripWeatherAdvice';
+import { WeatherAdviceCard } from '@/src/components/trip/WeatherAdviceCard';
 
-const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? '';
-
-// ─── Leaflet HTML builder ─────────────────────────────────────────────────────
-
-type LeafletMarker = { lat: number; lng: number; name: string; order: number };
-
-function buildLeafletHtml(
-  markers: LeafletMarker[],
-  userLocation: { lat: number; lng: number } | null | undefined,
-  labels: { loadingRoute: string; yourLocation: string; minUnit: string },
-): string {
-  const PRIMARY  = '#4285F4';
-  const START_BG = '#34A853';
-  const END_BG   = '#EA4335';
-  const USER_BG  = '#1a73e8';
-  const data     = JSON.stringify(markers);
-  const userLL   = userLocation ? JSON.stringify(userLocation) : 'null';
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
-<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"><\/script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body,#map{width:100%;height:100%}
-.mk-wrap{display:flex;flex-direction:column;align-items:center;gap:3px}
-.mk-pin{
-  width:32px;height:32px;border-radius:50% 50% 50% 0;
-  background:${PRIMARY};
-  display:flex;align-items:center;justify-content:center;
-  transform:rotate(-45deg);
-  border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)
-}
-.mk-pin--start{background:${START_BG}}
-.mk-pin--end{background:${END_BG}}
-.mk-pin .num{
-  transform:rotate(45deg);
-  font-size:13px;font-weight:700;color:#fff;font-family:sans-serif
-}
-.num-label{
-  background:rgba(255,255,255,.92);
-  color:#222;font-size:10px;font-family:sans-serif;font-weight:600;
-  padding:1px 5px;border-radius:4px;
-  white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis;
-  box-shadow:0 1px 3px rgba(0,0,0,.2)
-}
-.user-dot-wrap{position:relative;width:20px;height:20px}
-.user-dot{
-  width:16px;height:16px;border-radius:50%;
-  background:${USER_BG};border:2.5px solid #fff;
-  position:absolute;top:2px;left:2px;
-  box-shadow:0 1px 4px rgba(0,0,0,.3)
-}
-.user-pulse{
-  width:20px;height:20px;border-radius:50%;
-  background:rgba(26,115,232,.3);
-  position:absolute;top:0;left:0;
-  animation:pulse 2s ease-out infinite
-}
-@keyframes pulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.5);opacity:0}}
-#route-status{
-  position:absolute;bottom:52px;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.55);color:#fff;
-  font-size:12px;font-family:sans-serif;
-  padding:4px 12px;border-radius:12px;
-  z-index:1000;display:none;pointer-events:none
-}
-#info-bar{
-  position:absolute;bottom:8px;left:8px;
-  background:rgba(255,255,255,.93);
-  color:#333;font-size:12px;font-family:sans-serif;font-weight:600;
-  padding:5px 10px;border-radius:10px;
-  z-index:1000;display:none;pointer-events:none;
-  box-shadow:0 1px 4px rgba(0,0,0,.2)
-}
-</style>
-</head>
-<body>
-<div id="map"></div>
-<div id="route-status">${labels.loadingRoute}</div>
-<div id="info-bar"></div>
-<script>
-var pts=${data};
-var userLL=${userLL};
-var map=L.map('map',{zoomControl:true,attributionControl:false});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-  attribution:'© OpenStreetMap contributors © CARTO',maxZoom:19,subdomains:'abcd'
-}).addTo(map);
-
-// Blue dot — user location (drawn first, below markers)
-if(userLL){
-  var udIcon=L.divIcon({
-    html:'<div class="user-dot-wrap"><div class="user-pulse"><\/div><div class="user-dot"><\/div><\/div>',
-    className:'',iconSize:[20,20],iconAnchor:[10,10]
-  });
-  L.marker([userLL.lat,userLL.lng],{icon:udIcon,zIndexOffset:-100}).addTo(map)
-    .bindPopup('<b>${labels.yourLocation}<\/b>');
-}
-
-if(pts.length===0){map.setView([16.047,108.206],10);}
-else{
-  var lls=[];
-  pts.forEach(function(m,i){
-    var isStart=(m.order===1);
-    var isEnd=(m.order===pts.length);
-    var pinCls='mk-pin'+(isStart?' mk-pin--start':isEnd?' mk-pin--end':'');
-    var iconHtml='<div class="mk-wrap"><div class="'+pinCls+'"><span class="num">'+m.order+'<\/span><\/div><div class="num-label">'+m.name+'<\/div><\/div>';
-    var ic=L.divIcon({html:iconHtml,className:'',iconSize:[90,58],iconAnchor:[45,42],popupAnchor:[0,-44]});
-    L.marker([m.lat,m.lng],{icon:ic}).addTo(map).bindPopup('<b>'+m.name+'<\/b>');
-    lls.push([m.lat,m.lng]);
-  });
-  // fitBounds only on trip markers, not user location
-  map.fitBounds(L.latLngBounds(lls),{padding:[48,48]});
-
-  if(lls.length>1){
-    var statusEl=document.getElementById('route-status');
-    var infoEl=document.getElementById('info-bar');
-    statusEl.style.display='block';
-    var waypoints=pts.map(function(m){return m.lng+','+m.lat;}).join(';');
-    var osrmUrl='https://router.project-osrm.org/route/v1/driving/'+waypoints+'?overview=full&geometries=geojson';
-    fetch(osrmUrl)
-      .then(function(r){return r.json();})
-      .then(function(d){
-        var coords=d.routes[0].geometry.coordinates;
-        var routeLL=coords.map(function(c){return[c[1],c[0]];});
-        L.polyline(routeLL,{color:'#ffffff',weight:9,opacity:1}).addTo(map);
-        var pl=L.polyline(routeLL,{color:'${PRIMARY}',weight:5,opacity:.95}).addTo(map);
-        // Direction arrows
-        L.polylineDecorator(pl,{
-          patterns:[{offset:'12%',repeat:'22%',symbol:L.Symbol.arrowHead({pixelSize:10,polygon:false,pathOptions:{color:'${PRIMARY}',weight:2,opacity:.8}})}]
-        }).addTo(map);
-        // Info bar
-        var km=(d.routes[0].distance/1000).toFixed(1);
-        var min=Math.round(d.routes[0].duration/60);
-        infoEl.textContent=km+' km  ·  ~'+min+' ${labels.minUnit}';
-        infoEl.style.display='block';
-        statusEl.style.display='none';
-      })
-      .catch(function(){
-        L.polyline(lls,{color:'${PRIMARY}',weight:3,opacity:.7,dashArray:'6,4'}).addTo(map);
-        statusEl.style.display='none';
-      });
-  }
-}
-// Inject user location từ React Native sau khi GPS xong
-window.addUserLocation = function(lat, lng) {
-  if (window._userMarker) { window._userMarker.setLatLng([lat, lng]); return; }
-  var udIcon = L.divIcon({
-    html: '<div class="user-dot-wrap"><div class="user-pulse"><\/div><div class="user-dot"><\/div><\/div>',
-    className: '', iconSize: [20, 20], iconAnchor: [10, 10]
-  });
-  window._userMarker = L.marker([lat, lng], {icon: udIcon, zIndexOffset: -100})
-    .addTo(map).bindPopup('<b>${labels.yourLocation}<\/b>');
-};
-<\/script>
-</body>
-</html>`;
-}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -547,8 +387,10 @@ function SortableDayItems({ items, editMode, checkedIds, onToggleCheck, onReorde
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const userId = useAuthStore(state => state.user?.id);
   const t = useT();
   const localize = useLocalize();
+  const language = useLangStore(state => state.lang);
   const [trip, setTrip]         = useState<Trip | null>(null);
   const [items, setItems]       = useState<TripItem[]>([]);
   const [journals, setJournals] = useState<TripJournal[]>([]);
@@ -558,7 +400,11 @@ export default function TripDetailScreen() {
   // Offline resilience
   const [isOffline, setIsOffline]   = useState(false);
   const [isFromCache, setIsFromCache] = useState(false);
-  const [staticMapFailed, setStaticMapFailed] = useState(false);
+  const weatherAdvice = useTripWeatherAdvice(
+    id,
+    !!trip?.start_date && trip.status !== 'completed' && !isOffline && !isFromCache && process.env.EXPO_PUBLIC_WEATHER_ADAPTATION_ENABLED !== 'false',
+    language,
+  );
 
   // Journal
   const [journalDay, setJournalDay]         = useState(1);
@@ -629,11 +475,7 @@ export default function TripDetailScreen() {
 
   // Map modal
   const [mapModalVisible, setMapModalVisible]   = useState(false);
-  const [mapWebViewLoading, setMapWebViewLoading] = useState(true);
-  const [mapLocating, setMapLocating]           = useState(false);
   const [mapDay, setMapDay]                     = useState(1);
-  const [userLocation, setUserLocation]         = useState<{ lat: number; lng: number } | null>(null);
-  const mapWebViewRef = useRef<any>(null);
 
 
   // Edit trip modal
@@ -652,11 +494,31 @@ export default function TripDetailScreen() {
   }, []);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !userId) return;
     let cancelled = false;
 
     async function load() {
+      setTrip(null);
+      setItems([]);
+      setJournals([]);
+      setLoading(true);
+      setIsFromCache(false);
+      const cached = await loadTripCache(id);
+      if (cancelled) return;
+      if (cached && cached.trip.user_id === userId) {
+        setTrip(cached.trip);
+        setItems(cached.items);
+        setJournals(cached.journals);
+        setIsFromCache(true);
+        setLoading(false);
+      }
       try {
+        const network = await NetInfo.fetch();
+        if (cancelled) return;
+        if (network.isConnected === false || network.isInternetReachable === false) {
+          setLoading(false);
+          return;
+        }
         const [t, i, j] = await Promise.all([
           supabase.from('trips').select('*').eq('id', id).single(),
           supabase.from('trip_items')
@@ -667,7 +529,7 @@ export default function TripDetailScreen() {
           supabase.from('trip_journals').select('*').eq('trip_id', id).order('day_number'),
         ]);
         if (cancelled) return;
-        if (!t.data) throw new Error('No trip data');
+        if (t.error || i.error || j.error || !t.data) throw new Error('Incomplete trip data');
 
         setTrip(t.data);
         setItems(i.data ?? []);
@@ -680,30 +542,11 @@ export default function TripDetailScreen() {
           cachedAt: new Date().toISOString(),
         });
 
-        // Prefetch ảnh bản đồ tĩnh cho từng ngày có toạ độ — để offline lần đầu vẫn có ảnh sẵn.
-        if (MAPBOX_TOKEN) {
-          const stopsByDay: Record<number, StaticMapStop[]> = {};
-          (i.data ?? [])
-            .slice()
-            .sort((a: any, b: any) => a.sort_order - b.sort_order)
-            .forEach((item: any) => {
-              const loc = item.locations;
-              if (loc?.coordinates?.lat && loc?.coordinates?.lng) {
-                const day = item.day_number;
-                if (!stopsByDay[day]) stopsByDay[day] = [];
-                stopsByDay[day].push({ lat: loc.coordinates.lat, lng: loc.coordinates.lng, order: stopsByDay[day].length + 1 });
-              }
-            });
-          const prefetchUrls = Object.values(stopsByDay)
-            .map((stops) => buildMapboxStaticMapUrl(stops, MAPBOX_TOKEN))
-            .filter((u): u is string => !!u);
-          if (prefetchUrls.length > 0) ExpoImage.prefetch(prefetchUrls).catch(() => {});
-        }
       } catch {
         // Fetch lỗi (thường do mất mạng) — lùi về dữ liệu đã cache thay vì màn hình trắng.
         if (cancelled) return;
         const cached = await loadTripCache(id);
-        if (cached && !cancelled) {
+        if (cached && cached.trip.user_id === userId && !cancelled) {
           setTrip(cached.trip);
           setItems(cached.items);
           setJournals(cached.journals);
@@ -716,7 +559,7 @@ export default function TripDetailScreen() {
 
     load();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, userId]);
 
   // ── Dates ────────────────────────────────────────────────────────────────────
 
@@ -832,14 +675,7 @@ export default function TripDetailScreen() {
 
   // ── Add location ──────────────────────────────────────────────────────────────
 
-  // Inject user dot khi GPS xong (sau khi WebView đã sẵn sàng)
-  useEffect(() => {
-    if (userLocation && !mapWebViewLoading && mapWebViewRef.current) {
-      mapWebViewRef.current.injectJavaScript(
-        `if(typeof window.addUserLocation==='function'){window.addUserLocation(${userLocation.lat},${userLocation.lng});}; true;`
-      );
-    }
-  }, [userLocation, mapWebViewLoading]);
+
 
   // Refresh items khi quay về từ add-location page
   useFocusEffect(useCallback(() => {
@@ -991,7 +827,9 @@ export default function TripDetailScreen() {
             if (!id) return;
             await supabase.from('trip_items').delete().eq('trip_id', id);
             await supabase.from('trip_journals').delete().eq('trip_id', id);
-            await supabase.from('trips').delete().eq('id', id);
+            const { error } = await supabase.from('trips').delete().eq('id', id);
+            if (error) { Alert.alert(t('errGeneral')); return; }
+            await removeTripCache(id);
             router.back();
           },
         },
@@ -1001,29 +839,12 @@ export default function TripDetailScreen() {
 
   // ── Google Maps deep-link ─────────────────────────────────────────────────────
 
-  // ── Open map with location permission ────────────────────────────────────────
+  // ── Open trip map ────────────────────────────────────────────────────────────
 
-  async function openMapWithLocation(day: number) {
+  function openTripMap(day: number) {
     setMapDay(day);
-    setMapWebViewLoading(true);
-    setUserLocation(null);
-    setMapModalVisible(true);   // mở modal NGAY, không chờ GPS
-
-    setMapLocating(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      }
-    } catch {
-      // GPS thất bại, map vẫn hiển thị bình thường không có user dot
-    } finally {
-      setMapLocating(false);
-    }
+    setMapModalVisible(true);
   }
-
-  // ── Share ─────────────────────────────────────────────────────────────────────
 
   function shareItinerary() {
     if (!trip) return;
@@ -1080,13 +901,39 @@ export default function TripDetailScreen() {
   const daysWithCoords = Object.keys(itemsByDay)
     .map(Number)
     .filter(day => (itemsByDay[day] ?? []).some(item => {
-      const loc = item.locations as any;
-      return loc?.coordinates?.lat && loc?.coordinates?.lng;
+      return offlineMapStops([item])[0].lat !== null;
     }))
     .sort((a, b) => a - b);
 
   const selectedDayLoc = (itemsByDay[selectedDay] ?? []).find(item => (item.locations as any)?.coordinates?.lat);
   const selectedDayCoords = (selectedDayLoc?.locations as any)?.coordinates as { lat: number; lng: number } | undefined;
+  const tripWeatherCoords = selectedDayCoords ?? (items.find(item => (item.locations as any)?.coordinates?.lat)?.locations as any)?.coordinates as { lat: number; lng: number } | undefined;
+
+  async function applyWeatherProposal(proposalId: string, requestId: string) {
+    if (!trip || !id || isOffline) throw new Error(language === 'vi' ? 'Cần kết nối mạng để lưu lựa chọn.' : 'Connect to the internet to save this choice.');
+    const { data: decision, error: decisionError } = await supabase.rpc('apply_trip_weather_proposal', {
+      p_proposal_id: proposalId, p_request_id: requestId,
+    });
+    if (decisionError) throw decisionError;
+    const [tripResult, itemsResult, journalsResult] = await Promise.all([
+      supabase.from('trips').select('*').eq('id', id).single(),
+      supabase.from('trip_items')
+        .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates, travel_region, shelter_type, shelter_verified_at, weather_exposure, structured_opening_hours)')
+        .eq('trip_id', id).order('day_number').order('sort_order'),
+      supabase.from('trip_journals').select('*').eq('trip_id', id).order('day_number'),
+    ]);
+    if (tripResult.error || itemsResult.error || journalsResult.error || !tripResult.data) {
+      throw new Error(language === 'vi' ? 'Đã lưu, nhưng chưa tải được lịch mới. Hãy làm mới.' : 'Saved, but could not reload the itinerary. Please refresh.');
+    }
+    setTrip(tripResult.data);
+    setItems(itemsResult.data ?? []);
+    setJournals(journalsResult.data ?? []);
+    await saveTripCache(id, {
+      trip: tripResult.data, items: itemsResult.data ?? [], journals: journalsResult.data ?? [],
+      cachedAt: new Date().toISOString(),
+    });
+    if (decision?.event_id) weatherAdvice.dismissEvent(decision.event_id);
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -1142,6 +989,17 @@ export default function TripDetailScreen() {
                 <Text style={styles.heroMetaText}>{trip.destination}</Text>
               </View>
             </View>
+          </Animated.View>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: heroOpacity }]} pointerEvents="box-none">
+            <WeatherAdviceCard
+              coordinates={tripWeatherCoords}
+              alerts={weatherAdvice.alerts}
+              loading={weatherAdvice.loading}
+              error={weatherAdvice.error}
+              offline={isOffline}
+              onRefresh={() => void weatherAdvice.refresh(true)}
+              onApply={applyWeatherProposal}
+            />
           </Animated.View>
         </Animated.View>
 
@@ -1310,9 +1168,6 @@ export default function TripDetailScreen() {
                   <View style={styles.dayContentHeader}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Text style={styles.dayContentTitle}>{dayLabel(trip, selectedDay)}</Text>
-                      {selectedDayCoords && (
-                        <WeatherChip lat={selectedDayCoords.lat} lng={selectedDayCoords.lng} />
-                      )}
                     </View>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       {(itemsByDay[selectedDay] ?? []).length > 0 && (
@@ -1514,10 +1369,9 @@ export default function TripDetailScreen() {
       </Animated.ScrollView>
 
       {tab === 'timeline' && (itemsByDay[selectedDay] ?? []).some(item => {
-        const loc = item.locations as any;
-        return loc?.coordinates?.lat && loc?.coordinates?.lng;
+        return offlineMapStops([item])[0].lat !== null;
       }) && (
-        <TouchableOpacity style={styles.fabMap} onPress={() => openMapWithLocation(selectedDay)} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.fabMap} onPress={() => openTripMap(selectedDay)} activeOpacity={0.85}>
           <Ionicons name="map-outline" size={18} color={colors.textOnDark} />
         </TouchableOpacity>
       )}
@@ -1557,7 +1411,7 @@ export default function TripDetailScreen() {
                 <TouchableOpacity
                   key={day}
                   style={[styles.mapDayChip, day === mapDay && styles.mapDayChipActive]}
-                  onPress={() => { setMapWebViewLoading(true); setStaticMapFailed(false); setMapDay(day); }}
+                  onPress={() => setMapDay(day)}
                   activeOpacity={0.75}
                 >
                   <Text style={[styles.mapDayChipText, day === mapDay && styles.mapDayChipTextActive]}>
@@ -1568,81 +1422,16 @@ export default function TripDetailScreen() {
             </ScrollView>
           )}
 
-          {/* GPS locating indicator */}
-          {mapLocating && (
-            <View style={styles.mapLocatingBar}>
-              <ActivityIndicator size="small" color={colors.nomad.primary} />
-              <Text style={styles.mapLocatingText}>{t('tripMapLocating')}</Text>
-            </View>
+          {mapModalVisible && trip && (
+            <TripOfflineMap
+              key={`${id}-${mapDay}`}
+              trip={trip}
+              day={mapDay}
+              items={items}
+              journals={journals}
+              isOffline={isOffline}
+            />
           )}
-
-          {/* Map */}
-          <View style={{ flex: 1 }}>
-            {(() => {
-              const mapDayMarkers = (itemsByDay[mapDay] ?? [])
-                .sort((a, b) => a.sort_order - b.sort_order)
-                .reduce<LeafletMarker[]>((acc, item, idx) => {
-                  const loc = item.locations as any;
-                  if (loc?.coordinates?.lat && loc?.coordinates?.lng) {
-                    acc.push({ lat: loc.coordinates.lat, lng: loc.coordinates.lng, name: localize(loc.name, loc.name_en) ?? '—', order: idx + 1 });
-                  }
-                  return acc;
-                }, []);
-
-              if (isOffline) {
-                const staticMapUrl = buildMapboxStaticMapUrl(
-                  mapDayMarkers.map((m): StaticMapStop => ({ lat: m.lat, lng: m.lng, order: m.order })),
-                  MAPBOX_TOKEN
-                );
-                if (staticMapUrl && !staticMapFailed) {
-                  return (
-                    <ExpoImage
-                      source={{ uri: staticMapUrl }}
-                      style={{ flex: 1 }}
-                      contentFit="cover"
-                      cachePolicy="disk"
-                      onError={() => setStaticMapFailed(true)}
-                    />
-                  );
-                }
-                return (
-                  <ScrollView contentContainerStyle={styles.mapOfflineListContent}>
-                    <Text style={styles.mapOfflineListTitle}>{t('tripMapOfflineListTitle')}</Text>
-                    {mapDayMarkers.map((m) => (
-                      <View key={`${m.order}-${m.lat}-${m.lng}`} style={styles.mapOfflineListRow}>
-                        <Text style={styles.mapOfflineListOrder}>{m.order}</Text>
-                        <Text style={styles.mapOfflineListName}>{m.name}</Text>
-                      </View>
-                    ))}
-                  </ScrollView>
-                );
-              }
-
-              return (
-                <>
-                  <WebView
-                    ref={mapWebViewRef}
-                    key={mapDay}
-                    source={{ html: buildLeafletHtml(
-                      mapDayMarkers,
-                      null,   // luôn null — user dot được inject sau qua JS
-                      { loadingRoute: t('mapRouteLoading'), yourLocation: t('mapYourLocation'), minUnit: t('expMinUnit') },
-                    )}}
-                    onLoad={() => setMapWebViewLoading(false)}
-                    style={{ flex: 1 }}
-                    javaScriptEnabled
-                    domStorageEnabled
-                  />
-                  {mapWebViewLoading && (
-                    <View style={styles.mapLoadingOverlay}>
-                      <ActivityIndicator size="large" color={colors.nomad.primary} />
-                      <Text style={styles.mapLoadingText}>{t('tripMapLoading')}</Text>
-                    </View>
-                  )}
-                </>
-              );
-            })()}
-          </View>
 
           {/* Bottom bar */}
           <View style={styles.mapModalFooter}>
