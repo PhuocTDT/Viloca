@@ -46,3 +46,28 @@ export async function saveOfflineMap(userId: string, snapshot: OfflineMapSnapsho
     await FileSystem.deleteAsync(directory() + previous, { idempotent: true }).catch(() => {});
   }
 }
+
+/**
+ * Xoá mọi bản đồ offline đã lưu của 1 trip (mọi ngày) — gọi khi xoá trip, tránh để lại
+ * file ảnh mồ côi trong FileSystem. Không cần biết trước trip có bao nhiêu ngày: quét
+ * AsyncStorage theo tiền tố key để tìm đúng mọi (userId, tripId, *).
+ */
+export async function deleteOfflineMapsForTrip(userId: string, tripId: string): Promise<void> {
+  try {
+    const prefix = `viloca:offline-map:${JSON.stringify([userId, tripId]).slice(0, -1)},`;
+    const allKeys = await AsyncStorage.getAllKeys();
+    const matching = allKeys.filter((k) => k.startsWith(prefix));
+    if (matching.length === 0) return;
+
+    const entries = await AsyncStorage.multiGet(matching);
+    const dir = directory();
+    await Promise.all(entries.map(async ([, filename]) => {
+      if (filename && /^[a-zA-Z0-9-]+\.json$/.test(filename)) {
+        await FileSystem.deleteAsync(dir + filename, { idempotent: true }).catch(() => {});
+      }
+    }));
+    await AsyncStorage.multiRemove(matching);
+  } catch {
+    // Best-effort — không chặn việc xoá trip nếu dọn file offline-map lỗi.
+  }
+}

@@ -67,12 +67,17 @@ interface SenGridItemDef {
   labelKey: StringKey;
   icon: ImageSourcePropType;
   onPress: () => void;
+  /** Scale riêng cho icon (1 = kích thước mặc định) — dùng khi ảnh gốc có khung hình lớn hơn các icon khác. */
+  iconScale?: number;
 }
 
 function SenGridButton({ item, label, width }: { item: SenGridItemDef; label: string; width: number }) {
+  const iconSize = 48 * (item.iconScale ?? 1);
   return (
     <TouchableOpacity style={[styles.senGridItem, { width }]} activeOpacity={0.75} onPress={item.onPress}>
-      <Image source={item.icon} style={styles.senGridIcon} resizeMode="contain" />
+      <View style={styles.senGridIconBox}>
+        <Image source={item.icon} style={{ width: iconSize, height: iconSize }} resizeMode="contain" />
+      </View>
       <Text style={styles.senGridLabel} numberOfLines={2}>{label}</Text>
     </TouchableOpacity>
   );
@@ -173,7 +178,7 @@ export default function HomeScreen() {
     { labelKey: 'gridNearby',     icon: require('@/assets/sen-grid/nearby.png'),    onPress: () => scrollToY(nearbyY) },
     { labelKey: 'gridLocalExperience', icon: require('@/assets/mascot/sen-exploring.png'), onPress: () => router.push('/local') },
     { labelKey: 'gridMissions',   icon: require('@/assets/sen-grid/missions.png'),  onPress: () => router.push('/missions') },
-    { labelKey: 'gridDailyCheckin', icon: require('@/assets/sen-grid/daily-checkin.png'), onPress: () => router.push('/checkin') },
+    { labelKey: 'gridDailyCheckin', icon: require('@/assets/sen-grid/daily-checkin.png'), iconScale: 0.75, onPress: () => router.push('/checkin') },
     { labelKey: 'gridLeaderboard',  icon: require('@/assets/sen-grid/leaderboard.png'),   onPress: () => router.push('/leaderboard') },
     { labelKey: 'gridFood',       icon: require('@/assets/sen-grid/food.png'),      onPress: () => router.push({ pathname: '/search', params: { category: 'Ẩm thực', near: '1' } }) },
     { labelKey: 'gridFestival',   icon: require('@/assets/sen-grid/festivals.png'), onPress: () => scrollToY(festivalY) },
@@ -504,7 +509,7 @@ const styles = StyleSheet.create({
   senGridPage:     { height: SEN_GRID_H, justifyContent: 'flex-start', paddingHorizontal: 8 },
   senGridRow:      { flexDirection: 'row', alignItems: 'flex-start', width: '100%', marginBottom: 6 },
   senGridItem:     { alignItems: 'center', justifyContent: 'flex-start', gap: 4, paddingVertical: 2, paddingHorizontal: 2 },
-  senGridIcon:     { width: 48, height: 48 },
+  senGridIconBox:  { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   senGridLabel:    { fontSize: 11, fontWeight: '700', color: colors.nomad.onSurface, textAlign: 'center', lineHeight: 14 },
   senGridDotsWrap: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 4, marginBottom: 14 },
   senGridDot:       { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.nomad.outlineVariant },

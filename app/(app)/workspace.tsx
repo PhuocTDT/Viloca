@@ -16,6 +16,7 @@ import { getCoverForDestination } from '@/src/lib/destination-covers';
 import { useT, type StringKey } from '@/src/lib/i18n';
 import type { Trip } from '@/src/types';
 import { loadCachedTrips, removeTripCache } from '@/src/lib/trip-cache';
+import { deleteOfflineMapsForTrip } from '@/src/lib/offline-map-storage';
 import NetInfo from '@react-native-community/netinfo';
 
 const STATUS_TKEY: Record<string, StringKey> = {
@@ -87,6 +88,7 @@ export default function WorkspaceScreen() {
             const { error } = await supabase.from('trips').delete().eq('id', trip.id);
             if (!error) {
               await removeTripCache(trip.id);
+              if (user?.id) await deleteOfflineMapsForTrip(user.id, trip.id);
               setTrips((prev) => prev.filter((item) => item.id !== trip.id));
             }
           },

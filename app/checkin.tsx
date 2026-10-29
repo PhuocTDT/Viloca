@@ -20,6 +20,7 @@ export default function CheckinScreen() {
     milestones,
     checkinDates,
     isCheckedIn,
+    isShielded,
     loading,
     canCheckinToday,
     markDateCheckin,
@@ -52,6 +53,8 @@ export default function CheckinScreen() {
         setAlertInfo({ title: t('checkinTitle'), message: t('checkinAlreadyDone') });
       } else if (result.reason === 'future') {
         setAlertInfo({ title: t('checkinTitle'), message: t('checkinFutureDateError') });
+      } else if (result.reason === 'insufficient_credits') {
+        setAlertInfo({ title: t('checkinTitle'), message: t('checkinInsufficientCredits') });
       } else {
         setAlertInfo({
           title: t('checkinTitle'),
@@ -84,7 +87,7 @@ export default function CheckinScreen() {
     } else {
       setAlertInfo({
         title: t('checkinRewardTitle'),
-        message: `${t('checkinPastSuccess')}${dateStr}!`,
+        message: `${t('checkinPastSuccess')}${dateStr}!${t('checkinBackfillCostSfx')}`,
       });
     }
   }
@@ -112,9 +115,11 @@ export default function CheckinScreen() {
             shields={shields}
             checkinDates={checkinDates}
             isCheckedIn={isCheckedIn}
+            isShielded={isShielded}
             onDatePress={handleDatePress}
             canCheckinToday={canCheckinToday}
           />
+          <Text style={styles.backfillHint}>{t('checkinBackfillCostHint')}</Text>
 
           {/* Milestones */}
           <View style={styles.milestoneSection}>
@@ -169,6 +174,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '700', color: N.onSurface },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   body:        { padding: spacing.lg, gap: spacing.lg, paddingBottom: 40 },
+  backfillHint:{ fontSize: 11, color: N.onSurfaceVariant, textAlign: 'center', marginTop: -8 },
 
   sectionHeaderTitle: { fontSize: 15, fontWeight: '700', color: N.onSurface, marginBottom: 2 },
   milestoneSection: { gap: 10 },

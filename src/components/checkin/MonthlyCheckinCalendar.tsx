@@ -13,6 +13,7 @@ interface Props {
   shields: number;
   checkinDates: string[];
   isCheckedIn: (dateStr: string) => boolean;
+  isShielded?: (dateStr: string) => boolean;
   onDatePress: (dateStr: string) => void;
   canCheckinToday: boolean;
 }
@@ -21,6 +22,7 @@ export function MonthlyCheckinCalendar({
   currentStreak,
   shields,
   isCheckedIn,
+  isShielded,
   onDatePress,
   canCheckinToday,
 }: Props) {
@@ -57,22 +59,29 @@ export function MonthlyCheckinCalendar({
     const daysInMonth = getDaysInMonth(year, month);
     const startOffset = getMondayFirstStartOffset(year, month);
 
-    type Cell = { key: string; day: number | null; dateStr: string | null; isToday: boolean; isChecked: boolean; isFuture: boolean };
+    type Cell = { key: string; day: number | null; dateStr: string | null; isToday: boolean; isChecked: boolean; isShield: boolean; isFuture: boolean; isMissed: boolean };
     const result: Cell[] = [];
 
     for (let i = 0; i < startOffset; i++) {
-      result.push({ key: `pad-${i}`, day: null, dateStr: null, isToday: false, isChecked: false, isFuture: false });
+      result.push({ key: `pad-${i}`, day: null, dateStr: null, isToday: false, isChecked: false, isShield: false, isFuture: false, isMissed: false });
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isToday = dateStr === todayDateStr;
+      const isFuture = dateStr > todayDateStr;
+      const isChecked = isCheckedIn(dateStr);
+      const isShield = !isChecked && !!isShielded?.(dateStr);
       result.push({
         key: dateStr,
         day: d,
         dateStr,
-        isToday: dateStr === todayDateStr,
-        isChecked: isCheckedIn(dateStr),
-        isFuture: dateStr > todayDateStr,
+        isToday,
+        isChecked,
+        isShield,
+        isFuture,
+        // Ngày trong quá khứ, không điểm danh, không được khiên bảo vệ → thiếu, hiện X đỏ.
+        isMissed: !isToday && !isFuture && !isChecked && !isShield,
       });
     }
 
@@ -80,12 +89,12 @@ export function MonthlyCheckinCalendar({
     const remainder = result.length % 7;
     if (remainder > 0) {
       for (let j = 0; j < 7 - remainder; j++) {
-        result.push({ key: `end-${j}`, day: null, dateStr: null, isToday: false, isChecked: false, isFuture: false });
+        result.push({ key: `end-${j}`, day: null, dateStr: null, isToday: false, isChecked: false, isShield: false, isFuture: false, isMissed: false });
       }
     }
 
     return result;
-  }, [year, month, todayDateStr, isCheckedIn]);
+  }, [year, month, todayDateStr, isCheckedIn, isShielded]);
 
   // Month title
   const monthTitle = useMemo(() => {
@@ -168,10 +177,18 @@ export function MonthlyCheckinCalendar({
             >
               {c.isChecked ? (
                 <Image
-                  source={require('@/assets/sen-grid/daily-checkin.png')}
+                  source={require('@/assets/checkin-stamp.png')}
                   style={styles.checkedStamp}
                   resizeMode="contain"
                 />
+              ) : c.isShield ? (
+                <View style={styles.shieldStamp}>
+                  <Ionicons name="shield-checkmark" size={18} color={N.primary} />
+                </View>
+              ) : c.isMissed ? (
+                <View style={styles.missedStamp}>
+                  <Ionicons name="close" size={16} color="#DC2626" />
+                </View>
               ) : (
                 <Text
                   style={[
@@ -233,4 +250,8 @@ const styles = StyleSheet.create({
 
   /* Checked stamp */
   checkedStamp: { width: 30, height: 30 },
+
+  /* Shield-protected / missed day */
+  shieldStamp: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
+  missedStamp: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' },
 });

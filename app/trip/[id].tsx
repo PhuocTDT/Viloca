@@ -24,6 +24,7 @@ import { saveTripCache, loadTripCache, removeTripCache } from '@/src/lib/trip-ca
 import { shareAndReportMission } from '@/src/lib/share-mission';
 import { TripOfflineMap } from '@/src/components/trip/TripOfflineMap';
 import { offlineMapStops } from '@/src/lib/offline-map';
+import { deleteOfflineMapsForTrip } from '@/src/lib/offline-map-storage';
 import { useAuthStore } from '@/store/authStore';
 import { useLangStore } from '@/src/store/langStore';
 import { useTripWeatherAdvice } from '@/src/hooks/useTripWeatherAdvice';
@@ -830,6 +831,7 @@ export default function TripDetailScreen() {
             const { error } = await supabase.from('trips').delete().eq('id', id);
             if (error) { Alert.alert(t('errGeneral')); return; }
             await removeTripCache(id);
+            if (userId) await deleteOfflineMapsForTrip(userId, id);
             router.back();
           },
         },

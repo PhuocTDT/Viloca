@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors } from '@/src/theme/colors';
 import { useT } from '@/src/lib/i18n';
+import supabase from '@/src/lib/supabase';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -61,9 +62,11 @@ interface RegionVibeCard {
   highlightExperienceId: string;
 }
 
-// ─── Dữ liệu trải nghiệm Local đầy đủ & chi tiết ────────────────────────────
+// ─── Dữ liệu trải nghiệm Local — dự phòng khi chưa fetch xong / fetch lỗi ───
+// (dữ liệu thật nằm ở bảng Supabase local_experiences/local_region_vibes,
+// xem supabase/migrations/20261028000002_create_local_experiences.sql)
 
-const LOCAL_EXPERIENCES: LocalExperienceItem[] = [
+const FALLBACK_LOCAL_EXPERIENCES: LocalExperienceItem[] = [
   {
     id: 'exp-spotlight-mientay',
     title: 'Miền Tây sông nước: Ở nhà bè & Đánh bắt cá cùng ngư dân',
@@ -299,9 +302,9 @@ const LOCAL_EXPERIENCES: LocalExperienceItem[] = [
   },
 ];
 
-// ─── Dữ liệu Vùng theo Vibe cảm xúc ──────────────────────────────────────────
+// ─── Dữ liệu Vùng theo Vibe cảm xúc — dự phòng ───────────────────────────────
 
-const REGION_VIBES: RegionVibeCard[] = [
+const FALLBACK_REGION_VIBES: RegionVibeCard[] = [
   {
     id: 'rv-hue',
     regionName: 'Huế',
@@ -392,7 +395,61 @@ export default function LocalExperienceScreen() {
   const [selectedTheme, setSelectedTheme] = useState<ThemeCategory>('all');
   const [selectedVibe, setSelectedVibe] = useState<VibeCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
+  // Dữ liệu thật từ Supabase — khởi tạo bằng fallback để màn không trống khi
+  // đang tải; nếu fetch lỗi/rỗng thì giữ nguyên fallback, không làm hỏng UI.
+  const [localExperiences, setLocalExperiences] = useState<LocalExperienceItem[]>(FALLBACK_LOCAL_EXPERIENCES);
+  const [regionVibes, setRegionVibes] = useState<RegionVibeCard[]>(FALLBACK_REGION_VIBES);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const [expRes, vibeRes] = await Promise.all([
+        supabase.from('local_experiences').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('local_region_vibes').select('*').eq('is_active', true).order('sort_order'),
+      ]);
+      if (cancelled) return;
+
+      if (expRes.data && expRes.data.length > 0) {
+        setLocalExperiences(expRes.data.map((row: any): LocalExperienceItem => ({
+          id: row.id,
+          title: row.title,
+          theme: row.theme,
+          regionCode: row.region_code,
+          regionName: row.region_name,
+          vibe: row.vibe,
+          image: row.image,
+          localTip: row.local_tip,
+          duration: row.duration,
+          price: row.price,
+          crowdLevel: row.crowd_level,
+          bestTime: row.best_time,
+          longDescription: row.long_description,
+          timelineSteps: row.timeline_steps ?? [],
+          rules: row.rules ?? [],
+          activities: row.activities ?? [],
+        })));
+      }
+
+      if (vibeRes.data && vibeRes.data.length > 0) {
+        setRegionVibes(vibeRes.data.map((row: any): RegionVibeCard => ({
+          id: row.id,
+          regionName: row.region_name,
+          vibeKey: row.vibe_key,
+          vibeLabel: row.vibe_label,
+          image: row.image,
+          suggestedActivities: row.suggested_activities ?? [],
+          description: row.description,
+          spotsCount: row.spots_count,
+          highlightExperienceId: row.highlight_experience_id,
+        })));
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+
   // Modals
   const [detailModalItem, setDetailModalItem] = useState<LocalExperienceItem | null>(null);
   const [addedModalItem, setAddedModalItem] = useState<LocalExperienceItem | null>(null);
@@ -453,7 +510,7 @@ export default function LocalExperienceScreen() {
 
   // Filter experiences by theme and search text
   const filteredExperiences = useMemo(() => {
-    return LOCAL_EXPERIENCES.filter((item) => {
+    return localExperiences.filter((item) => {
       const matchTheme = selectedTheme === 'all' || item.theme === selectedTheme;
       const matchQuery =
         searchQuery.trim() === '' ||
@@ -462,13 +519,13 @@ export default function LocalExperienceScreen() {
         item.localTip.toLowerCase().includes(searchQuery.toLowerCase());
       return matchTheme && matchQuery;
     });
-  }, [selectedTheme, searchQuery]);
+  }, [localExperiences, selectedTheme, searchQuery]);
 
   // Filter region vibes
   const filteredRegions = useMemo(() => {
-    if (selectedVibe === 'all') return REGION_VIBES;
-    return REGION_VIBES.filter((r) => r.vibeKey === selectedVibe);
-  }, [selectedVibe]);
+    if (selectedVibe === 'all') return regionVibes;
+    return regionVibes.filter((r) => r.vibeKey === selectedVibe);
+  }, [regionVibes, selectedVibe]);
 
   const themesList: { key: ThemeCategory; label: string; icon: string }[] = [
     { key: 'all', label: t('themeAll'), icon: 'sparkles' },
@@ -609,7 +666,7 @@ export default function LocalExperienceScreen() {
               <TouchableOpacity
                 style={styles.spotlightCard}
                 activeOpacity={0.92}
-                onPress={() => setDetailModalItem(LOCAL_EXPERIENCES[0])}
+                onPress={() => setDetailModalItem(localExperiences[0])}
               >
                 <ExpoImage
                   source={{ uri: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800' }}
@@ -642,7 +699,7 @@ export default function LocalExperienceScreen() {
                     <TouchableOpacity
                       style={styles.spotlightBtn}
                       activeOpacity={0.85}
-                      onPress={() => setAddedModalItem(LOCAL_EXPERIENCES[0])}
+                      onPress={() => setAddedModalItem(localExperiences[0])}
                     >
                       <Ionicons name="add-circle-outline" size={15} color="#FFFFFF" />
                       <Text style={styles.spotlightBtnText} numberOfLines={1}>{t('btnAddToTrip')}</Text>
@@ -651,7 +708,7 @@ export default function LocalExperienceScreen() {
                     <TouchableOpacity
                       style={styles.spotlightDetailBtn}
                       activeOpacity={0.85}
-                      onPress={() => setDetailModalItem(LOCAL_EXPERIENCES[0])}
+                      onPress={() => setDetailModalItem(localExperiences[0])}
                     >
                       <Text style={styles.spotlightDetailBtnText} numberOfLines={1}>{t('btnExploreDetail')}</Text>
                       <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
@@ -796,7 +853,7 @@ export default function LocalExperienceScreen() {
 
             {/* Region Cards */}
             {filteredRegions.map((region) => {
-              const matchedExp = LOCAL_EXPERIENCES.find((e) => e.id === region.highlightExperienceId) || LOCAL_EXPERIENCES[0];
+              const matchedExp = localExperiences.find((e) => e.id === region.highlightExperienceId) || localExperiences[0];
               return (
                 <View key={region.id} style={styles.regionCard}>
                   <View style={styles.regionHeroWrap}>
