@@ -1,34 +1,56 @@
-// Mock the Supabase client so importing it doesn't pull in React Native /
-// AsyncStorage (this file is only reached for `countLocations`, which calls
-// `supabase.from` directly; `readLocations` never touches the real client
-// because the caller supplies `run`).
+// Mock the Supabase client: readLocations now determines pro/free explicitly
+// via `supabase.auth.getUser()` + `profiles.plan`, instead of guessing from
+// whether the full table came back empty.
+const mockGetUser = jest.fn();
+const mockSingle = jest.fn();
 jest.mock('../src/lib/supabase', () => ({
   __esModule: true,
-  default: { from: jest.fn(() => ({ select: jest.fn() })) },
+  default: {
+    auth: { getUser: (...args: unknown[]) => mockGetUser(...args) },
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: (...args: unknown[]) => mockSingle(...args),
+        })),
+      })),
+    })),
+  },
 }));
 
-import { readLocations, countLocations, type LocationTable } from '../src/lib/location-access';
+import { readLocations, type LocationTable } from '../src/lib/location-access';
+
+function mockPlan(plan: 'pro' | 'free' | null) {
+  if (plan === null) {
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+    return;
+  }
+  mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
+  mockSingle.mockResolvedValue({ data: { plan } });
+}
 
 describe('readLocations', () => {
-  it('returns rows from `locations` when the full table has data (pro user)', async () => {
-    const run = jest.fn(async (table: LocationTable) =>
-      table === 'locations' ? { data: [{ id: '1' }], error: null } : { data: null, error: null }
-    );
+  it('queries `locations` for a pro user', async () => {
+    mockPlan('pro');
+    const run = jest.fn(async () => ({ data: [{ id: '1' }], error: null }));
     const rows = await readLocations(run);
     expect(rows).toEqual([{ id: '1' }]);
-    expect(run).toHaveBeenCalledTimes(1); // never needed to fall back
+    expect(run).toHaveBeenCalledWith('locations');
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to `locations_preview` when `locations` is empty (RLS-blocked free user)', async () => {
+  it('queries `locations_preview` for a free user, even when they can read some full rows (own-trip RLS)', async () => {
+    mockPlan('free');
     const run = jest.fn(async (table: LocationTable) =>
-      table === 'locations' ? { data: [], error: null } : { data: [{ id: '2' }], error: null }
+      table === 'locations_preview' ? { data: [{ id: '2' }], error: null } : { data: [{ id: 'narrow' }], error: null }
     );
     const rows = await readLocations(run);
     expect(rows).toEqual([{ id: '2' }]);
-    expect(run).toHaveBeenCalledTimes(2);
+    expect(run).toHaveBeenCalledWith('locations_preview');
+    expect(run).toHaveBeenCalledTimes(1); // never touches `locations` at all for a free user
   });
 
-  it('falls back to the view when `locations` errors', async () => {
+  it('falls back to the view when a pro user\'s `locations` query errors', async () => {
+    mockPlan('pro');
     const run = jest.fn(async (table: LocationTable) =>
       table === 'locations'
         ? { data: null, error: new Error('permission denied') }
@@ -38,45 +60,26 @@ describe('readLocations', () => {
     expect(rows).toEqual([{ id: '3' }]);
   });
 
+  it('treats an unauthenticated caller as free', async () => {
+    mockPlan(null);
+    const run = jest.fn(async () => ({ data: [{ id: '4' }], error: null }));
+    await readLocations(run);
+    expect(run).toHaveBeenCalledWith('locations_preview');
+  });
+
   it('returns [] when both the table and the view come back empty', async () => {
+    mockPlan('pro');
     const run = jest.fn(async () => ({ data: [], error: null }));
     expect(await readLocations(run)).toEqual([]);
   });
 
   it('returns [] when the view also errors', async () => {
+    mockPlan('pro');
     const run = jest.fn(async (table: LocationTable) =>
       table === 'locations'
         ? { data: null, error: new Error('x') }
         : { data: null, error: new Error('y') }
     );
     expect(await readLocations(run)).toEqual([]);
-  });
-});
-
-describe('countLocations', () => {
-  it('returns the full-table count when it is truthy (pro user)', async () => {
-    const apply = jest.fn(async (_q: unknown, table: LocationTable) => ({
-      count: table === 'locations' ? 42 : 7,
-    }));
-    expect(await countLocations(apply)).toBe(42);
-  });
-
-  it('falls back to the preview count when the full table reports 0 (free user, RLS-blocked)', async () => {
-    const apply = jest.fn(async (_q: unknown, table: LocationTable) => ({
-      count: table === 'locations' ? 0 : 5,
-    }));
-    expect(await countLocations(apply)).toBe(5);
-  });
-
-  it('falls back to the preview count when the full table reports null', async () => {
-    const apply = jest.fn(async (_q: unknown, table: LocationTable) => ({
-      count: table === 'locations' ? null : 3,
-    }));
-    expect(await countLocations(apply)).toBe(3);
-  });
-
-  it('returns 0 when neither the table nor the view report a count', async () => {
-    const apply = jest.fn(async () => ({ count: null }));
-    expect(await countLocations(apply)).toBe(0);
   });
 });

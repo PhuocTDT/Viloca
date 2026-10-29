@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
@@ -9,6 +9,7 @@ import { spacing, radius } from '@/src/theme/spacing';
 import { useCheckin } from '@/src/hooks/useCheckin';
 import { MonthlyCheckinCalendar } from '@/src/components/checkin/MonthlyCheckinCalendar';
 import { useT } from '@/src/lib/i18n';
+import { vnTodayStr } from '@/src/lib/date-utils';
 import type { CheckinResult } from '@/src/types';
 
 const N = colors.nomad;
@@ -36,7 +37,7 @@ export default function CheckinScreen() {
   async function handleDatePress(dateStr: string) {
     if (submitting) return;
 
-    if (isCheckedIn(dateStr)) {
+    if (isCheckedIn(dateStr) || isShielded(dateStr)) {
       setAlertInfo({
         title: t('checkinTitle'),
         message: `${t('checkinDateAlreadyDone')} (${dateStr})`,
@@ -44,6 +45,24 @@ export default function CheckinScreen() {
       return;
     }
 
+    // Điểm danh bù ngày quá khứ tốn 10 AI credit — phải xác nhận trước khi trừ,
+    // tránh bấm nhầm 1 ô X đỏ cũ là mất credit ngay không báo trước.
+    if (dateStr < vnTodayStr()) {
+      Alert.alert(
+        t('checkinBackfillConfirmTitle'),
+        t('checkinBackfillConfirmMsg'),
+        [
+          { text: t('alertCancel'), style: 'cancel' },
+          { text: t('checkinBackfillConfirmOk'), style: 'destructive', onPress: () => doCheckin(dateStr) },
+        ],
+      );
+      return;
+    }
+
+    await doCheckin(dateStr);
+  }
+
+  async function doCheckin(dateStr: string) {
     setSubmitting(true);
     const result = await markDateCheckin(dateStr);
     setSubmitting(false);

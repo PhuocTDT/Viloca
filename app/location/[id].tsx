@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import supabase from '@/src/lib/supabase';
+import { readLocations, isProUser } from '@/src/lib/location-access';
 import { useFavorite } from '@/src/hooks/useFavorite';
 import { colors } from '@/src/theme/colors';
 import { useT } from '@/src/lib/i18n';
@@ -81,21 +82,13 @@ export default function LocationDetailScreen() {
     setDescExpanded(false);
     setLoading(true);
     async function load() {
-      // Pro users: full data from locations table (RLS-gated)
-      const { data: fullData } = await supabase
-        .from('locations').select('*').eq('id', id).single();
+      const [pro, rows] = await Promise.all([
+        isProUser(),
+        readLocations<Location>((table) => supabase.from(table).select('*').eq('id', id)),
+      ]);
       if (cancelled) return;
-      if (fullData) {
-        setLocation(fullData as Location);
-        setIsPro(true);
-      } else {
-        // Free user fallback: locations_preview (limited fields)
-        const { data: preview } = await supabase
-          .from('locations_preview').select('*').eq('id', id).single();
-        if (cancelled) return;
-        setLocation(preview as unknown as Location);
-        setIsPro(false);
-      }
+      setLocation(rows[0] ?? null);
+      setIsPro(pro);
       setLoading(false);
     }
     load();

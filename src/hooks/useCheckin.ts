@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../lib/supabase';
 import type { CheckinMilestone, CheckinState, CheckinResult } from '../types';
 
-import { formatLocalDate, todayStr } from '../lib/date-utils';
+import { formatLocalDate, todayStr, vnTodayStr } from '../lib/date-utils';
 export { formatLocalDate, todayStr };
 
 export function useCheckin() {
@@ -61,8 +61,15 @@ export function useCheckin() {
       ]);
       if (cancelled) return;
 
+      // Streak không tự reset trên server khi user ngừng điểm danh (chỉ được
+      // tính lại ở lần gọi daily_checkin() kế tiếp) — nên nếu đã quá 1 ngày
+      // (giờ VN) kể từ last_checkin_date, hiển thị streak là 0 (chuỗi đã đứt,
+      // dù hàng DB chưa cập nhật) thay vì số streak cũ đã "chết".
       const st = stateRes.data ?? null;
-      setState(st);
+      const [vy, vm, vd] = vnTodayStr().split('-').map(Number);
+      const vnYesterday = formatLocalDate(new Date(vy, vm - 1, vd - 1));
+      const isStale = !!st?.last_checkin_date && st.last_checkin_date < vnYesterday;
+      setState(st && isStale ? { ...st, current_streak: 0 } : st);
       setMilestones(milestonesRes.data ?? []);
 
       const datesSet = new Set<string>();
@@ -115,7 +122,7 @@ export function useCheckin() {
 
   const refetch = useCallback(() => setReloadKey((k) => k + 1), []);
 
-  const today = todayStr();
+  const today = vnTodayStr();
   const canCheckinToday = state?.last_checkin_date !== today && !checkinDates.includes(today);
 
   const isCheckedIn = useCallback((dateStr: string) => {
@@ -134,7 +141,7 @@ export function useCheckin() {
   }, [refetch]);
 
   const markDateCheckin = useCallback(async (dateStr: string) => {
-    const t = todayStr();
+    const t = vnTodayStr();
     if (dateStr === t) {
       if (!canCheckinToday) {
         return { ok: false as const, reason: 'already_done' as const };

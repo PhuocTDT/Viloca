@@ -28,9 +28,11 @@ export function useTodaySchedule(trip: Trip | null): TodayScheduleResult {
       const day = Math.floor((Date.now() - startMs) / 86_400_000) + 1;
       setDayNumber(day);
 
+      // Join locations: item thêm từ địa điểm (kể cả AI tạo) không set
+      // experience_title, nên không join sẽ hiện tên trống trên thẻ Home.
       const { data } = await supabase
         .from('trip_items')
-        .select('*')
+        .select('*, locations(name, name_en)')
         .eq('trip_id', trip!.id)
         .eq('day_number', day);
 

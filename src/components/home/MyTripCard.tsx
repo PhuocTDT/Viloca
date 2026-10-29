@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors } from '@/src/theme/colors';
 import { useT, type StringKey } from '@/src/lib/i18n';
+import { useLocalize } from '@/src/lib/location-i18n';
 import { useUpcomingTrip } from '@/src/hooks/useUpcomingTrip';
 import { useTodaySchedule } from '@/src/hooks/useTodaySchedule';
 import type { TimeSlot } from '@/src/types';
@@ -25,6 +26,7 @@ const MAX_ITEMS = 3;
  */
 export function MyTripCard() {
   const t = useT();
+  const localize = useLocalize();
   const { trip: upcoming, activeTrip, daysUntil, loading } = useUpcomingTrip();
   const { items, dayNumber, loading: scheduleLoading } = useTodaySchedule(activeTrip);
 
@@ -63,14 +65,16 @@ export function MyTripCard() {
           {scheduleLoading ? null : items.length === 0 ? (
             <Text style={styles.empty}>{t('homeTripNoItems')}</Text>
           ) : (
-            items.slice(0, MAX_ITEMS).map((it) => (
-              <View key={it.id} style={styles.row}>
-                <Text style={styles.slot}>{t(SLOT_KEY[it.time_slot] ?? 'slotMorning')}</Text>
-                <Text style={styles.itemTitle} numberOfLines={1}>
-                  {it.experience_title ?? ''}
-                </Text>
-              </View>
-            ))
+            items.slice(0, MAX_ITEMS).map((it) => {
+              const loc = it.locations ?? null;
+              const name = (loc ? localize(loc.name, loc.name_en) : null) ?? it.experience_title ?? '';
+              return (
+                <View key={it.id} style={styles.row}>
+                  <Text style={styles.slot}>{t(SLOT_KEY[it.time_slot] ?? 'slotMorning')}</Text>
+                  <Text style={styles.itemTitle} numberOfLines={1}>{name}</Text>
+                </View>
+              );
+            })
           )}
           {items.length > MAX_ITEMS && (
             <Text style={styles.more}>+{items.length - MAX_ITEMS}</Text>

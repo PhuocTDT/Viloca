@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import { useT } from '@/src/lib/i18n';
-import { formatLocalDate, getDaysInMonth, getMondayFirstStartOffset } from '@/src/lib/date-utils';
+import { getDaysInMonth, getMondayFirstStartOffset, vnTodayStr } from '@/src/lib/date-utils';
 
 const N = colors.nomad;
 
@@ -32,9 +32,13 @@ export function MonthlyCheckinCalendar({
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  const today = useMemo(() => new Date(), []);
-  const todayDateStr = useMemo(() => formatLocalDate(today), [today]);
-  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+  // "Hôm nay" theo giờ VN (khớp với server, xem useCheckin.ts) — không dùng
+  // new Date() của máy, tránh lệch timezone với RPC daily_checkin/backfill_checkin.
+  const todayDateStr = useMemo(() => vnTodayStr(), []);
+  const isCurrentMonth = useMemo(() => {
+    const [ty, tm] = todayDateStr.split('-').map(Number);
+    return ty === year && tm === month + 1;
+  }, [todayDateStr, year, month]);
 
   function handlePrevMonth() {
     setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -43,7 +47,8 @@ export function MonthlyCheckinCalendar({
     setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   }
   function handleGoToday() {
-    setViewDate(new Date());
+    const [ty, tm, td] = todayDateStr.split('-').map(Number);
+    setViewDate(new Date(ty, tm - 1, td));
   }
 
   // Weekday headers (Mon-first)
