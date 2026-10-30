@@ -21,6 +21,13 @@ export function useLocationSearch(initialCategory?: string | null) {
   const [results, setResults]               = useState<Location[]>([]);
   const [loading, setLoading]               = useState(false);
 
+  // Expo Router thường giữ nguyên cùng 1 instance màn hình khi điều hướng lại
+  // tới cùng route với tham số khác (vd đổi category từ lưới Home), nên state
+  // khởi tạo 1 lần từ `initialCategory` sẽ không tự cập nhật nếu không đồng bộ lại ở đây.
+  useEffect(() => {
+    setCategoryKeyword(initialCategory ?? null);
+  }, [initialCategory]);
+
   useEffect(() => {
     setLoading(true);
     const timer = setTimeout(async () => {

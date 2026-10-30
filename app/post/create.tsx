@@ -6,6 +6,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { resizeImage } from '@/src/lib/image-resize';
 import supabase from '@/src/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/src/theme/colors';
@@ -13,6 +14,7 @@ import { spacing, radius } from '@/src/theme/spacing';
 import { useT } from '@/src/lib/i18n';
 
 const MAX_IMAGES = 5;
+const MAX_LONG_EDGE = 1600;
 
 type ImageAsset = { uri: string; mimeType: string; ext: string; base64: string };
 
@@ -30,14 +32,18 @@ export default function CreatePostScreen() {
       allowsMultipleSelection: true,
       quality: 0.85,
       selectionLimit: MAX_IMAGES - images.length,
-      base64: true,
     });
     if (!result.canceled) {
-      const assets: ImageAsset[] = result.assets.map((a) => {
-        const mime = a.mimeType ?? 'image/jpeg';
-        const ext  = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
-        return { uri: a.uri, mimeType: mime === 'image/heic' ? 'image/jpeg' : mime, ext, base64: a.base64 ?? '' };
-      });
+      const assets: ImageAsset[] = await Promise.all(
+        result.assets.map(async (a) => {
+          const resized = await resizeImage(
+            a.uri,
+            { width: a.width, height: a.height },
+            { maxLongEdge: MAX_LONG_EDGE }
+          );
+          return { uri: resized.uri, mimeType: 'image/jpeg', ext: 'jpg', base64: resized.base64 };
+        })
+      );
       setImages((prev) => [...prev, ...assets].slice(0, MAX_IMAGES));
     }
   }

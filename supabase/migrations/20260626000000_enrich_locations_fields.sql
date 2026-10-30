@@ -2,9 +2,23 @@
 -- Run in Supabase SQL editor or via `npx supabase db push`
 
 -- 1. Copy short_description → description (source for AI hint generation)
-UPDATE public.locations
-  SET description = short_description
-  WHERE description IS NULL AND short_description IS NOT NULL;
+-- Bọc điều kiện: cột short_description chỉ xuất hiện SAU migration
+-- alter_locations_table (chạy sau file này), nên tại thời điểm này nó chưa
+-- tồn tại — và các migration seed địa điểm sau đó tự điền short_description/
+-- long_description trực tiếp nên backfill này không còn cần thiết nữa.
+-- Trên DB đã apply migration này từ trước (prod) đây là no-op an toàn.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'locations' AND column_name = 'description')
+  AND EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'locations' AND column_name = 'short_description')
+  THEN
+    UPDATE public.locations
+      SET description = short_description
+      WHERE description IS NULL AND short_description IS NOT NULL;
+  END IF;
+END $$;
 
 -- 2. Assign vibes by category (must match VIBES options in workspace.tsx)
 UPDATE public.locations SET vibes = ARRAY['Cổ kính','Văn hóa','Bình yên']

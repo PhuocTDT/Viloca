@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import supabase from '@/src/lib/supabase';
+import { readLocations } from '@/src/lib/location-access';
 import { useCategories } from '@/src/hooks/useCategories';
 import { colors } from '@/src/theme/colors';
 import type { Category } from '@/src/types';
@@ -23,14 +24,14 @@ function useActiveCategoryChips(): { chips: Category[]; loading: boolean } {
     if (pickedRef.current) return;
 
     async function load() {
-      const { data } = await supabase
-        .from('locations')
-        .select('category')
-        .eq('is_active', true);
+      const data = await readLocations<{ category: string | null }>((table) => {
+        const q = supabase.from(table).select('category');
+        return table === 'locations' ? q.eq('is_active', true) : q;
+      });
 
       // Build a set of all lowercase category tokens from active locations
       const activeTokens = new Set<string>();
-      for (const row of (data ?? [])) {
+      for (const row of data) {
         if (!row.category) continue;
         for (const part of String(row.category).split(',')) {
           activeTokens.add(part.trim().toLowerCase());

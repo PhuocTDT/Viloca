@@ -12,6 +12,7 @@ import supabase from '@/src/lib/supabase';
 import { colors } from '@/src/theme/colors';
 import { spacing, radius } from '@/src/theme/spacing';
 import { useT, type StringKey } from '@/src/lib/i18n';
+import { useLocalize } from '@/src/lib/location-i18n';
 import type { Location, TimeSlot } from '@/src/types';
 
 const TIMES = [
@@ -31,6 +32,7 @@ function cityLabel(code: string | null, t: (k: StringKey) => string) {
 
 export default function AddLocationScreen() {
   const t = useT();
+  const localize = useLocalize();
   const insets = useSafeAreaInsets();
   const { trip_id, day: dayParam } = useLocalSearchParams<{ trip_id: string; day: string }>();
 
@@ -106,7 +108,7 @@ export default function AddLocationScreen() {
       i => i.location_id === location.id && i.day_number === selectedDay
     );
     if (sameDay) {
-      setError(`"${location.name}${t('addLocInDayMid')}${selectedDay}.`);
+      setError(`"${localize(location.name, location.name_en)}${t('addLocInDayMid')}${selectedDay}.`);
       return;
     }
 
@@ -115,7 +117,7 @@ export default function AddLocationScreen() {
     );
     if (otherDay) {
       setWarnModal({
-        message: `"${location.name}${t('addLocInDayMid')}${otherDay.day_number}.${t('addLocWarnSufPfx')}${selectedDay}?`,
+        message: `"${localize(location.name, location.name_en)}${t('addLocInDayMid')}${otherDay.day_number}.${t('addLocWarnSufPfx')}${selectedDay}?`,
         onConfirm: doAdd,
       });
       return;
@@ -164,13 +166,13 @@ export default function AddLocationScreen() {
           {!photo && (
             <LinearGradient
               colors={[colors.nomad.primaryContainer, colors.nomad.primary]}
-              style={StyleSheet.absoluteFillObject}
+              style={StyleSheet.absoluteFill}
             />
           )}
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.82)']}
             locations={[0.15, 1]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           {cat && (
             <View style={styles.catBadge}>
@@ -178,7 +180,7 @@ export default function AddLocationScreen() {
             </View>
           )}
           <View style={styles.locCardInfo}>
-            <Text style={styles.locName} numberOfLines={2}>{location.name}</Text>
+            <Text style={styles.locName} numberOfLines={2}>{localize(location.name, location.name_en)}</Text>
             {subtitle ? (
               <View style={styles.locSubRow}>
                 <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.8)" />

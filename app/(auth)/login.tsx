@@ -29,9 +29,13 @@ export default function LoginScreen() {
     setError('');
     if (!email || !password) { setError(t('fillAll')); return; }
     setLoading(true);
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     setLoading(false);
-    if (authError) { console.log('LOGIN ERROR:', authError.status, authError.message); setError(t('loginError')); return; }
+    if (authError) {
+      console.log('LOGIN ERROR:', authError.status, authError.message);
+      setError(t(authError.status === 0 || authError.name === 'AuthRetryableFetchError' ? 'loginNetworkError' : 'loginError'));
+      return;
+    }
     setUser(data.user);
     router.replace('/(app)');
   }
@@ -54,7 +58,7 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scroll,
-            { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 },
+            { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 12 },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -173,7 +177,7 @@ export default function LoginScreen() {
               <View style={styles.legalDot} />
               <Text style={styles.legalLink}>{t('privacyPolicy')}</Text>
             </View>
-            <Text style={styles.copyright}>© 2024 Viloca Travel. All rights reserved.</Text>
+            <Text style={styles.copyright}>{t('copyrightFooter')}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -209,53 +213,53 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
 
   // Header
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 52,
   },
   logoWrap: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   logoGlow: {
     position: 'absolute',
-    width: 112, height: 112,
-    borderRadius: 56,
+    width: 80, height: 80,
+    borderRadius: 40,
     backgroundColor: c.primary,
     opacity: 0.1,
-    transform: [{ scale: 1.3 }],
+    transform: [{ scale: 1.25 }],
   },
   logo: {
-    width: 90, height: 90,
+    width: 56, height: 56,
   },
   headlineWrap: {
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   headline: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: c.primary,
     letterSpacing: -0.5,
     textAlign: 'center',
   },
   subheadline: {
-    fontSize: 15,
+    fontSize: 12,
     color: c.onSurfaceVariant,
     textAlign: 'center',
     maxWidth: 260,
-    lineHeight: 22,
+    lineHeight: 16,
   },
 
   // Form
   form: {
-    gap: 16,
+    gap: 10,
   },
   fieldWrap: {
     gap: 6,
@@ -282,14 +286,14 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     color: c.onSurface,
     paddingHorizontal: 12,
-    paddingVertical: 16,
+    paddingVertical: 11,
   },
   eyeBtn: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 11,
   },
 
   // Forgot password
@@ -298,7 +302,7 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   forgotText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: c.primary,
   },
@@ -327,8 +331,8 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: c.primary,
     borderRadius: 12,
-    paddingVertical: 16,
-    marginTop: 8,
+    paddingVertical: 12,
+    marginTop: 6,
     shadowColor: c.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginVertical: 4,
+    marginVertical: 2,
   },
   dividerLine: {
     flex: 1,
@@ -371,7 +375,7 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: colors.nomad.surfaceContainer,
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 10,
   },
   googleLogo: {
     width: 20,
@@ -386,22 +390,22 @@ const styles = StyleSheet.create({
   // Footer
   footer: {
     alignItems: 'center',
-    gap: 12,
-    marginTop: 40,
+    gap: 6,
+    marginTop: 14,
   },
   signupRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   signupText: {
-    fontSize: 15,
+    fontSize: 12,
     color: c.onSurface,
   },
   signupLink: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
     color: c.onSurface,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1.5,
     borderBottomColor: c.outlineVariant,
   },
   legalRow: {
@@ -410,7 +414,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   legalLink: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '600',
     color: c.outline,
     letterSpacing: 0.5,
@@ -422,7 +426,7 @@ const styles = StyleSheet.create({
     backgroundColor: c.outlineVariant,
   },
   copyright: {
-    fontSize: 10,
+    fontSize: 9,
     color: c.outline,
     opacity: 0.5,
   },

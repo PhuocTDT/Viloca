@@ -47,6 +47,7 @@ export interface Experience {
 
 export interface Profile {
   id: string;
+  username: string | null;
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -54,6 +55,47 @@ export interface Profile {
   plan: 'free' | 'pro';
   ai_credits_remaining: number;
   created_at: string;
+}
+
+/** Tập con của Profile dùng cho danh sách/kết quả tìm kiếm (không cần fetch nguyên row). */
+export type ProfileSummary = Pick<Profile, 'id' | 'username' | 'full_name' | 'avatar_url'>;
+
+/** ProfileSummary + bio + số người theo dõi/đang theo dõi — dùng cho ProfileCard ở màn tìm bạn. */
+export type ProfileSearchResult = Pick<Profile, 'id' | 'username' | 'full_name' | 'avatar_url' | 'bio'> & {
+  followersCount: number;
+  followingCount: number;
+};
+
+export interface CheckinMilestone {
+  day_threshold: number;
+  reward_credits: number;
+  grants_shield: boolean;
+}
+
+export interface CheckinState {
+  current_streak: number;
+  last_checkin_date: string | null;
+  streak_shields: number;
+}
+
+export interface CheckinResult {
+  streak: number;
+  credits_granted: number;
+  shield_used: boolean;
+  milestone_hit: number | null;
+  shields_remaining: number;
+}
+
+export interface CheckinLog {
+  id: string;
+  user_id: string;
+  checkin_date: string;
+  created_at?: string;
+}
+
+export interface LeaderboardEntry extends ProfileSummary {
+  rank: number;
+  value: number;
 }
 
 export interface Trip {
@@ -69,6 +111,7 @@ export interface Trip {
   place_id: string | null;
   is_ai_generated: boolean;
   created_at: string;
+  itinerary_revision?: number;
 }
 
 export interface TripItem {
@@ -86,12 +129,16 @@ export interface TripItem {
   note: string | null;
   ai_reason: string | null;
   sort_order: number;
+  weather_duration_minutes?: number | null;
   // joined via select('*, locations(...)')
   locations?: {
     name: string;
+    name_en: string | null;
     category: string | null;
     hint: string | null;
+    hint_en: string | null;
     short_description: string | null;
+    short_description_en: string | null;
     cover_image: string | null;
     photos: string | null;
     district: string | null;
@@ -101,6 +148,11 @@ export interface TripItem {
     rating: number | null;
     opening_hours: string | null;
     coordinates: { lat: number; lng: number } | null;
+    travel_region?: 'hue' | 'hoi_an' | 'mekong_delta' | 'ha_giang' | null;
+    shelter_type?: 'indoor' | 'outdoor' | 'mixed' | 'unknown';
+    shelter_verified_at?: string | null;
+    weather_exposure?: 'ordinary' | 'water' | 'cycling' | 'mountain_road';
+    structured_opening_hours?: Record<string, unknown> | null;
   } | null;
 }
 
@@ -108,9 +160,11 @@ export interface Location {
   id: string;
   // Core / free-tier fields
   name: string;
+  name_en: string | null;
   category: string;
   vibes: string[];
   hint: string | null;
+  hint_en: string | null;
   cover_image: string | null;
   images: string[];
   price_per_person: number;
@@ -130,6 +184,7 @@ export interface Location {
   off_days: string | null;
   phone: string | null;
   short_description: string | null;
+  short_description_en: string | null;
   photos: string | null;
   verified: boolean;
   is_featured: boolean;
@@ -139,6 +194,11 @@ export interface Location {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  travel_region?: 'hue' | 'hoi_an' | 'mekong_delta' | 'ha_giang' | null;
+  shelter_type?: 'indoor' | 'outdoor' | 'mixed' | 'unknown';
+  shelter_verified_at?: string | null;
+  weather_exposure?: 'ordinary' | 'water' | 'cycling' | 'mountain_road';
+  structured_opening_hours?: Record<string, unknown> | null;
 }
 
 export interface Category {
@@ -202,4 +262,33 @@ export interface PostComment {
   content: string;
   created_at: string;
   profiles?: { full_name: string | null; avatar_url: string | null } | null;
+}
+
+export interface Mission {
+  id: string;
+  code: string;
+  title: string;
+  title_en: string | null;
+  description: string | null;
+  description_en: string | null;
+  icon: string | null;
+  verification_mode: 'server_count' | 'client_report';
+  metric: string;
+  target_count: number;
+  reward_credits: number;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface UserMissionProgress {
+  mission_id: string;
+  progress_count: number;
+  completed_at: string | null;
+  claimed_at: string | null;
+}
+
+export interface MissionWithProgress extends Mission {
+  progressCount: number;
+  completedAt: string | null;
+  claimedAt: string | null;
 }

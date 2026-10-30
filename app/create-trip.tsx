@@ -223,15 +223,10 @@ export default function CreateTripScreen() {
 
     // Preflight: kiểm tra điểm đến có dữ liệu không trước khi tạo trip
     const cityCode = DEST_TO_CITY[destination];
-    const preflightQ = supabase
-      .from('locations')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true);
-    const { count: destCount } = await (
-      cityCode
-        ? preflightQ.eq('city', cityCode)
-        : preflightQ.ilike('address', `%${destination}%`)
-    );
+    const { data: destCount } = await supabase.rpc('count_locations_by_destination', {
+      p_city_code: cityCode ?? null,
+      p_destination: destination,
+    });
 
     if (!destCount || destCount === 0) {
       setError(`"${destination}" chưa có dữ liệu địa điểm trên Viloca. Hiện hỗ trợ: Hà Nội, Đà Nẵng, TP. Hồ Chí Minh, Quảng Nam. Vui lòng chọn lại điểm đến.`);
@@ -524,7 +519,7 @@ export default function CreateTripScreen() {
               {hasCover ? (
                 <>
                   <Image source={{ uri: coverUri! }} style={styles.heroImg} resizeMode="cover" />
-                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={StyleSheet.absoluteFillObject} />
+                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={StyleSheet.absoluteFill} />
                   <View style={styles.heroCityWrap}>
                     <Text style={styles.heroCity}>{destination}</Text>
                   </View>
@@ -564,7 +559,7 @@ export default function CreateTripScreen() {
                 <View style={styles.tipCard}>
                   <Ionicons name="information-circle-outline" size={18} color={N.secondary} />
                   <Text style={styles.tipText}>
-                    {destination} là điểm đến được yêu thích trên Viloca. Bạn đã sẵn sàng khám phá chưa?
+                    {destination}{t('tripDestTipSuffix')}
                   </Text>
                 </View>
               )}
@@ -572,8 +567,8 @@ export default function CreateTripScreen() {
                 <View style={styles.tipCardWarn}>
                   <Ionicons name="alert-circle-outline" size={18} color={colors.error} />
                   <Text style={styles.tipTextWarn}>
-                    Viloca chưa có dữ liệu địa điểm tại {destination}. Tính năng AI Trip sẽ không khả dụng — bạn vẫn có thể tự lên lịch.{'\n'}
-                    <Text style={{ fontWeight: '600' }}>Hỗ trợ AI: Hà Nội, Đà Nẵng, TP. Hồ Chí Minh, Quảng Nam.</Text>
+                    {t('tripDestWarnPfx')}{destination}{t('tripDestWarnSfx')}{'\n'}
+                    <Text style={{ fontWeight: '600' }}>{t('tripDestAiSupportedCities')}</Text>
                   </Text>
                 </View>
               )}

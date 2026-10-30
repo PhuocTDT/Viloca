@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, ImageBackground, TouchableOpacity,
-  ActivityIndicator, Linking,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground,
+  ActivityIndicator, Linking, Animated,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import supabase from '@/src/lib/supabase';
+import { readLocations, isProUser } from '@/src/lib/location-access';
 import { useFavorite } from '@/src/hooks/useFavorite';
 import { colors } from '@/src/theme/colors';
 import { useT } from '@/src/lib/i18n';
+import { useLocalize } from '@/src/lib/location-i18n';
+import { WeatherChip } from '@/src/components/ui/WeatherChip';
 import type { Location } from '@/src/types';
 
 const PRICE_LABEL: Record<number, { symbol: string; label: string }> = {
@@ -20,6 +23,7 @@ const PRICE_LABEL: Record<number, { symbol: string; label: string }> = {
   4: { symbol: '₫₫₫₫', label: '600k+' },
 };
 const LONG_DESC_LINES = 4;
+const HERO_HEIGHT = 300;
 
 // ─── Accordion section ───────────────────────────────────────────────────────
 function AccordionSection({
@@ -53,29 +57,43 @@ export default function LocationDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [descExpanded, setDescExpanded] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const navbarHeight = insets.top + 56;
+  const collapseDistance = Math.max(1, HERO_HEIGHT - navbarHeight);
+  const heroHeight = scrollY.interpolate({
+    inputRange: [0, collapseDistance],
+    outputRange: [HERO_HEIGHT, navbarHeight],
+    extrapolate: 'clamp',
+  });
+  const navbarOpacity = scrollY.interpolate({
+    inputRange: [collapseDistance * 0.65, collapseDistance],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
 
   const { isFavorite, toggle } = useFavorite(id);
   const t = useT();
+  const localize = useLocalize();
 
   useEffect(() => {
+    let cancelled = false;
+    scrollY.setValue(0);
+    setDescExpanded(false);
+    setLoading(true);
     async function load() {
-      // Pro users: full data from locations table (RLS-gated)
-      const { data: fullData } = await supabase
-        .from('locations').select('*').eq('id', id).single();
-      if (fullData) {
-        setLocation(fullData as Location);
-        setIsPro(true);
-      } else {
-        // Free user fallback: locations_preview (limited fields)
-        const { data: preview } = await supabase
-          .from('locations_preview').select('*').eq('id', id).single();
-        setLocation(preview as unknown as Location);
-        setIsPro(false);
-      }
+      const [pro, rows] = await Promise.all([
+        isProUser(),
+        readLocations<Location>((table) => supabase.from(table).select('*').eq('id', id)),
+      ]);
+      if (cancelled) return;
+      setLocation(rows[0] ?? null);
+      setIsPro(pro);
       setLoading(false);
     }
     load();
-  }, [id]);
+    return () => { cancelled = true; };
+  }, [id, scrollY]);
 
   if (loading) {
     return (
@@ -105,38 +123,44 @@ export default function LocationDetailScreen() {
   const hasMapsUrl = !!location.google_maps_url;
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}>
       {/* ── Hero ───────────────────────────────────────────────────── */}
-      <ImageBackground
-        source={firstPhoto ? { uri: firstPhoto } : undefined}
-        style={styles.hero}
-        resizeMode="cover"
-      >
-        {!firstPhoto && (
-          <LinearGradient
-            colors={[colors.nomad.primaryContainer, colors.nomad.primary]}
-            style={StyleSheet.absoluteFillObject}
-          />
-        )}
-        <LinearGradient
-          colors={['rgba(0,0,0,0.35)', 'transparent']}
-          locations={[0, 0.6]}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <TouchableOpacity
-          style={[styles.backBtn, { top: insets.top + 8 }]}
-          onPress={() => router.back()}
-          activeOpacity={0.85}
+      <Animated.View pointerEvents="none" style={[styles.hero, { height: heroHeight }]}>
+        <ImageBackground
+          source={firstPhoto ? { uri: firstPhoto } : undefined}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
         >
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
-      </ImageBackground>
+          {!firstPhoto && (
+            <LinearGradient
+              colors={[colors.nomad.primaryContainer, colors.nomad.primary]}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.35)', 'transparent']}
+            locations={[0, 0.6]}
+            style={StyleSheet.absoluteFill}
+          />
+        </ImageBackground>
+      </Animated.View>
 
       {/* ── Content ────────────────────────────────────────────────── */}
-      <ScrollView
+      <Animated.ScrollView
+        key={id}
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentInsetAdjustmentBehavior="never"
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false },
+        )}
+        contentContainerStyle={{
+          paddingTop: HERO_HEIGHT,
+          paddingBottom: insets.bottom + 100,
+          minHeight: viewportHeight + collapseDistance,
+        }}
       >
         {/* Category + verified */}
         <View style={styles.badgeRow}>
@@ -158,7 +182,7 @@ export default function LocationDetailScreen() {
         {/* Name + heart */}
         <View style={styles.nameRow}>
           {isPro ? (
-            <Text style={styles.name} numberOfLines={3}>{location.name}</Text>
+            <Text style={styles.name} numberOfLines={3}>{localize(location.name, location.name_en)}</Text>
           ) : (
             <View style={styles.lockedNameWrap}>
               <Ionicons name="lock-closed" size={15} color={colors.nomad.outline} />
@@ -183,9 +207,16 @@ export default function LocationDetailScreen() {
         ) : (!isPro && location.hint) ? (
           <View style={styles.subtitleRow}>
             <Ionicons name="sparkles-outline" size={14} color={colors.nomad.onSurfaceVariant} />
-            <Text style={styles.subtitle}>{location.hint}</Text>
+            <Text style={styles.subtitle}>{localize(location.hint, location.hint_en)}</Text>
           </View>
         ) : null}
+
+        {/* Weather — chỉ Pro user có toạ độ đầy đủ */}
+        {isPro && location.coordinates?.lat && location.coordinates?.lng && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 14 }}>
+            <WeatherChip lat={location.coordinates.lat} lng={location.coordinates.lng} />
+          </View>
+        )}
 
         {/* Style tags */}
         {styleTags.length > 0 && (
@@ -215,7 +246,7 @@ export default function LocationDetailScreen() {
 
         {/* Short description */}
         {location.short_description ? (
-          <Text style={styles.shortDesc}>{location.short_description}</Text>
+          <Text style={styles.shortDesc}>{localize(location.short_description, location.short_description_en)}</Text>
         ) : null}
 
         {/* Long description (expandable) */}
@@ -289,7 +320,25 @@ export default function LocationDetailScreen() {
             </View>
           )}
         </AccordionSection>
-      </ScrollView>
+      </Animated.ScrollView>
+
+      <View pointerEvents="box-none" style={[styles.navbar, { height: navbarHeight }]}>
+        <Animated.View pointerEvents="none" style={[styles.navbarBackground, { opacity: navbarOpacity }]} />
+        <TouchableOpacity
+          style={[styles.backBtn, { top: insets.top + 8 }]}
+          onPress={() => router.back()}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={localize('Quay lại', 'Back')}
+        >
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+        </TouchableOpacity>
+        <Animated.View pointerEvents="none" style={[styles.navbarTitleWrap, { top: insets.top, opacity: navbarOpacity }]}>
+          <Text style={styles.navbarTitle} numberOfLines={1}>
+            {isPro ? localize(location.name, location.name_en) : t('locProNameLock')}
+          </Text>
+        </Animated.View>
+      </View>
 
       {/* ── Bottom bar ─────────────────────────────────────────────── */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
@@ -322,7 +371,11 @@ const styles = StyleSheet.create({
   notFound: { color: colors.nomad.onSurfaceVariant, fontSize: 15 },
 
   // Hero
-  hero:    { width: '100%', height: 300, backgroundColor: colors.nomad.surfaceContainer },
+  hero:    { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden', backgroundColor: colors.nomad.surfaceContainer },
+  navbar: { position: 'absolute', top: 0, left: 0, right: 0 },
+  navbarBackground: { ...StyleSheet.absoluteFill, backgroundColor: colors.nomad.primary },
+  navbarTitleWrap: { position: 'absolute', left: 68, right: 20, height: 56, justifyContent: 'center' },
+  navbarTitle: { fontSize: 16, fontWeight: '700', color: colors.nomad.onPrimary },
   backBtn: {
     position: 'absolute', left: 16,
     width: 40, height: 40, borderRadius: 20,

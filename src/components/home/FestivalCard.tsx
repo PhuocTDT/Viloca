@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { colors } from '@/src/theme/colors';
 import type { FestivalWithStatus } from '@/src/hooks/useFestivals';
 
@@ -26,7 +27,8 @@ export function FestivalCard({ festival, onPress }: Props) {
       <Image
         source={{ uri: festival.cover_image ?? undefined }}
         style={styles.image}
-        resizeMode="cover"
+        contentFit="cover"
+        transition={150}
       />
       <View style={styles.overlay} />
       <View style={styles.content}>
@@ -50,8 +52,8 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 3,
   },
-  image:   { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)' },
+  image:   { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
+  overlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.38)' },
   content: { flex: 1, justifyContent: 'flex-end', padding: 12 },
   badge: {
     alignSelf: 'flex-start',

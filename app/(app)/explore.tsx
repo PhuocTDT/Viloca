@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, RefreshControl, Alert,
-  Image, TouchableOpacity, Dimensions, Share, ActivityIndicator,
+  Image, TouchableOpacity, Dimensions, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import supabase from '@/src/lib/supabase';
+import { shareAndReportMission } from '@/src/lib/share-mission';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/src/theme/colors';
 import { useT, type StringKey } from '@/src/lib/i18n';
@@ -14,6 +15,43 @@ import type { Post } from '@/src/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const PAGE_SIZE = 10;
+
+// ─── Mock posts (fallback khi DB chưa có data) ───────────────────────────────
+
+const MOCK_POSTS: Post[] = [
+  {
+    id: 'mock-1', user_id: 'mock', content: 'Hội An buổi tối thật sự ma mị 🏮 Đèn lồng rực rỡ khắp phố, ngồi cà phê bên sông nghe nhạc acoustic mà không muốn về. Ai chưa đến thì phải đến một lần nhé!',
+    images: ['https://picsum.photos/seed/hoian1/800/600', 'https://picsum.photos/seed/hoian2/800/600'],
+    location_id: null, trip_id: null, likes_count: 84, comments_count: 17,
+    created_at: new Date(Date.now() - 2 * 3600000).toISOString(), updated_at: new Date().toISOString(),
+    profiles: { full_name: 'Lan Anh', avatar_url: 'https://api.dicebear.com/7.x/avataaars/png?seed=lananh' },
+    post_likes: [], post_saves: [],
+  },
+  {
+    id: 'mock-2', user_id: 'mock', content: '🎬 Ngủ trên thuyền giữa vịnh Hạ Long — trải nghiệm không thể quên trong đời. Sáng dậy mở cửa cabin là thấy ngay cảnh này 🌊',
+    images: ['https://picsum.photos/seed/halong1/800/600'],
+    location_id: null, trip_id: null, likes_count: 201, comments_count: 43,
+    created_at: new Date(Date.now() - 5 * 3600000).toISOString(), updated_at: new Date().toISOString(),
+    profiles: { full_name: 'Minh Tú', avatar_url: 'https://api.dicebear.com/7.x/avataaars/png?seed=minhtu' },
+    post_likes: [], post_saves: [],
+  },
+  {
+    id: 'mock-3', user_id: 'mock', content: 'Ai mà không biết Cầu Vàng thì phải biết ngay 😂 Thật ra cầu đẹp thật, chỉ tội đông khách quá. Tip: đến sớm khoảng 7h sáng sẽ vắng hơn nhiều!',
+    images: ['https://picsum.photos/seed/danang1/800/600', 'https://picsum.photos/seed/danang2/800/600', 'https://picsum.photos/seed/danang3/800/600'],
+    location_id: null, trip_id: null, likes_count: 136, comments_count: 29,
+    created_at: new Date(Date.now() - 24 * 3600000).toISOString(), updated_at: new Date().toISOString(),
+    profiles: { full_name: 'Hương Giang', avatar_url: 'https://api.dicebear.com/7.x/avataaars/png?seed=huong' },
+    post_likes: [], post_saves: [],
+  },
+  {
+    id: 'mock-4', user_id: 'mock', content: 'Cuối tuần Hà Nội đông vui lắm 🍃 Bún chả Hàng Mành ăn xong đi bộ quanh hồ, ghé cà phê trứng nghe mưa rơi. Đó là Hà Nội của tôi.',
+    images: ['https://picsum.photos/seed/hanoi1/800/600'],
+    location_id: null, trip_id: null, likes_count: 57, comments_count: 8,
+    created_at: new Date(Date.now() - 48 * 3600000).toISOString(), updated_at: new Date().toISOString(),
+    profiles: { full_name: 'Đức Nam', avatar_url: 'https://api.dicebear.com/7.x/avataaars/png?seed=ducnam' },
+    post_likes: [], post_saves: [],
+  },
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -140,7 +178,7 @@ function PostCard({ post, currentUserId, onLike, onSave, onDelete }: {
           <Ionicons name="chatbubble-outline" size={21} color={colors.nomad.onSurfaceVariant} />
           <Text style={s.actionCount}>{post.comments_count}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.actionBtn} onPress={() => Share.share({ message: `Xem bài viết trên Viloca: viloca://post/${post.id}` })} activeOpacity={0.7}>
+        <TouchableOpacity style={s.actionBtn} onPress={() => shareAndReportMission({ message: `Xem bài viết trên Viloca: viloca://post/${post.id}` })} activeOpacity={0.7}>
           <Ionicons name="paper-plane-outline" size={21} color={colors.nomad.onSurfaceVariant} />
           <Text style={s.actionCount}>{t('postShare')}</Text>
         </TouchableOpacity>
@@ -170,6 +208,7 @@ export default function ExploreScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore]         = useState(true);
   const loadingMoreRef                = useRef(false);
+  const likeInFlightRef               = useRef<Set<string>>(new Set());
 
   async function fetchPosts(from = 0, append = false, isRefresh = false) {
     if (isRefresh) setRefreshing(true);
@@ -221,27 +260,36 @@ export default function ExploreScreen() {
     fetchPosts(realPosts.length, true);
   }, [realPosts.length, hasMore]);
 
-  const displayPosts: Post[] = realPosts;
+  // Real posts on top, mock posts at bottom as filler
+  const displayPosts: Post[] = realPosts.length > 0
+    ? [...realPosts, ...MOCK_POSTS]
+    : MOCK_POSTS;
 
   async function handleLike(post: Post) {
     if (!user || post.id.startsWith('mock-')) return;
-    const liked = post.post_likes?.some((l) => l.user_id === user.id);
-    if (liked) {
-      await supabase.from('post_likes').delete().eq('post_id', post.id).eq('user_id', user.id);
-    } else {
-      await supabase.from('post_likes').insert({ post_id: post.id, user_id: user.id });
+    if (likeInFlightRef.current.has(post.id)) return;
+    likeInFlightRef.current.add(post.id);
+    try {
+      const liked = post.post_likes?.some((l) => l.user_id === user.id);
+      if (liked) {
+        await supabase.from('post_likes').delete().eq('post_id', post.id).eq('user_id', user.id);
+      } else {
+        await supabase.from('post_likes').insert({ post_id: post.id, user_id: user.id });
+      }
+      setRealPosts((prev) => prev.map((p) => {
+        if (p.id !== post.id) return p;
+        const wasLiked = p.post_likes?.some((l) => l.user_id === user.id);
+        return {
+          ...p,
+          likes_count: wasLiked ? Math.max(0, p.likes_count - 1) : p.likes_count + 1,
+          post_likes: wasLiked
+            ? (p.post_likes ?? []).filter((l) => l.user_id !== user.id)
+            : [...(p.post_likes ?? []), { user_id: user.id }],
+        };
+      }));
+    } finally {
+      likeInFlightRef.current.delete(post.id);
     }
-    setRealPosts((prev) => prev.map((p) => {
-      if (p.id !== post.id) return p;
-      const wasLiked = p.post_likes?.some((l) => l.user_id === user.id);
-      return {
-        ...p,
-        likes_count: wasLiked ? p.likes_count - 1 : p.likes_count + 1,
-        post_likes: wasLiked
-          ? (p.post_likes ?? []).filter((l) => l.user_id !== user.id)
-          : [...(p.post_likes ?? []), { user_id: user.id }],
-      };
-    }));
   }
 
   async function handleSave(post: Post) {
@@ -324,7 +372,6 @@ export default function ExploreScreen() {
         source={require('@/assets/viloca-logo.png')}
         style={s.watermark}
         resizeMode="contain"
-        pointerEvents="none"
       />
 
       <View style={s.header}>
@@ -350,8 +397,8 @@ export default function ExploreScreen() {
             <Text style={{ fontSize: 14, color: colors.nomad.onSurfaceVariant }}>{t('exploreNoPostsTitle')}</Text>
             <Text style={{ fontSize: 12, color: colors.nomad.outlineVariant }}>{t('exploreNoPostsSub')}</Text>
           </View>
-        ) : null}
-        ListFooterComponent={loadingMore ? <ActivityIndicator style={{ padding: 16 }} color={colors.nomad.primary} /> : null}
+        ) : undefined}
+        ListFooterComponent={loadingMore ? <ActivityIndicator style={{ padding: 16 }} color={colors.nomad.primary} /> : undefined}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -371,7 +418,7 @@ const s = StyleSheet.create({
   screen:       { flex: 1, backgroundColor: colors.nomad.background, overflow: 'hidden' },
   blobTopRight:   { position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: 110, backgroundColor: colors.nomad.secondaryContainer, opacity: 0.28 },
   blobBottomLeft: { position: 'absolute', bottom: 60, left: -50, width: 160, height: 160, borderRadius: 80, backgroundColor: colors.nomad.primary, opacity: 0.07 },
-  watermark:      { position: 'absolute', bottom: 24, right: 20, width: 88, height: 88, opacity: 0.05 },
+  watermark:      { position: 'absolute', bottom: 24, right: 20, width: 88, height: 88, opacity: 0.05, pointerEvents: 'none' },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

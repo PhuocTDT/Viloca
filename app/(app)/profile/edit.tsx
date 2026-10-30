@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
+import { resizeImage } from '@/src/lib/image-resize';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { Avatar } from '@/src/components/ui/Avatar';
@@ -60,13 +61,13 @@ export default function EditProfileScreen() {
   }
 
   async function uploadAvatar(uid: string, uri: string): Promise<string | null> {
-    const ext  = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
-    const path = `${uid}.${ext}`;
-    const resp = await fetch(uri);
+    const resized = await resizeImage(uri, null, { width: 512, height: 512 });
+    const path = `${uid}.jpg`;
+    const resp = await fetch(resized.uri);
     const blob = await resp.blob();
     const { error: uploadErr } = await supabase.storage
       .from('avatars')
-      .upload(path, blob, { upsert: true, contentType: `image/${ext}` });
+      .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
     if (uploadErr) { setError(t('editErrUploadPhoto') + uploadErr.message); return null; }
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
     return publicUrl;

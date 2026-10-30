@@ -41,7 +41,7 @@ export default function RootLayout() {
         </View>
       ) : (
         <>
-          <StatusBar style="dark" translucent />
+          <StatusBar style="dark" />
           <Stack screenOptions={{ headerShown: false }} />
         </>
       )}

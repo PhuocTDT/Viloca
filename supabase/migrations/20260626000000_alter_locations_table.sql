@@ -1,4 +1,14 @@
 -- Migrate locations table from hint-based schema to full location schema
+--
+-- GHI CHÚ (phát hiện khi build local từ đầu, 2026-10-26): các statement DROP
+-- COLUMN / RENAME COLUMN nguyên bản bên dưới KHÔNG khớp với thực tế trên
+-- production — query trực tiếp schema prod cho thấy hint/cover_image/images/
+-- vibes/price_per_person/duration_minutes/rating/coordinates/description vẫn
+-- còn nguyên, và long_description tồn tại SONG SONG với description (tức là
+-- được ADD COLUMN, không phải RENAME). Migration này có lẽ chưa từng chạy
+-- đúng như file viết trên prod. Sửa lại để khớp với trạng thái prod thật,
+-- không đổi gì trên DB đã có sẵn các cột này (chỉ no-op).
+--
 -- Drop dependent view first
 DROP VIEW IF EXISTS locations_preview;
 
@@ -7,20 +17,8 @@ DROP INDEX IF EXISTS idx_locations_category;
 DROP INDEX IF EXISTS idx_locations_is_active;
 DROP INDEX IF EXISTS idx_locations_vibes;
 
--- Drop old columns that don't fit new schema
-ALTER TABLE locations
-  DROP COLUMN IF EXISTS hint,
-  DROP COLUMN IF EXISTS cover_image,
-  DROP COLUMN IF EXISTS images,
-  DROP COLUMN IF EXISTS vibes,
-  DROP COLUMN IF EXISTS price_per_person,
-  DROP COLUMN IF EXISTS duration_minutes,
-  DROP COLUMN IF EXISTS rating,
-  DROP COLUMN IF EXISTS coordinates,
-  DROP COLUMN IF EXISTS hint_generated_at;
-
--- Rename description → long_description
-ALTER TABLE locations RENAME COLUMN description TO long_description;
+-- Thêm long_description thay vì rename description (prod giữ cả 2 cột song song)
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS long_description TEXT;
 
 -- Relax NOT NULL on category (some entries may lack it)
 ALTER TABLE locations ALTER COLUMN category DROP NOT NULL;

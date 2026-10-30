@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ActivityIndicator, KeyboardAvoidingView, Platform, Image, StyleSheet,
+  type TextInputInstance,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,7 +32,7 @@ export default function VerifyEmailScreen() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const [countdown, setCountdown] = useState(pending ? 0 : 60);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   useEffect(() => {
     if (countdown === 0) return;
@@ -53,7 +54,7 @@ export default function VerifyEmailScreen() {
       setError(mapOtpError(verifyError.message, t));
       setOtpValue('');
     } else {
-      router.replace('/(app)');
+      router.replace('/(auth)/onboarding-style');
     }
   }
 

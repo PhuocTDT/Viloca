@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -31,14 +32,15 @@ export function FeaturedPlaceCard({ location, distanceLabel }: Props) {
       activeOpacity={0.92}
       onPress={() => router.push(`/location/${location.id}`)}
     >
-      <ImageBackground
-        source={firstPhoto ? { uri: firstPhoto } : undefined}
-        style={styles.image}
-        resizeMode="cover"
-        imageStyle={{ borderRadius: 20 }}
-      >
-        {/* Fallback gradient when no image */}
-        {!firstPhoto && (
+      <View style={styles.image}>
+        {firstPhoto ? (
+          <Image
+            source={{ uri: firstPhoto }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={150}
+          />
+        ) : (
           <LinearGradient
             colors={[colors.nomad.primaryContainer, colors.nomad.primary]}
             style={StyleSheet.absoluteFill}
@@ -97,7 +99,7 @@ export function FeaturedPlaceCard({ location, distanceLabel }: Props) {
             </View>
           ) : null}
         </View>
-      </ImageBackground>
+      </View>
     </TouchableOpacity>
   );
 }

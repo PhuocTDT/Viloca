@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="viloca-grad-v" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2E6F4E" />
+      <stop offset="100%" stop-color="#15803D" />
+    </linearGradient>
+    <linearGradient id="viloca-grad-hat" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8895C" />
+      <stop offset="50%" stop-color="#C8602E" />
+      <stop offset="100%" stop-color="#9A3412" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded circle for high contrast on light/dark tabs -->
+  <rect width="64" height="64" rx="16" fill="#FAF7F2" />
+
+  <g filter="url(#shadow)">
+    <!-- Stylized Letter 'V' for Viloca -->
+    <path d="M 17 26 L 32 54 L 47 26 L 39.5 26 L 32 41 L 24.5 26 Z" fill="url(#viloca-grad-v)" />
+
+    <!-- Traditional Conical Hat (Nón Lá) resting on top of V -->
+    <polygon points="32,7 13,24 51,24" fill="url(#viloca-grad-hat)" />
+    <!-- Hat decorative line/accent -->
+    <path d="M 13 24 Q 32 28 51 24" stroke="#FAF7F2" stroke-width="2" fill="none" opacity="0.9" />
+    <path d="M 22 17 Q 32 20 42 17" stroke="#FDE68A" stroke-width="1.2" fill="none" opacity="0.75" />
+
+    <!-- Sparkle star on hat -->
+    <circle cx="32" cy="11" r="1.5" fill="#FEF3C7" />
+  </g>
+</svg>

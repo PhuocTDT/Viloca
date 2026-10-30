@@ -17,7 +17,6 @@ function BgDecor() {
         source={require('../../../assets/viloca-logo.png')}
         style={styles.watermark}
         resizeMode="contain"
-        pointerEvents="none"
       />
     </>
   );
@@ -62,5 +61,6 @@ const styles = StyleSheet.create({
   watermark: {
     position: 'absolute', bottom: 24, right: 20,
     width: 88, height: 88, opacity: 0.05,
+    pointerEvents: 'none',
   },
 });

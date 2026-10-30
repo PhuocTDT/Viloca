@@ -5,6 +5,8 @@ import {
   formatDate,
   buildGoogleMapsUrl,
   stripDiacritics,
+  localDateString,
+  daysFromToday,
 } from '../src/lib/trip-utils';
 import type { Trip, TripItem } from '../src/types';
 
@@ -211,5 +213,39 @@ describe('stripDiacritics', () => {
 
   it('handles mixed string', () => {
     expect(stripDiacritics('TP. Hồ Chí Minh')).toBe('TP. Ho Chi Minh');
+  });
+});
+
+// ─── localDateString / daysFromToday ─────────────────────────────────────────
+
+describe('localDateString', () => {
+  it('formats a local date as YYYY-MM-DD with zero padding', () => {
+    expect(localDateString(new Date(2026, 0, 5, 3, 0))).toBe('2026-01-05');
+    expect(localDateString(new Date(2026, 11, 31, 23, 59))).toBe('2026-12-31');
+  });
+
+  it('uses the LOCAL date, not the UTC date (just after local midnight)', () => {
+    // 00:30 local: toISOString() could still be the previous day in UTC+7
+    expect(localDateString(new Date(2026, 5, 10, 0, 30))).toBe('2026-06-10');
+  });
+});
+
+describe('daysFromToday', () => {
+  const now = new Date(2026, 9, 21, 15, 30); // 21 Oct 2026, afternoon
+
+  it('returns 0 for today, whatever the time of day', () => {
+    expect(daysFromToday('2026-10-21', now)).toBe(0);
+    expect(daysFromToday('2026-10-21', new Date(2026, 9, 21, 0, 1))).toBe(0);
+    expect(daysFromToday('2026-10-21', new Date(2026, 9, 21, 23, 59))).toBe(0);
+  });
+
+  it('counts calendar days, not 24h blocks', () => {
+    expect(daysFromToday('2026-10-22', now)).toBe(1);
+    expect(daysFromToday('2026-10-22', new Date(2026, 9, 21, 23, 59))).toBe(1);
+    expect(daysFromToday('2026-11-21', now)).toBe(31);
+  });
+
+  it('never returns a negative number for past dates', () => {
+    expect(daysFromToday('2026-10-01', now)).toBe(0);
   });
 });

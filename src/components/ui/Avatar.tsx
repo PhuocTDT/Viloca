@@ -1,4 +1,5 @@
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { colors } from '../../theme/colors';
 import { radius } from '../../theme/spacing';
 
@@ -16,7 +17,7 @@ export function Avatar({ uri, name, size = 48 }: Props) {
   const style = { width: size, height: size, borderRadius: size / 2 };
 
   if (uri) {
-    return <Image source={{ uri }} style={[styles.image, style]} />;
+    return <Image source={{ uri }} style={[styles.image, style]} contentFit="cover" transition={150} />;
   }
   return (
     <View style={[styles.fallback, style]}>
@@ -28,7 +29,7 @@ export function Avatar({ uri, name, size = 48 }: Props) {
 }
 
 const styles = StyleSheet.create({
-  image:    { resizeMode: 'cover' },
+  image:    {},
   fallback: { backgroundColor: colors.nomad.secondaryContainer, alignItems: 'center', justifyContent: 'center' },
   initials: { color: colors.nomad.primary, fontWeight: '700' },
 });

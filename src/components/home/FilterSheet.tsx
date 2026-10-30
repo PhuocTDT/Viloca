@@ -1,18 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, Modal, TouchableOpacity, ScrollView,
   StyleSheet, TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/theme/colors';
+import { useT, type StringKey } from '@/src/lib/i18n';
 
 export type FilterTab = 'category' | 'city' | 'style' | 'price';
 
-const FILTER_TABS: { key: FilterTab; label: string; icon: string }[] = [
-  { key: 'category', label: 'Danh mục',   icon: 'grid-outline' },
-  { key: 'city',     label: 'Thành phố',  icon: 'business-outline' },
-  { key: 'style',    label: 'Không khí',  icon: 'sparkles-outline' },
-  { key: 'price',    label: 'Mức giá',    icon: 'pricetag-outline' },
+export interface CityFilterOption {
+  code: string | null; // null = "Tất cả"/"Gần bạn" tuỳ `tKey`
+  tKey: StringKey;
+}
+
+export interface SearchFilters {
+  categories: string[];
+  city: string | null;
+  vibes: string[];
+  priceLevels: number[];
+}
+
+export const EMPTY_FILTERS: SearchFilters = { categories: [], city: null, vibes: [], priceLevels: [] };
+
+export function filterCount(f: SearchFilters): number {
+  return f.categories.length + f.vibes.length + f.priceLevels.length + (f.city ? 1 : 0);
+}
+
+const FILTER_TABS: { key: FilterTab; labelKey: StringKey; icon: string }[] = [
+  { key: 'category', labelKey: 'filterTabCategory', icon: 'grid-outline' },
+  { key: 'city',     labelKey: 'filterTabCity',      icon: 'business-outline' },
+  { key: 'style',    labelKey: 'filterTabStyle',     icon: 'sparkles-outline' },
+  { key: 'price',    labelKey: 'filterTabPrice',     icon: 'pricetag-outline' },
 ];
 
 // Extracted from category column in DB
@@ -22,15 +41,8 @@ const CATEGORIES = [
   'Workshop', 'Café', 'Du lịch cộng đồng', 'Trekking',
 ];
 
-// Only cities with actual data in DB
-const CITIES = [
-  { code: 'HN', label: 'Hà Nội' },
-  { code: 'SG', label: 'TP. HCM' },
-  { code: 'DN', label: 'Đà Nẵng' },
-];
-
-// Extracted from style_tag column in DB (individual tags)
-const STYLE_TAGS = [
+// Extracted from vibes column in DB (individual tags)
+const VIBE_TAGS = [
   'Cổ kính', 'Hoài cổ', 'Lịch sử', 'Truyền thống', 'Dân gian',
   'Kiến trúc Pháp', 'Kiến trúc tối giản', 'Sang trọng', 'Lộng lẫy',
   'Nghệ thuật', 'Triển lãm', 'Biểu diễn', 'Đương đại',
@@ -50,20 +62,53 @@ const PRICE_LEVELS = [
   { value: 4, label: '₫₫₫₄   600k+' },
 ];
 
-function ChipGrid({ items, selected, onSelect }: {
-  items: string[]; selected: string[]; onSelect: (v: string) => void;
+/** Danh sách lựa chọn dạng dropdown (1 chọn, có tick) — dùng cho tab City. */
+function SingleSelectList({ items, selected, onSelect }: {
+  items: { value: string | null; label: string }[];
+  selected: string | null;
+  onSelect: (v: string | null) => void;
 }) {
   return (
-    <View style={styles.grid}>
+    <View style={styles.optionList}>
       {items.map((item) => {
-        const active = selected.includes(item);
+        const active = selected === item.value;
         return (
           <TouchableOpacity
-            key={item}
-            style={[styles.chip, active && styles.chipActive]}
-            onPress={() => onSelect(item)}
+            key={String(item.value)}
+            style={[styles.optionRow, active && styles.optionRowActive]}
+            onPress={() => onSelect(active ? null : item.value)}
           >
-            <Text style={[styles.chipText, active && styles.chipTextActive]}>{item}</Text>
+            <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>{item.label}</Text>
+            {active && <Ionicons name="checkmark" size={16} color={colors.nomad.primary} />}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Danh sách lựa chọn nhiều — dùng cho tab Category/Vibe/Price. */
+function MultiSelectList({ items, selected, onToggle }: {
+  items: { value: string; label: string }[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  return (
+    <View style={styles.optionList}>
+      {items.map((item) => {
+        const active = selected.includes(item.value);
+        return (
+          <TouchableOpacity
+            key={item.value}
+            style={[styles.optionRow, active && styles.optionRowActive]}
+            onPress={() => onToggle(item.value)}
+          >
+            <Ionicons
+              name={active ? 'checkbox' : 'square-outline'}
+              size={18}
+              color={active ? colors.nomad.primary : colors.nomad.outline}
+            />
+            <Text style={[styles.optionLabel, { flex: 1 }, active && styles.optionLabelActive]}>{item.label}</Text>
           </TouchableOpacity>
         );
       })}
@@ -75,17 +120,41 @@ interface Props {
   visible: boolean;
   initialTab?: FilterTab;
   onClose: () => void;
+  filters: SearchFilters;
+  onApply: (f: SearchFilters) => void;
+  cityOptions: CityFilterOption[];
 }
 
-export function FilterSheet({ visible, initialTab = 'category', onClose }: Props) {
+export function FilterSheet({ visible, initialTab = 'category', onClose, filters, onApply, cityOptions }: Props) {
+  const t = useT();
   const [activeTab, setActiveTab] = useState<FilterTab>(initialTab);
-  const [selected, setSelected]   = useState<string[]>([]);
+  const [draft, setDraft]         = useState<SearchFilters>(filters);
 
-  function toggle(val: string) {
-    setSelected((prev) =>
-      prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]
-    );
+  // Mở sheet lại -> nạp lại từ filter đang áp dụng, để Huỷ (đóng không Apply) không mất lựa chọn cũ.
+  useEffect(() => {
+    if (visible) { setDraft(filters); setActiveTab(initialTab); }
+  }, [visible, initialTab]);
+
+  function toggleCategory(v: string) {
+    setDraft((d) => ({ ...d, categories: d.categories.includes(v) ? d.categories.filter((x) => x !== v) : [...d.categories, v] }));
   }
+  function toggleVibe(v: string) {
+    setDraft((d) => ({ ...d, vibes: d.vibes.includes(v) ? d.vibes.filter((x) => x !== v) : [...d.vibes, v] }));
+  }
+  function togglePrice(v: string) {
+    const n = Number(v);
+    setDraft((d) => ({ ...d, priceLevels: d.priceLevels.includes(n) ? d.priceLevels.filter((x) => x !== n) : [...d.priceLevels, n] }));
+  }
+
+  function handleApply() {
+    onApply(draft);
+    onClose();
+  }
+  function handleClear() {
+    setDraft(EMPTY_FILTERS);
+  }
+
+  const count = filterCount(draft);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -97,7 +166,7 @@ export function FilterSheet({ visible, initialTab = 'category', onClose }: Props
         <View style={styles.handle} />
 
         <View style={styles.header}>
-          <Text style={styles.title}>Lọc địa điểm</Text>
+          <Text style={styles.title}>{t('filterSheetTitle')}</Text>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={22} color={colors.nomad.onSurfaceVariant} />
           </TouchableOpacity>
@@ -107,7 +176,7 @@ export function FilterSheet({ visible, initialTab = 'category', onClose }: Props
         <ScrollView
           horizontal showsHorizontalScrollIndicator={false}
           style={styles.tabScroll}
-          contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingRight: 32, gap: 8, alignItems: 'center' }}
         >
           {FILTER_TABS.map((tab) => (
             <TouchableOpacity
@@ -120,7 +189,7 @@ export function FilterSheet({ visible, initialTab = 'category', onClose }: Props
                 color={activeTab === tab.key ? '#fff' : colors.nomad.onSurfaceVariant}
               />
               <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
-                {tab.label}
+                {t(tab.labelKey)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -129,62 +198,44 @@ export function FilterSheet({ visible, initialTab = 'category', onClose }: Props
         {/* Options */}
         <ScrollView style={styles.optionsScroll} showsVerticalScrollIndicator={false}>
           {activeTab === 'category' && (
-            <ChipGrid items={CATEGORIES} selected={selected} onSelect={toggle} />
+            <MultiSelectList
+              items={CATEGORIES.map((c) => ({ value: c, label: c }))}
+              selected={draft.categories}
+              onToggle={toggleCategory}
+            />
           )}
           {activeTab === 'city' && (
-            <View style={styles.grid}>
-              {CITIES.map((c) => {
-                const active = selected.includes(c.code);
-                return (
-                  <TouchableOpacity
-                    key={c.code}
-                    style={[styles.chip, active && styles.chipActive]}
-                    onPress={() => toggle(c.code)}
-                  >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <SingleSelectList
+              items={cityOptions.map((c) => ({ value: c.code, label: t(c.tKey) }))}
+              selected={draft.city}
+              onSelect={(v) => setDraft((d) => ({ ...d, city: v }))}
+            />
           )}
           {activeTab === 'style' && (
-            <ChipGrid items={STYLE_TAGS} selected={selected} onSelect={toggle} />
+            <MultiSelectList
+              items={VIBE_TAGS.map((v) => ({ value: v, label: v }))}
+              selected={draft.vibes}
+              onToggle={toggleVibe}
+            />
           )}
           {activeTab === 'price' && (
-            <View style={styles.priceList}>
-              {PRICE_LEVELS.map((p) => {
-                const key = String(p.value);
-                const active = selected.includes(key);
-                return (
-                  <TouchableOpacity
-                    key={key}
-                    style={[styles.priceRow, active && styles.priceRowActive]}
-                    onPress={() => toggle(key)}
-                  >
-                    <Text style={[styles.priceLabel, active && styles.priceLabelActive]}>
-                      {p.label}
-                    </Text>
-                    {active && (
-                      <Ionicons name="checkmark" size={16} color={colors.nomad.primary} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <MultiSelectList
+              items={PRICE_LEVELS.map((p) => ({ value: String(p.value), label: p.label }))}
+              selected={draft.priceLevels.map(String)}
+              onToggle={togglePrice}
+            />
           )}
         </ScrollView>
 
         {/* Footer */}
-        {selected.length > 0 && (
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.clearBtn} onPress={() => setSelected([])}>
-              <Text style={styles.clearText}>Xóa ({selected.length})</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.applyBtn} onPress={onClose}>
-              <Text style={styles.applyText}>Áp dụng</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <View style={styles.footer}>
+          <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
+            <Text style={styles.clearText}>{t('filterClearBtn')}{count > 0 ? ` (${count})` : ''}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.applyBtn} onPress={handleApply}>
+            <Text style={styles.applyText}>{t('filterApplyBtn')}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
@@ -195,59 +246,51 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: colors.nomad.surface,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingBottom: 40, maxHeight: '75%',
+    paddingBottom: 22, height: '72%',
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
     backgroundColor: colors.nomad.outlineVariant,
-    alignSelf: 'center', marginTop: 10, marginBottom: 4,
+    alignSelf: 'center', marginTop: 8, marginBottom: 2,
   },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 12,
+    paddingHorizontal: 20, paddingVertical: 8,
   },
-  title: { fontSize: 17, fontWeight: '700', color: colors.nomad.onSurface },
+  title: { fontSize: 15, fontWeight: '700', color: colors.nomad.onSurface },
 
-  tabScroll: { marginBottom: 4 },
+  tabScroll: { flexGrow: 0, marginBottom: 4 },
   tab: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99,
+    paddingHorizontal: 13, paddingVertical: 8, borderRadius: 99,
     backgroundColor: colors.nomad.surfaceContainer,
+    borderWidth: 1, borderColor: colors.nomad.outlineVariant,
   },
-  tabActive:     { backgroundColor: colors.nomad.primary },
-  tabText:       { fontSize: 12, fontWeight: '500', color: colors.nomad.onSurfaceVariant },
+  tabActive:     { backgroundColor: colors.nomad.primary, borderColor: colors.nomad.primary },
+  tabText:       { fontSize: 12.5, fontWeight: '600', color: colors.nomad.onSurfaceVariant },
   tabTextActive: { color: '#fff' },
 
-  optionsScroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
+  optionsScroll: { flex: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99,
+  optionList: { gap: 5 },
+  optionRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'space-between',
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
     backgroundColor: colors.nomad.surfaceContainer,
   },
-  chipActive:     { backgroundColor: colors.nomad.onPrimaryContainer },
-  chipText:       { fontSize: 13, color: colors.nomad.onSurfaceVariant },
-  chipTextActive: { color: colors.nomad.primary, fontWeight: '600' },
+  optionRowActive:   { backgroundColor: colors.nomad.onPrimaryContainer },
+  optionLabel:       { fontSize: 12.5, color: colors.nomad.onSurfaceVariant },
+  optionLabelActive: { color: colors.nomad.primary, fontWeight: '600' },
 
-  priceList: { gap: 8 },
-  priceRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12,
-    backgroundColor: colors.nomad.surfaceContainer,
-  },
-  priceRowActive:  { backgroundColor: colors.nomad.onPrimaryContainer },
-  priceLabel:      { fontSize: 14, color: colors.nomad.onSurfaceVariant },
-  priceLabelActive: { color: colors.nomad.primary, fontWeight: '600' },
-
-  footer: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 16 },
+  footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 12 },
   clearBtn: {
-    flex: 1, paddingVertical: 12, borderRadius: 10,
+    flex: 1, paddingVertical: 10, borderRadius: 10,
     borderWidth: 1, borderColor: colors.nomad.outline, alignItems: 'center',
   },
-  clearText: { fontSize: 14, color: colors.nomad.onSurface, fontWeight: '600' },
+  clearText: { fontSize: 13, color: colors.nomad.onSurface, fontWeight: '600' },
   applyBtn: {
-    flex: 2, paddingVertical: 12, borderRadius: 10,
+    flex: 2, paddingVertical: 10, borderRadius: 10,
     backgroundColor: colors.nomad.primary, alignItems: 'center',
   },
-  applyText: { fontSize: 14, color: '#fff', fontWeight: '700' },
+  applyText: { fontSize: 13, color: '#fff', fontWeight: '700' },
 });

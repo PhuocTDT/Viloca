@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, TextInput, ActivityIndicator, Image, ImageBackground, Modal, Animated, Alert, Share, Linking,
-  SafeAreaView,
+  ScrollView, TextInput, ActivityIndicator, Image, ImageBackground, Modal, Animated, Alert, Linking,
+  SafeAreaView, type ScrollViewInstance,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
+import NetInfo from '@react-native-community/netinfo';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
@@ -19,166 +19,17 @@ import { getCoverForDestination } from '@/src/lib/destination-covers';
 import { suggestTime, tripDayCount, dayLabel, formatDate, buildGoogleMapsUrl } from '@/src/lib/trip-utils';
 import type { Trip, TripItem, TripJournal, TimeSlot, TripStatus } from '@/src/types';
 import { useT, type StringKey } from '@/src/lib/i18n';
-import * as Location from 'expo-location';
+import { useLocalize } from '@/src/lib/location-i18n';
+import { saveTripCache, loadTripCache, removeTripCache } from '@/src/lib/trip-cache';
+import { shareAndReportMission } from '@/src/lib/share-mission';
+import { TripOfflineMap } from '@/src/components/trip/TripOfflineMap';
+import { offlineMapStops } from '@/src/lib/offline-map';
+import { deleteOfflineMapsForTrip } from '@/src/lib/offline-map-storage';
+import { useAuthStore } from '@/store/authStore';
+import { useLangStore } from '@/src/store/langStore';
+import { useTripWeatherAdvice } from '@/src/hooks/useTripWeatherAdvice';
+import { WeatherAdviceCard } from '@/src/components/trip/WeatherAdviceCard';
 
-// ─── Leaflet HTML builder ─────────────────────────────────────────────────────
-
-type LeafletMarker = { lat: number; lng: number; name: string; order: number };
-
-function buildLeafletHtml(
-  markers: LeafletMarker[],
-  userLocation?: { lat: number; lng: number } | null,
-): string {
-  const PRIMARY  = '#4285F4';
-  const START_BG = '#34A853';
-  const END_BG   = '#EA4335';
-  const USER_BG  = '#1a73e8';
-  const data     = JSON.stringify(markers);
-  const userLL   = userLocation ? JSON.stringify(userLocation) : 'null';
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
-<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"><\/script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body,#map{width:100%;height:100%}
-.mk-wrap{display:flex;flex-direction:column;align-items:center;gap:3px}
-.mk-pin{
-  width:32px;height:32px;border-radius:50% 50% 50% 0;
-  background:${PRIMARY};
-  display:flex;align-items:center;justify-content:center;
-  transform:rotate(-45deg);
-  border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)
-}
-.mk-pin--start{background:${START_BG}}
-.mk-pin--end{background:${END_BG}}
-.mk-pin .num{
-  transform:rotate(45deg);
-  font-size:13px;font-weight:700;color:#fff;font-family:sans-serif
-}
-.num-label{
-  background:rgba(255,255,255,.92);
-  color:#222;font-size:10px;font-family:sans-serif;font-weight:600;
-  padding:1px 5px;border-radius:4px;
-  white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis;
-  box-shadow:0 1px 3px rgba(0,0,0,.2)
-}
-.user-dot-wrap{position:relative;width:20px;height:20px}
-.user-dot{
-  width:16px;height:16px;border-radius:50%;
-  background:${USER_BG};border:2.5px solid #fff;
-  position:absolute;top:2px;left:2px;
-  box-shadow:0 1px 4px rgba(0,0,0,.3)
-}
-.user-pulse{
-  width:20px;height:20px;border-radius:50%;
-  background:rgba(26,115,232,.3);
-  position:absolute;top:0;left:0;
-  animation:pulse 2s ease-out infinite
-}
-@keyframes pulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.5);opacity:0}}
-#route-status{
-  position:absolute;bottom:52px;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.55);color:#fff;
-  font-size:12px;font-family:sans-serif;
-  padding:4px 12px;border-radius:12px;
-  z-index:1000;display:none;pointer-events:none
-}
-#info-bar{
-  position:absolute;bottom:8px;left:8px;
-  background:rgba(255,255,255,.93);
-  color:#333;font-size:12px;font-family:sans-serif;font-weight:600;
-  padding:5px 10px;border-radius:10px;
-  z-index:1000;display:none;pointer-events:none;
-  box-shadow:0 1px 4px rgba(0,0,0,.2)
-}
-</style>
-</head>
-<body>
-<div id="map"></div>
-<div id="route-status">Đang tải lộ trình...</div>
-<div id="info-bar"></div>
-<script>
-var pts=${data};
-var userLL=${userLL};
-var map=L.map('map',{zoomControl:true,attributionControl:false});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-  attribution:'© OpenStreetMap contributors © CARTO',maxZoom:19,subdomains:'abcd'
-}).addTo(map);
-
-// Blue dot — user location (drawn first, below markers)
-if(userLL){
-  var udIcon=L.divIcon({
-    html:'<div class="user-dot-wrap"><div class="user-pulse"><\/div><div class="user-dot"><\/div><\/div>',
-    className:'',iconSize:[20,20],iconAnchor:[10,10]
-  });
-  L.marker([userLL.lat,userLL.lng],{icon:udIcon,zIndexOffset:-100}).addTo(map)
-    .bindPopup('<b>Vị trí của bạn<\/b>');
-}
-
-if(pts.length===0){map.setView([16.047,108.206],10);}
-else{
-  var lls=[];
-  pts.forEach(function(m,i){
-    var isStart=(m.order===1);
-    var isEnd=(m.order===pts.length);
-    var pinCls='mk-pin'+(isStart?' mk-pin--start':isEnd?' mk-pin--end':'');
-    var iconHtml='<div class="mk-wrap"><div class="'+pinCls+'"><span class="num">'+m.order+'<\/span><\/div><div class="num-label">'+m.name+'<\/div><\/div>';
-    var ic=L.divIcon({html:iconHtml,className:'',iconSize:[90,58],iconAnchor:[45,42],popupAnchor:[0,-44]});
-    L.marker([m.lat,m.lng],{icon:ic}).addTo(map).bindPopup('<b>'+m.name+'<\/b>');
-    lls.push([m.lat,m.lng]);
-  });
-  // fitBounds only on trip markers, not user location
-  map.fitBounds(L.latLngBounds(lls),{padding:[48,48]});
-
-  if(lls.length>1){
-    var statusEl=document.getElementById('route-status');
-    var infoEl=document.getElementById('info-bar');
-    statusEl.style.display='block';
-    var waypoints=pts.map(function(m){return m.lng+','+m.lat;}).join(';');
-    var osrmUrl='https://router.project-osrm.org/route/v1/driving/'+waypoints+'?overview=full&geometries=geojson';
-    fetch(osrmUrl)
-      .then(function(r){return r.json();})
-      .then(function(d){
-        var coords=d.routes[0].geometry.coordinates;
-        var routeLL=coords.map(function(c){return[c[1],c[0]];});
-        L.polyline(routeLL,{color:'#ffffff',weight:9,opacity:1}).addTo(map);
-        var pl=L.polyline(routeLL,{color:'${PRIMARY}',weight:5,opacity:.95}).addTo(map);
-        // Direction arrows
-        L.polylineDecorator(pl,{
-          patterns:[{offset:'12%',repeat:'22%',symbol:L.Symbol.arrowHead({pixelSize:10,polygon:false,pathOptions:{color:'${PRIMARY}',weight:2,opacity:.8}})}]
-        }).addTo(map);
-        // Info bar
-        var km=(d.routes[0].distance/1000).toFixed(1);
-        var min=Math.round(d.routes[0].duration/60);
-        infoEl.textContent=km+' km  ·  ~'+min+' phút';
-        infoEl.style.display='block';
-        statusEl.style.display='none';
-      })
-      .catch(function(){
-        L.polyline(lls,{color:'${PRIMARY}',weight:3,opacity:.7,dashArray:'6,4'}).addTo(map);
-        statusEl.style.display='none';
-      });
-  }
-}
-// Inject user location từ React Native sau khi GPS xong
-window.addUserLocation = function(lat, lng) {
-  if (window._userMarker) { window._userMarker.setLatLng([lat, lng]); return; }
-  var udIcon = L.divIcon({
-    html: '<div class="user-dot-wrap"><div class="user-pulse"><\/div><div class="user-dot"><\/div><\/div>',
-    className: '', iconSize: [20, 20], iconAnchor: [10, 10]
-  });
-  window._userMarker = L.marker([lat, lng], {icon: udIcon, zIndexOffset: -100})
-    .addTo(map).bindPopup('<b>Vị trí của bạn<\/b>');
-};
-<\/script>
-</body>
-</html>`;
-}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -233,7 +84,7 @@ function journalDateLabel(trip: Trip, dayNum: number): string {
 
 // ─── Sortable Day List ────────────────────────────────────────────────────────
 
-const ITEM_H = 96;
+const ITEM_H = 104;
 const LEFT_W = 88; // dragHandle(28) + timeCol(44) + dotCol(16)
 
 type SortableProps = {
@@ -250,10 +101,11 @@ type SortableProps = {
 
 function CardInner({ item }: { item: TripItem }) {
   const t            = useT();
+  const localize     = useLocalize();
   const locData      = item.locations ?? null;
-  const displayTitle = locData?.name ?? item.experience_title ?? '—';
+  const displayTitle = (locData ? localize(locData.name, locData.name_en) : null) ?? item.experience_title ?? '—';
   const displayLoc   = locData?.district ?? item.experience_location;
-  const hintText     = item.note ?? locData?.hint ?? null;
+  const hintText     = item.note ?? (locData?.hint ? localize(locData.hint, locData.hint_en) : null);
   const displayCat   = locData?.category ?? item.experience_category;
   const photoUrl     = locData?.cover_image
     ?? (locData?.photos ? locData.photos.split(',')[0].trim() : null)
@@ -268,15 +120,15 @@ function CardInner({ item }: { item: TripItem }) {
         resizeMode="cover"
       >
         {!photoUrl && (
-          <LinearGradient colors={[colors.nomad.primaryContainer, colors.nomad.primary]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[colors.nomad.primaryContainer, colors.nomad.primary]} style={StyleSheet.absoluteFill} />
         )}
         {photoUrl && (
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} locations={[0.4, 1]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} locations={[0.4, 1]} style={StyleSheet.absoluteFill} />
         )}
       </ImageBackground>
       <View style={styles.cardBody}>
         <View style={styles.cardTitleRow}>
-          <Text style={styles.timelineTitle} numberOfLines={2}>{displayTitle}</Text>
+          <Text style={styles.timelineTitle} numberOfLines={1}>{displayTitle}</Text>
           {!!item.ai_reason && (
             <View style={styles.aiItemBadge}>
               <Ionicons name="sparkles" size={9} color={colors.nomad.primary} />
@@ -294,7 +146,7 @@ function CardInner({ item }: { item: TripItem }) {
           <Text style={[styles.timelineCardDesc, { fontStyle: 'italic' }]} numberOfLines={1}>{hintText}</Text>
         )}
         {displayCat && (
-          <View style={[styles.tagChip, { alignSelf: 'flex-start', marginTop: 4 }]}>
+          <View style={[styles.tagChip, { alignSelf: 'flex-start', marginTop: 3 }]}>
             <Text style={styles.tagChipText}>{CATEGORY_TKEY[displayCat] ? t(CATEGORY_TKEY[displayCat]) : displayCat}</Text>
           </View>
         )}
@@ -536,12 +388,24 @@ function SortableDayItems({ items, editMode, checkedIds, onToggleCheck, onReorde
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const userId = useAuthStore(state => state.user?.id);
   const t = useT();
+  const localize = useLocalize();
+  const language = useLangStore(state => state.lang);
   const [trip, setTrip]         = useState<Trip | null>(null);
   const [items, setItems]       = useState<TripItem[]>([]);
   const [journals, setJournals] = useState<TripJournal[]>([]);
   const [tab, setTab]           = useState<Tab>('timeline');
   const [loading, setLoading]   = useState(true);
+
+  // Offline resilience
+  const [isOffline, setIsOffline]   = useState(false);
+  const [isFromCache, setIsFromCache] = useState(false);
+  const weatherAdvice = useTripWeatherAdvice(
+    id,
+    !!trip?.start_date && trip.status !== 'completed' && !isOffline && !isFromCache && process.env.EXPO_PUBLIC_WEATHER_ADAPTATION_ENABLED !== 'false',
+    language,
+  );
 
   // Journal
   const [journalDay, setJournalDay]         = useState(1);
@@ -578,6 +442,26 @@ export default function TripDetailScreen() {
 
   // Scroll
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollViewInstance>(null);
+
+  // Đổi tab: cuộn về đầu + reset scrollY ngay (không animate) — nếu không, chuyển sang
+  // tab ngắn hơn (vd Info) trong khi đang cuộn dở ở tab trước sẽ để lại navbar xanh bị
+  // kẹt nửa mờ nửa rõ, đè lên ảnh bìa còn sót lại phía sau.
+  function handleTabChange(next: Tab) {
+    setTab(next);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    scrollY.setValue(0);
+  }
+
+  // Điều hướng giữa 2 chuyến đi khác nhau dùng chung route /trip/[id] nên component
+  // không remount — nếu không reset, vị trí cuộn (và navbar xanh nửa mờ) của chuyến cũ
+  // vẫn còn nguyên khi mở chuyến mới.
+  useEffect(() => {
+    setTab('timeline');
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    scrollY.setValue(0);
+  }, [id]);
+
   const COVER_MAX = 260;
   const COVER_MIN = 72;
   const coverHeight    = scrollY.interpolate({ inputRange: [0, COVER_MAX - COVER_MIN], outputRange: [COVER_MAX, COVER_MIN], extrapolate: 'clamp' });
@@ -592,11 +476,7 @@ export default function TripDetailScreen() {
 
   // Map modal
   const [mapModalVisible, setMapModalVisible]   = useState(false);
-  const [mapWebViewLoading, setMapWebViewLoading] = useState(true);
-  const [mapLocating, setMapLocating]           = useState(false);
   const [mapDay, setMapDay]                     = useState(1);
-  const [userLocation, setUserLocation]         = useState<{ lat: number; lng: number } | null>(null);
-  const mapWebViewRef = useRef<any>(null);
 
 
   // Edit trip modal
@@ -606,24 +486,81 @@ export default function TripDetailScreen() {
   const [savingEdit, setSavingEdit]         = useState(false);
 
 
+  // Nhận biết mất mạng để hiện banner thay vì để màn hình trắng/lỗi im lặng.
   useEffect(() => {
-    if (!id) return;
-    Promise.all([
-      supabase.from('trips').select('*').eq('id', id).single(),
-      supabase.from('trip_items')
-        .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
-        .eq('trip_id', id)
-        .order('day_number')
-        .order('sort_order'),
-      supabase.from('trip_journals').select('*').eq('trip_id', id).order('day_number'),
-    ]).then(([t, i, j]) => {
-      setTrip(t.data);
-      setItems(i.data ?? []);
-      setJournals(j.data ?? []);
-      if (!t.data?.is_ai_generated) setDismissedAI(true);
-      setLoading(false);
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOffline(!(state.isConnected && state.isInternetReachable !== false));
     });
-  }, [id]);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!id || !userId) return;
+    let cancelled = false;
+
+    async function load() {
+      setTrip(null);
+      setItems([]);
+      setJournals([]);
+      setLoading(true);
+      setIsFromCache(false);
+      const cached = await loadTripCache(id);
+      if (cancelled) return;
+      if (cached && cached.trip.user_id === userId) {
+        setTrip(cached.trip);
+        setItems(cached.items);
+        setJournals(cached.journals);
+        setIsFromCache(true);
+        setLoading(false);
+      }
+      try {
+        const network = await NetInfo.fetch();
+        if (cancelled) return;
+        if (network.isConnected === false || network.isInternetReachable === false) {
+          setLoading(false);
+          return;
+        }
+        const [t, i, j] = await Promise.all([
+          supabase.from('trips').select('*').eq('id', id).single(),
+          supabase.from('trip_items')
+            .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
+            .eq('trip_id', id)
+            .order('day_number')
+            .order('sort_order'),
+          supabase.from('trip_journals').select('*').eq('trip_id', id).order('day_number'),
+        ]);
+        if (cancelled) return;
+        if (t.error || i.error || j.error || !t.data) throw new Error('Incomplete trip data');
+
+        setTrip(t.data);
+        setItems(i.data ?? []);
+        setJournals(j.data ?? []);
+        if (!t.data?.is_ai_generated) setDismissedAI(true);
+        setIsFromCache(false);
+        setLoading(false);
+        saveTripCache(id, {
+          trip: t.data, items: i.data ?? [], journals: j.data ?? [],
+          cachedAt: new Date().toISOString(),
+        });
+
+      } catch {
+        // Fetch lỗi (thường do mất mạng) — lùi về dữ liệu đã cache thay vì màn hình trắng.
+        if (cancelled) return;
+        const cached = await loadTripCache(id);
+        if (cached && cached.trip.user_id === userId && !cancelled) {
+          setTrip(cached.trip);
+          setItems(cached.items);
+          setJournals(cached.journals);
+          if (!cached.trip?.is_ai_generated) setDismissedAI(true);
+          setIsFromCache(true);
+        }
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [id, userId]);
 
   // ── Dates ────────────────────────────────────────────────────────────────────
 
@@ -727,7 +664,7 @@ export default function TripDetailScreen() {
 
     const { data: refreshed } = await supabase
       .from('trip_items')
-      .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours)')
+      .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours)')
       .eq('trip_id', id)
       .order('day_number')
       .order('sort_order');
@@ -739,20 +676,13 @@ export default function TripDetailScreen() {
 
   // ── Add location ──────────────────────────────────────────────────────────────
 
-  // Inject user dot khi GPS xong (sau khi WebView đã sẵn sàng)
-  useEffect(() => {
-    if (userLocation && !mapWebViewLoading && mapWebViewRef.current) {
-      mapWebViewRef.current.injectJavaScript(
-        `if(typeof window.addUserLocation==='function'){window.addUserLocation(${userLocation.lat},${userLocation.lng});}; true;`
-      );
-    }
-  }, [userLocation, mapWebViewLoading]);
+
 
   // Refresh items khi quay về từ add-location page
   useFocusEffect(useCallback(() => {
     if (!id) return;
     supabase.from('trip_items')
-      .select('*, locations(name, category, hint, short_description, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
+      .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates)')
       .eq('trip_id', id)
       .order('day_number').order('sort_order')
       .then(({ data }) => { if (data) setItems(data); });
@@ -898,7 +828,10 @@ export default function TripDetailScreen() {
             if (!id) return;
             await supabase.from('trip_items').delete().eq('trip_id', id);
             await supabase.from('trip_journals').delete().eq('trip_id', id);
-            await supabase.from('trips').delete().eq('id', id);
+            const { error } = await supabase.from('trips').delete().eq('id', id);
+            if (error) { Alert.alert(t('errGeneral')); return; }
+            await removeTripCache(id);
+            if (userId) await deleteOfflineMapsForTrip(userId, id);
             router.back();
           },
         },
@@ -908,29 +841,12 @@ export default function TripDetailScreen() {
 
   // ── Google Maps deep-link ─────────────────────────────────────────────────────
 
-  // ── Open map with location permission ────────────────────────────────────────
+  // ── Open trip map ────────────────────────────────────────────────────────────
 
-  async function openMapWithLocation(day: number) {
+  function openTripMap(day: number) {
     setMapDay(day);
-    setMapWebViewLoading(true);
-    setUserLocation(null);
-    setMapModalVisible(true);   // mở modal NGAY, không chờ GPS
-
-    setMapLocating(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      }
-    } catch {
-      // GPS thất bại, map vẫn hiển thị bình thường không có user dot
-    } finally {
-      setMapLocating(false);
-    }
+    setMapModalVisible(true);
   }
-
-  // ── Share ─────────────────────────────────────────────────────────────────────
 
   function shareItinerary() {
     if (!trip) return;
@@ -949,7 +865,8 @@ export default function TripDetailScreen() {
       grouped[Number(day)]
         .sort((a, b) => a.sort_order - b.sort_order)
         .forEach(item => {
-          const name = (item.locations as any)?.name ?? item.experience_title ?? '?';
+          const locName = item.locations as { name: string; name_en: string | null } | null | undefined;
+          const name = (locName ? localize(locName.name, locName.name_en) : null) ?? item.experience_title ?? '?';
           const slot = TIME_SLOTS.find(s => s.value === item.time_slot);
           lines.push(`  ${slot?.icon ?? ''} ${name}`);
           if (item.note) lines.push(`     → ${item.note}`);
@@ -958,7 +875,7 @@ export default function TripDetailScreen() {
     });
 
     lines.push(t('tripShareCredit'));
-    Share.share({ message: lines.filter(l => l !== null).join('\n') });
+    shareAndReportMission({ message: lines.filter(l => l !== null).join('\n') });
   }
 
   // ── Computed ──────────────────────────────────────────────────────────────────
@@ -986,10 +903,39 @@ export default function TripDetailScreen() {
   const daysWithCoords = Object.keys(itemsByDay)
     .map(Number)
     .filter(day => (itemsByDay[day] ?? []).some(item => {
-      const loc = item.locations as any;
-      return loc?.coordinates?.lat && loc?.coordinates?.lng;
+      return offlineMapStops([item])[0].lat !== null;
     }))
     .sort((a, b) => a - b);
+
+  const selectedDayLoc = (itemsByDay[selectedDay] ?? []).find(item => (item.locations as any)?.coordinates?.lat);
+  const selectedDayCoords = (selectedDayLoc?.locations as any)?.coordinates as { lat: number; lng: number } | undefined;
+  const tripWeatherCoords = selectedDayCoords ?? (items.find(item => (item.locations as any)?.coordinates?.lat)?.locations as any)?.coordinates as { lat: number; lng: number } | undefined;
+
+  async function applyWeatherProposal(proposalId: string, requestId: string) {
+    if (!trip || !id || isOffline) throw new Error(language === 'vi' ? 'Cần kết nối mạng để lưu lựa chọn.' : 'Connect to the internet to save this choice.');
+    const { data: decision, error: decisionError } = await supabase.rpc('apply_trip_weather_proposal', {
+      p_proposal_id: proposalId, p_request_id: requestId,
+    });
+    if (decisionError) throw decisionError;
+    const [tripResult, itemsResult, journalsResult] = await Promise.all([
+      supabase.from('trips').select('*').eq('id', id).single(),
+      supabase.from('trip_items')
+        .select('*, locations(name, name_en, category, hint, hint_en, short_description, short_description_en, cover_image, photos, district, address, price_per_person, duration_minutes, rating, opening_hours, coordinates, travel_region, shelter_type, shelter_verified_at, weather_exposure, structured_opening_hours)')
+        .eq('trip_id', id).order('day_number').order('sort_order'),
+      supabase.from('trip_journals').select('*').eq('trip_id', id).order('day_number'),
+    ]);
+    if (tripResult.error || itemsResult.error || journalsResult.error || !tripResult.data) {
+      throw new Error(language === 'vi' ? 'Đã lưu, nhưng chưa tải được lịch mới. Hãy làm mới.' : 'Saved, but could not reload the itinerary. Please refresh.');
+    }
+    setTrip(tripResult.data);
+    setItems(itemsResult.data ?? []);
+    setJournals(journalsResult.data ?? []);
+    await saveTripCache(id, {
+      trip: tripResult.data, items: itemsResult.data ?? [], journals: journalsResult.data ?? [],
+      cachedAt: new Date().toISOString(),
+    });
+    if (decision?.event_id) weatherAdvice.dismissEvent(decision.event_id);
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -1010,11 +956,21 @@ export default function TripDetailScreen() {
       </View>
 
       <Animated.ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
         scrollEventThrottle={16}
         scrollEnabled={!isDragging}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
       >
+        {(isOffline || isFromCache) && (
+          <View style={styles.offlineBanner}>
+            <Ionicons name="cloud-offline-outline" size={14} color={colors.nomad.onSurfaceVariant} />
+            <Text style={styles.offlineBannerText}>
+              {isOffline ? t('tripOfflineBanner') : t('tripCachedBanner')}
+            </Text>
+          </View>
+        )}
+
         {/* Hero cover */}
         <Animated.View style={[styles.coverWrap, { height: coverHeight }]}>
           <Animated.Image
@@ -1025,7 +981,7 @@ export default function TripDetailScreen() {
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.28)', 'rgba(0,0,0,0.88)']}
             locations={[0.25, 0.58, 1]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           <Animated.View style={[styles.heroContent, { opacity: heroOpacity }]}>
             <View style={styles.heroBottom}>
@@ -1036,6 +992,17 @@ export default function TripDetailScreen() {
               </View>
             </View>
           </Animated.View>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: heroOpacity }]} pointerEvents="box-none">
+            <WeatherAdviceCard
+              coordinates={tripWeatherCoords}
+              alerts={weatherAdvice.alerts}
+              loading={weatherAdvice.loading}
+              error={weatherAdvice.error}
+              offline={isOffline}
+              onRefresh={() => void weatherAdvice.refresh(true)}
+              onApply={applyWeatherProposal}
+            />
+          </Animated.View>
         </Animated.View>
 
         {/* Tabs */}
@@ -1043,7 +1010,7 @@ export default function TripDetailScreen() {
           {(['timeline', 'journal', 'info'] as Tab[]).map((tabKey) => {
             const tKeys: Record<Tab, StringKey> = { timeline: 'tripTabTimeline', journal: 'tripTabJournal', info: 'tripTabInfo' };
             return (
-              <TouchableOpacity key={tabKey} style={[styles.tabBtn, tab === tabKey && styles.tabBtnActive]} onPress={() => setTab(tabKey)}>
+              <TouchableOpacity key={tabKey} style={[styles.tabBtn, tab === tabKey && styles.tabBtnActive]} onPress={() => handleTabChange(tabKey)}>
                 <Text style={[styles.tabText, tab === tabKey && styles.tabTextActive]}>{t(tKeys[tabKey])}</Text>
               </TouchableOpacity>
             );
@@ -1063,10 +1030,16 @@ export default function TripDetailScreen() {
                 <View style={styles.setupCardIcon}>
                   <Ionicons name="calendar-outline" size={20} color={colors.nomad.primary} />
                 </View>
-                <View>
-                  <Text style={styles.setupCardTitle}>
-                    {trip.start_date ? `${formatDate(trip.start_date)} → ${trip.end_date ? formatDate(trip.end_date) : '...'}` : t('tripAddDates')}
-                  </Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  {trip.start_date ? (
+                    <View style={styles.setupDateRange}>
+                      <Text style={styles.setupCardTitle}>{formatDate(trip.start_date)}</Text>
+                      <Text style={styles.setupCardTitle}>→</Text>
+                      <Text style={styles.setupCardTitle}>{trip.end_date ? formatDate(trip.end_date) : '...'}</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.setupCardTitle}>{t('tripAddDates')}</Text>
+                  )}
                   <Text style={styles.setupCardSub}>
                     {trip.start_date ? `${maxDays} ${t('tripDaysChangeSub')}` : t('tripDatesSub')}
                   </Text>
@@ -1195,7 +1168,9 @@ export default function TripDetailScreen() {
                 {/* Selected day content */}
                 <View style={styles.dayContent}>
                   <View style={styles.dayContentHeader}>
-                    <Text style={styles.dayContentTitle}>{dayLabel(trip, selectedDay)}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={styles.dayContentTitle}>{dayLabel(trip, selectedDay)}</Text>
+                    </View>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       {(itemsByDay[selectedDay] ?? []).length > 0 && (
                         <TouchableOpacity
@@ -1332,7 +1307,7 @@ export default function TripDetailScreen() {
                     if (data) setTrip(data);
                   }}
                 >
-                  <Ionicons name={opt.icon as any} size={16} color={trip.status === opt.value ? colors.nomad.primary : colors.nomad.onSurfaceVariant} />
+                  <Ionicons name={opt.icon as any} size={14} color={trip.status === opt.value ? colors.nomad.primary : colors.nomad.onSurfaceVariant} />
                   <Text style={[styles.statusBtnText, trip.status === opt.value && styles.statusBtnTextActive]}>{t(opt.tKey)}</Text>
                 </TouchableOpacity>
               ))}
@@ -1361,25 +1336,34 @@ export default function TripDetailScreen() {
             )}
 
             {/* Actions */}
-            <View style={styles.infoActions}>
-              <TouchableOpacity style={styles.infoActionBtn} onPress={shareItinerary}>
+            <View style={styles.infoActionsRow}>
+              <TouchableOpacity
+                style={styles.infoIconBtn}
+                onPress={shareItinerary}
+                accessibilityRole="button"
+                accessibilityLabel={t('tripInfoShare')}
+              >
                 <Ionicons name="share-outline" size={18} color={colors.nomad.primary} />
-                <Text style={styles.infoActionText}>{t('tripInfoShare')}</Text>
               </TouchableOpacity>
 
               {trip.status === 'completed' && (
                 <TouchableOpacity
-                  style={styles.infoActionBtn}
+                  style={styles.infoIconBtn}
                   onPress={() => router.push({ pathname: '/post/create', params: { trip_id: id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('tripInfoCreatePost')}
                 >
                   <Ionicons name="camera-outline" size={18} color={colors.nomad.primary} />
-                  <Text style={styles.infoActionText}>{t('tripInfoCreatePost')}</Text>
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={[styles.infoActionBtn, { borderColor: colors.error }]} onPress={deleteTrip}>
+              <TouchableOpacity
+                style={[styles.infoIconBtn, { borderColor: colors.error }]}
+                onPress={deleteTrip}
+                accessibilityRole="button"
+                accessibilityLabel={t('tripInfoDelete')}
+              >
                 <Ionicons name="trash-outline" size={18} color={colors.error} />
-                <Text style={[styles.infoActionText, { color: colors.error }]}>{t('tripInfoDelete')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1387,17 +1371,16 @@ export default function TripDetailScreen() {
       </Animated.ScrollView>
 
       {tab === 'timeline' && (itemsByDay[selectedDay] ?? []).some(item => {
-        const loc = item.locations as any;
-        return loc?.coordinates?.lat && loc?.coordinates?.lng;
+        return offlineMapStops([item])[0].lat !== null;
       }) && (
-        <TouchableOpacity style={styles.fabMap} onPress={() => openMapWithLocation(selectedDay)} activeOpacity={0.85}>
-          <Ionicons name="map-outline" size={22} color={colors.textOnDark} />
+        <TouchableOpacity style={styles.fabMap} onPress={() => openTripMap(selectedDay)} activeOpacity={0.85}>
+          <Ionicons name="map-outline" size={18} color={colors.textOnDark} />
         </TouchableOpacity>
       )}
 
       {tab === 'timeline' && items.length > 0 && (
         <TouchableOpacity style={styles.fab} onPress={() => openAddExp(selectedDay)} activeOpacity={0.85}>
-          <Ionicons name="add" size={26} color={colors.textOnDark} />
+          <Ionicons name="add" size={22} color={colors.textOnDark} />
         </TouchableOpacity>
       )}
 
@@ -1430,7 +1413,7 @@ export default function TripDetailScreen() {
                 <TouchableOpacity
                   key={day}
                   style={[styles.mapDayChip, day === mapDay && styles.mapDayChipActive]}
-                  onPress={() => { setMapWebViewLoading(true); setMapDay(day); }}
+                  onPress={() => setMapDay(day)}
                   activeOpacity={0.75}
                 >
                   <Text style={[styles.mapDayChipText, day === mapDay && styles.mapDayChipTextActive]}>
@@ -1441,43 +1424,16 @@ export default function TripDetailScreen() {
             </ScrollView>
           )}
 
-          {/* GPS locating indicator */}
-          {mapLocating && (
-            <View style={styles.mapLocatingBar}>
-              <ActivityIndicator size="small" color={colors.nomad.primary} />
-              <Text style={styles.mapLocatingText}>{t('tripMapLocating')}</Text>
-            </View>
-          )}
-
-          {/* Map */}
-          <View style={{ flex: 1 }}>
-            <WebView
-              ref={mapWebViewRef}
-              key={mapDay}
-              source={{ html: buildLeafletHtml(
-                (itemsByDay[mapDay] ?? [])
-                  .sort((a, b) => a.sort_order - b.sort_order)
-                  .reduce<LeafletMarker[]>((acc, item, idx) => {
-                    const loc = item.locations as any;
-                    if (loc?.coordinates?.lat && loc?.coordinates?.lng) {
-                      acc.push({ lat: loc.coordinates.lat, lng: loc.coordinates.lng, name: loc.name ?? '—', order: idx + 1 });
-                    }
-                    return acc;
-                  }, []),
-                null,   // luôn null — user dot được inject sau qua JS
-              )}}
-              onLoad={() => setMapWebViewLoading(false)}
-              style={{ flex: 1 }}
-              javaScriptEnabled
-              domStorageEnabled
+          {mapModalVisible && trip && (
+            <TripOfflineMap
+              key={`${id}-${mapDay}`}
+              trip={trip}
+              day={mapDay}
+              items={items}
+              journals={journals}
+              isOffline={isOffline}
             />
-            {mapWebViewLoading && (
-              <View style={styles.mapLoadingOverlay}>
-                <ActivityIndicator size="large" color={colors.nomad.primary} />
-                <Text style={styles.mapLoadingText}>{t('tripMapLoading')}</Text>
-              </View>
-            )}
-          </View>
+          )}
 
           {/* Bottom bar */}
           <View style={styles.mapModalFooter}>
@@ -1502,11 +1458,13 @@ export default function TripDetailScreen() {
               const loc       = selectedItem.locations as any;
               const slot      = TIME_SLOTS.find(s => s.value === selectedItem.time_slot);
               const coverImg  = loc?.cover_image ?? selectedItem.experience_image;
-              const title     = loc?.name ?? selectedItem.experience_title ?? '—';
+              const title     = (loc ? localize(loc.name, loc.name_en) : null) ?? selectedItem.experience_title ?? '—';
               const locLabel  = loc?.district ?? loc?.address ?? selectedItem.experience_location;
               const category  = loc?.category ?? selectedItem.experience_category;
-              const shortDesc = loc?.short_description ?? loc?.hint ?? selectedItem.note;
-              const longDesc  = loc?.short_description;
+              const shortDescLoc = loc?.short_description ? localize(loc.short_description, loc.short_description_en) : null;
+              const hintLoc   = loc?.hint ? localize(loc.hint, loc.hint_en) : null;
+              const shortDesc = shortDescLoc ?? hintLoc ?? selectedItem.note;
+              const longDesc  = shortDescLoc;
               return (
                 <ScrollView showsVerticalScrollIndicator={false}>
                   {coverImg ? (
@@ -1554,7 +1512,7 @@ export default function TripDetailScreen() {
                       <View style={[styles.detailRow, { flexWrap: 'wrap', gap: 12 }]}>
                         {!!loc?.rating && <Text style={styles.detailMeta}>⭐ {loc.rating}</Text>}
                         {!!loc?.duration_minutes && <Text style={styles.detailMeta}>⏱ {loc.duration_minutes >= 60 ? `${Math.floor(loc.duration_minutes / 60)}h` : `${loc.duration_minutes}p`}</Text>}
-                        {!!loc?.price_per_person && <Text style={styles.detailMeta}>💰 {(loc.price_per_person / 1000).toFixed(0)}k/người</Text>}
+                        {!!loc?.price_per_person && <Text style={styles.detailMeta}>💰 {(loc.price_per_person / 1000).toFixed(0)}k{t('unitPerPerson')}</Text>}
                         {!!loc?.opening_hours && <Text style={styles.detailMeta}>🕐 {loc.opening_hours}</Text>}
                       </View>
                     )}
@@ -1764,7 +1722,7 @@ const styles = StyleSheet.create({
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   navbar:        { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md },
-  navbarBg:      { ...StyleSheet.absoluteFillObject as any, backgroundColor: colors.nomad.primary },
+  navbarBg:      { ...StyleSheet.absoluteFill as any, backgroundColor: colors.nomad.primary },
   backBtn:       { width: 38, height: 38, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
   editNavBtn:    { width: 38, height: 38, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
   navbarInfo:    { flex: 1 },
@@ -1787,15 +1745,16 @@ const styles = StyleSheet.create({
   tabTextActive: { color: colors.nomad.primary, fontWeight: '600' },
 
   // Setup card
-  setupCard:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.nomad.secondaryContainer, borderRadius: radius.lg, padding: spacing.md, margin: spacing.md, borderWidth: 1, borderColor: colors.nomad.primary + '40' },
-  setupCardLeft:  { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  setupCardIcon:  { width: 40, height: 40, borderRadius: radius.lg, backgroundColor: colors.nomad.surfaceContainerLow, alignItems: 'center', justifyContent: 'center' },
-  setupCardTitle: { fontSize: 14, fontWeight: '700', color: colors.nomad.primary },
-  setupCardSub:   { fontSize: 12, color: colors.nomad.primary + 'aa', marginTop: 2 },
-  setupCardRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  extendDaysRow:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  extendBtn:      { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: colors.nomad.primary, alignItems: 'center', justifyContent: 'center' },
-  extendBtnText:  { fontSize: 11, color: colors.nomad.primary, fontWeight: '700', minWidth: 20, textAlign: 'center' },
+  setupCard:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.nomad.secondaryContainer, borderRadius: radius.lg, padding: spacing.sm, margin: spacing.md, borderWidth: 1, borderColor: colors.nomad.primary + '40' },
+  setupCardLeft:  { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
+  setupCardIcon:  { width: 32, height: 32, borderRadius: radius.md, backgroundColor: colors.nomad.surfaceContainerLow, alignItems: 'center', justifyContent: 'center' },
+  setupCardTitle: { fontSize: 12, fontWeight: '700', color: colors.nomad.primary },
+  setupDateRange: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 4, rowGap: 2 },
+  setupCardSub:   { fontSize: 10, color: colors.nomad.primary + 'aa', marginTop: 1 },
+  setupCardRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  extendDaysRow:  { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  extendBtn:      { width: 19, height: 19, borderRadius: 10, borderWidth: 1, borderColor: colors.nomad.primary, alignItems: 'center', justifyContent: 'center' },
+  extendBtnText:  { fontSize: 9.5, color: colors.nomad.primary, fontWeight: '700', minWidth: 13, textAlign: 'center' },
 
   // AI banner
   aiBanner:         { backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, padding: spacing.md, margin: spacing.md, borderWidth: 1, borderColor: colors.nomad.outlineVariant },
@@ -1875,7 +1834,7 @@ const styles = StyleSheet.create({
   timelineCard:       { flex: 1, backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.nomad.primary + '30', overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 2 },
   timelineCardActive: { borderColor: colors.nomad.primary, borderWidth: 2, backgroundColor: '#f4f8ec', shadowOpacity: 0.14, elevation: 5 },
   cardInner:          { flexDirection: 'row', alignItems: 'stretch', flex: 1 },
-  cardThumb:          { width: 80, height: 88, justifyContent: 'flex-end' },
+  cardThumb:          { width: 84, height: 96, justifyContent: 'flex-end' },
   cardThumbImg:       { borderTopLeftRadius: radius.lg - 1, borderBottomLeftRadius: radius.lg - 1 },
   cardThumbTime:      { paddingHorizontal: 5, paddingVertical: 3 },
   cardThumbTimeText:  { fontSize: 10, fontWeight: '700', color: '#fff' },
@@ -1893,8 +1852,8 @@ const styles = StyleSheet.create({
 
 
   // FAB
-  fab:    { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.nomad.primary, alignItems: 'center', justifyContent: 'center', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6 },
-  fabMap: { position: 'absolute', bottom: 24, left: 24,  width: 50, height: 50, borderRadius: 25, backgroundColor: colors.nomad.primary, alignItems: 'center', justifyContent: 'center', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6 },
+  fab:    { position: 'absolute', bottom: 24, right: 24, width: 46, height: 46, borderRadius: 23, backgroundColor: colors.nomad.primary, alignItems: 'center', justifyContent: 'center', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6 },
+  fabMap: { position: 'absolute', bottom: 24, left: 24,  width: 40, height: 40, borderRadius: 20, backgroundColor: colors.nomad.primary, alignItems: 'center', justifyContent: 'center', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6 },
 
   // Journal
   journalEntry:        { flexDirection: 'row', backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg, marginBottom: spacing.md, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4, elevation: 2 },
@@ -1927,18 +1886,17 @@ const styles = StyleSheet.create({
   journalInput:     { borderWidth: 1, borderColor: colors.nomad.outlineVariant, borderRadius: radius.md, padding: 12, fontSize: 14, color: colors.nomad.onSurface, minHeight: 100, marginBottom: spacing.md },
 
   // Info
-  infoSectionLabel: { fontSize: 13, fontWeight: '700', color: colors.nomad.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
-  statusRow:        { flexDirection: 'row', gap: 8, marginBottom: spacing.lg },
-  statusBtn:        { flex: 1, flexDirection: 'column', alignItems: 'center', paddingVertical: 10, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.outlineVariant, backgroundColor: colors.nomad.background, gap: 4 },
+  infoSectionLabel: { fontSize: 12, fontWeight: '700', color: colors.nomad.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  statusRow:        { flexDirection: 'row', gap: 6, marginBottom: spacing.md },
+  statusBtn:        { flex: 1, flexDirection: 'column', alignItems: 'center', paddingVertical: 7, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.outlineVariant, backgroundColor: colors.nomad.background, gap: 3 },
   statusBtnActive:  { borderColor: colors.nomad.primary, backgroundColor: colors.nomad.secondaryContainer },
-  statusBtnText:    { fontSize: 10, color: colors.nomad.onSurfaceVariant, fontWeight: '500', textAlign: 'center' },
+  statusBtnText:    { fontSize: 9, color: colors.nomad.onSurfaceVariant, fontWeight: '500', textAlign: 'center' },
   statusBtnTextActive: { color: colors.nomad.primary, fontWeight: '700' },
-  infoRow:          { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.nomad.outlineVariant },
-  infoLabel:        { fontSize: 13, color: colors.nomad.onSurfaceVariant },
-  infoValue:        { fontSize: 13, fontWeight: '500', color: colors.nomad.onSurface, flexShrink: 1, textAlign: 'right', maxWidth: '60%' },
-  infoActions:      { marginTop: spacing.xl, gap: 10 },
-  infoActionBtn:    { flexDirection: 'row', alignItems: 'center', gap: 10, padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.primary, backgroundColor: colors.nomad.secondaryContainer },
-  infoActionText:   { fontSize: 14, color: colors.nomad.primary, fontWeight: '600' },
+  infoRow:          { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.nomad.outlineVariant },
+  infoLabel:        { fontSize: 12, color: colors.nomad.onSurfaceVariant },
+  infoValue:        { fontSize: 12, fontWeight: '500', color: colors.nomad.onSurface, flexShrink: 1, textAlign: 'right', maxWidth: '60%' },
+  infoActionsRow:   { flexDirection: 'row', gap: 10, marginTop: spacing.lg },
+  infoIconBtn:      { width: 42, height: 42, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.nomad.primary, backgroundColor: colors.nomad.secondaryContainer, alignItems: 'center', justifyContent: 'center' },
 
   // Detail modal
   detailImg:             { width: '100%', height: 200, borderRadius: radius.lg, resizeMode: 'cover', marginBottom: spacing.md },
@@ -1993,7 +1951,7 @@ const styles = StyleSheet.create({
   },
   mapModalTitle: { fontSize: 17, fontWeight: '700', color: colors.nomad.onSurface },
   mapLoadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.nomad.surfaceContainerLow,
     alignItems: 'center', justifyContent: 'center', gap: 12,
   },
@@ -2004,6 +1962,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.nomad.secondaryContainer, borderBottomWidth: 1, borderBottomColor: colors.nomad.primary + '30',
   },
   mapLocatingText: { fontSize: 13, color: colors.nomad.primary, fontWeight: '500' },
+  offlineBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center',
+    paddingVertical: 8, paddingHorizontal: spacing.lg,
+    backgroundColor: colors.nomad.surfaceContainer,
+  },
+  offlineBannerText: { fontSize: 12, color: colors.nomad.onSurfaceVariant, fontWeight: '500' },
+  mapOfflineListContent: { padding: spacing.lg, gap: 10 },
+  mapOfflineListTitle: { fontSize: 13, color: colors.nomad.onSurfaceVariant, marginBottom: 4 },
+  mapOfflineListRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 10, paddingHorizontal: 12,
+    backgroundColor: colors.nomad.surfaceContainerLow, borderRadius: radius.lg,
+  },
+  mapOfflineListOrder: {
+    width: 22, height: 22, borderRadius: 11, textAlign: 'center', lineHeight: 22,
+    backgroundColor: colors.nomad.primary, color: colors.nomad.onPrimary, fontSize: 11, fontWeight: '700',
+  },
+  mapOfflineListName: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.nomad.onSurface },
   mapModalFooter: {
     paddingHorizontal: spacing.lg, paddingVertical: 12,
     borderTopWidth: 1, borderTopColor: colors.nomad.outlineVariant,
